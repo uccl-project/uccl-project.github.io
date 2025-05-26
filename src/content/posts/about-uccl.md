@@ -14,7 +14,7 @@ author: UCCL Team
 
 # UCCL: An Extensible Software Transport Layer for GPU Networking.
 
-UCCL is a software-only extensible transport layer for GPU networking. It is designed to be **fast** and **extensible** to meet the challenging requirements fast-evolving ML workloads. 
+UCCL is a software-only extensible transport layer for GPU networking. It is designed to be **fast** and **extensible** to meet the challenging requirements of the modern ML workloads. 
 
 UCCL achieves up to **3.2x higher performance** over NCCL on AWS, and matches NCCL performance on ASIC-based RDMA NICs. UCCL provides a flexible and extensible framework that allows developers to **readily deploy custom transport protocols**  in software tailored to the latest ML workloads, and are compatible with many NIC vendors (Nvidia, AMD, AWS, etc.). 
 
@@ -36,7 +36,10 @@ UCCL is a software-only extensible transport layer for GPU networking. It is des
 
 ### How to decouple the data and control paths for existing RDMA NICs?
 
+
 ### How to achieve hardware-level performance for software control path?
+
+Modern NICs can support 3.2 Tbps inter-server bandwidth. 
 
 ### How to support multiple vendor NICs and their different capabilities?
 
@@ -44,11 +47,24 @@ UCCL is a software-only extensible transport layer for GPU networking. It is des
 
 ### Moving control paths to CPU for more states handling and faster processing compared to wimpy ARM/on-chip cores.
 
+* Leveraging UC/RC QPs + RDMA write with intermediate. E.g. for Nvidia and Broadcom NICs (that have UC or can disable RC CC Logics)
+* Leveraging UD QPs + Send/Recv with scatter-gather list. E.g. for AWS EFA NICs (that cannot disable RC CC Logics)
+* Handling out-of-order packet delivery. 
+  * scattered memcpy at the receiver GPU. 
 
 ### Harnessing multi-path for avoiding path collision.
 
+* Leveraging 256 paths.
+* Use latency metrics for path selection. 
 
 ## Evaluation.
 
 
 ## Future dev plan.
+
+- Dynamic membership with GPU servers joining and exiting
+- GPU-initiated network P2P that support all NIC vendors including Nvidia, AWS EFA, and Broadcom, to support MoE all-to-all workload and KV cache transfers in PD disaggregation. 
+- Re-architecting NCCL to unleash network hardware capabilities
+  - Scalable and efficient CPU proxy
+  - Low-cost async collectives with compute-communication ordering guarantee
+  - Device kernels in vendor-agnostic Triton language
