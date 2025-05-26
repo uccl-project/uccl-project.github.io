@@ -1,7 +1,7 @@
 ---
 title: "UCCL"
 slug: about-uccl
-description: "About UCCL"
+description: "Introducing UCCL, an extensible software transport layer for GPU networking."
 category:
   - One
 tags:
