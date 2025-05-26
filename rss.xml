@@ -22,12 +22,18 @@ UCCL is a software-only extensible transport layer for GPU networking. It is des
 
 ### How to decouple the data and control paths for existing RDMA NICs?
 
+The overall goal of separating the control path and the data path is to enable running extensible transport on the CPU, while efficiently transferring data to/from GPUs in a GPUDirect manner. This goal has three specific aspects: (1) We
+should involve as little control logic as possible in the data path to let the CPU make more transport decisions, like CC and packet reliability. (2) We must achieve GPUDirect for the data path efficiency. (3) We should support heterogeneous RDMA NICs. For example, NVIDIA NICs support UC, while Broadcom and AWS EFA do not.
 
 ### How to achieve hardware-level performance for software control path?
 
-Modern NICs can support 3.2 Tbps inter-server bandwidth. 
+Supporting hardware-level performance for software control path is challenging, as a single GPU server could have 8×400 Gbps RDMA NICs, totaling 3.2 Tbps bandwidth bidirectionally; the next generation RDMA NIC will achieve 800 Gbps, rendering 6.4 Tbps bandwidth. As a reference, Google’s software transport Snap can handle 80 Gbps
+traffic on a CPU core (though they do not use RDMA NICs). Our goal is to use 1 CPU core to handle 400G unidirectional traffic. 
 
 ### How to support multiple vendor NICs and their different capabilities?
+
+Datacenters usually consist of multiple generations and vendors of RDMA NICs due to continuous expansion, cost optimization, and to avoid vendor lock-in. In practice, UC is not always supported across different RDMA NIC vendors, e.g., Broadcom. While NVIDIA, Broadcom, and AMD all have 400 Gbps RDMA NICs for ML, they come with subtly
+different control path logic like packet reliability and CC; this heterogeneity reduces achievable bandwidth by 2-33× when communicating between NICs from different generations/vendors, as reported by Alibaba. Instead, if we can extensibly align these NICs’ control path logic in software, we could avoid such a severe performance drop.
 
 ## Core UCCL Insights.
 
@@ -43,8 +49,15 @@ Modern NICs can support 3.2 Tbps inter-server bandwidth.
 * Leveraging 256 paths.
 * Use latency metrics for path selection. 
 
+### Towards efficient software transport for ML networking.
+* **Run-to-completion execution:** Each UCCL engine thread runs RX, TX, pacing, timeout detection, and retransmission functionalities for a set of connections in an efficient run-tocompletion manner. UCCL employs Deficit Round Robin (DRR) scheduling to fairly multiplex one engine thread among multiple functionalities and connections.
+* **Connection splitting:** To handle 400+ Gbps traffic per NIC more efficiently, UCCL pivots away from the Flor design of a single CPU core for one connection, but leverages multiple cores for one connection with connection splitting. Basically, UCCL equally partitions the 256 QPs among all engine threads responsible for a specific NIC; each engine thread gets its own connection states for CC and LB, forming a sub-connection. Within each sub-connection, UCCL uses RDMA SRQ and SCQ (Shared Recv/Completion Queues) to reduce the overhead when polling multiple recv and completion queues. The application threads atop the UCCL plugin are responsible for choosing the least-loaded engine (e.g., the engine with the least unconsumed messages) when dispatching messages via SHM. In this way, UCCL could scale transport processing of a single connection to multiple cores, and handle transient load imbalance among CPUs at runtime. It also reduces TX packet bursts by avoiding sending all messages at once from a single core.
+* **Control coalescing**: There is an inherent tradeoff between the control decision granularity and software transport efficiency. One could run CC, LB, and reliability logic for each packet to achieve precise control of the transport behaviors, at the cost of consuming more CPU cores. Alternatively, one could relax the control granularity by coalescing several same-path packets and making control decisions together, thus with lower CPU consumption. For UC/RC, this also means an RDMA write could directly transmit several packets as a single data chunk, leveraging NIC-offloaded segmentation and reassembly. UCCL employs this control coalescing design with 32KB chunk size as default, striking a balanced tradeoff. Under this chunk size, UCCL can saturate 400 Gbps. unidirectional bandwidth with 1 CPU core, while not severely disrupting transport behaviors/performance. Nevertheless, UCCL could also adaptively adjust chunk size based on the congestion level, e.g., switching to a small chunk size to make more precise control when congestion window (cwnd) drops below a threshold or severe packet loss happens.
+* **Chained posting**: UD does not support NIC offloading for segmentation and reassembly, thus it incurs more MMIO writes than UC/RC when issuing send/recv verbs (e.g., for individual packets). To reduce such overhead, UCCL leverages the chained posting feature of RDMA NICs to issue one MMIO write for posting up to 32 send/recv verbs. Concretely, the WQEs of these 32 verbs are chained together through the next pointer in previous WQEs, and get posted to the RDMA NIC in one MMIO write
+
 ## Evaluation.
 
+To demonstrate the versatility of this interface and the power of UCCL’s extensibility, we use three case studies. First, we implement a multipath transport protocol that mitigates flow collisions by leveraging packet spraying—randomly sending packets from a single connection across different paths. This transport achieves 3.3 × higher throughput for collective communication over AWS’s SRD on EFA NICs, translating into up to 1.4 × speed-up for two ML applications. Second, we implement the receiver-driven EQDS protocol to handle network incast in MoE-like workloads, reducing message tail latency by 4.9 × compared with InfiniBand’s built-in transport. Third, we implement selective retransmission for efficient loss recovery and demonstrate its superiority over RDMA hardware transport under packet loss. These case studies show that UCCL effectively enables transport-layer innovations that would otherwise require costly, time-consuming changes to today’s network stack.
 
 ## Future dev plan.
 
