@@ -14,7 +14,9 @@ author: UCCL Team
 
 # UCCL: An Extensible Software Transport Layer for GPU Networking.
 
-UCCL is a software-only extensible transport layer for GPU networking. It is designed to augment the slow-evolving networking to meet the challenging performance requirements fast-evolving ML workloads. UCCL provides a flexible and extensible framework that allows developers to implement custom transport protocols and congestion control algorithms tailored to the specific needs of ML workloads, works with different vendor NICs, and supports many transport protocols.
+UCCL is a software-only extensible transport layer for GPU networking. It is designed to be **fast** and **extensible** to meet the challenging requirements fast-evolving ML workloads. 
+
+UCCL achieves up to **3.2x higher performance** over NCCL on AWS, and matches NCCL performance on ASIC-based RDMA NICs. UCCL provides a flexible and extensible framework that allows developers to **readily deploy custom transport protocols**  in software tailored to the latest ML workloads, and are compatible with many NIC vendors (Nvidia, AMD, AWS, etc.). 
 
 ## Fast-evolving ML workloads outpaces slow-evolving networking.
 
