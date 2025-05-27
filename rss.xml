@@ -5,7 +5,7 @@ UCCL is a software-only extensible transport layer for GPU networking. It is des
 UCCL achieves up to **3.2x higher performance** over NCCL on AWS, which translates into up to **1.4×** speedup for two ML applications. UCCL provides a flexible and extensible framework that allows developers to **readily deploy custom transport protocols** in software tailored to the latest ML workloads. For example, UCCL supports a receiver-driven protocol EQDS to handle network incast in MoE-like workloads, achieving **4.9×**
 better message tail latency over InfiniBand built-in transport. UCCL is also compatible with many NIC vendors (Nvidia, AMD, AWS, etc.). 
 
-![Alt text]([path/to/image.png](https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/images/about-uccl/arch_cropped.jpg))
+![Alt text](https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/images/about-uccl/arch_cropped.jpg)
 
 ## Fast-evolving ML workloads outpaces slow-evolving networking.
 
