@@ -16,7 +16,7 @@ author: UCCL Team
 
 UCCL is a software-only extensible transport layer for GPU networking. It is designed to be **fast** and **extensible** to meet the challenging requirements of the modern ML workloads. 
 
-UCCL achieves up to **3.2x higher performance** over NCCL on AWS, which translates into up to **1.4×** speedup for two ML applications. UCCL provides a flexible and extensible framework that allows developers to **readily deploy custom transport protocols**  in software tailored to the latest ML workloads. For example, UCCL supports a receiver-driven protocol EQDS to handle network incast in MoE-like workloads, achieving **4.9×**
+UCCL achieves up to **3.2x higher performance** over NCCL on AWS, which translates into up to **1.4×** speedup for two ML applications. UCCL provides a flexible and extensible framework that allows developers to **readily deploy custom transport protocols** in software tailored to the latest ML workloads. For example, UCCL supports a receiver-driven protocol EQDS to handle network incast in MoE-like workloads, achieving **4.9×**
 better message tail latency over InfiniBand built-in transport. UCCL is also compatible with many NIC vendors (Nvidia, AMD, AWS, etc.). 
 
 ## Fast-evolving ML workloads outpaces slow-evolving networking.
@@ -25,9 +25,7 @@ Machine learning (ML) workloads and their requirements for networking are evolvi
 
 However, networking techniques especially the host network transport on RDMA NICs are hard to adapt and evolve to better suit the needs of ML workloads. Essentially, hardware changes are time-consuming and take much longer time than software changes. This can lead to a **mismatch between the application needs and existing hardware optimizations**, which often translates into poor performance. 
 
-* Meta has reported that DCQCN — a popular congestion control (CC) algorithm in datacenters supported by RDMA NICs—does not work well for LLM training workloads with low flow entropy and high traffic burstiness. As a result, Meta decided to disable the CC support in NICs and instead implement traffic scheduling at the application layer.
-* DeepSeek disabled the CC when running large-scale all-to-all for serving MoE models. However, running a large-scale RDMA network without CC is brittle, as it can lead to deadlocks, head-of-line blocking, and pervasive congestion 
-* Alibaba has observed severe performance degradation for collective communication during LLM training. This was due to the high level of flow collisions, which in turn was caused by the RDMA NICs supporting only single-flow/path per connection. To avoid this problem, Alibaba has redesigned the network topology for LLM training using a rail-optimized dual-plane architecture. However, such a redesign is costly to build and maintain. 
+Operational evidence from several large-scale deployments underscores the problem. Meta found that DCQCN—the congestion-control scheme implemented in most datacenter NICs—performed poorly for large-language-model (LLM) training traffic, which exhibits low flow entropy and pronounced burstiness. To restore efficiency, Meta disabled NIC-level congestion control entirely and shifted traffic scheduling into the application layer. DeepSeek reached a similar conclusion while serving mixture-of-experts (MoE) models: it disabled congestion control to sustain the required all-to-all exchanges, but doing so left the RDMA fabric vulnerable to deadlocks, head-of-line blocking, and pervasive congestion. Alibaba diagnosed a different bottleneck: collective communication slowed dramatically because each RDMA connection could use only a single path, producing severe flow collisions. Their remedy was a rail-optimized dual-plane topology—a substantial re-engineering effort undertaken solely to compensate for limitations of existing NIC transport. Collectively, these experiences highlight the need for transport mechanisms that can be extended or replaced in software, without waiting for a new generation of hardware.
 
 ## UCCL: a software-only extensible transport layer for GPU networking.
 
@@ -81,11 +79,6 @@ when copying them into the transport buffers.
 
 To demonstrate the versatility of this interface and the power of UCCL’s extensibility, we use three case studies. First, we implement a multipath transport protocol that mitigates flow collisions by leveraging packet spraying—randomly sending packets from a single connection across different paths. This transport achieves 3.3 × higher throughput for collective communication over AWS’s SRD on EFA NICs, translating into up to 1.4 × speed-up for two ML applications. Second, we implement the receiver-driven EQDS protocol to handle network incast in MoE-like workloads, reducing message tail latency by 4.9 × compared with InfiniBand’s built-in transport. Third, we implement selective retransmission for efficient loss recovery and demonstrate its superiority over RDMA hardware transport under packet loss. These case studies show that UCCL effectively enables transport-layer innovations that would otherwise require costly, time-consuming changes to today’s network stack.
 
-## Future dev plan.
+## Future development plan.
 
-- Dynamic membership with GPU servers joining and exiting
-- GPU-initiated network P2P that support all NIC vendors including Nvidia, AWS EFA, and Broadcom, to support MoE all-to-all workload and KV cache transfers in PD disaggregation. 
-- Re-architecting NCCL to unleash network hardware capabilities
-  - Scalable and efficient CPU proxy
-  - Low-cost async collectives with compute-communication ordering guarantee
-  - Device kernels in vendor-agnostic Triton language
+Our future work has three focuses: (1) enabling dynamic membership, so GPU servers can join or leave an ongoing job without interruption; (2) introducing GPU-initiated, vendor-agnostic network peer-to-peer communication that spans NVIDIA, AWS EFA, Broadcom, and other NICs, thereby supporting both MoE all-to-all exchanges and high-rate KV-cache transfers in parameter-disaggregated deployments; and (3) re-architecting NCCL to unlock latent network-hardware capabilities through a scalable, efficient CPU proxy, low-cost asynchronous collectives that preserve compute-communication ordering guarantees, and device kernels implemented in the vendor-neutral Triton language.
