@@ -19,6 +19,8 @@ UCCL is a software-only extensible transport layer for GPU networking. It is des
 UCCL achieves up to **3.2x higher performance** over NCCL on AWS, which translates into up to **1.4×** speedup for two ML applications. UCCL provides a flexible and extensible framework that allows developers to **readily deploy custom transport protocols** in software tailored to the latest ML workloads. For example, UCCL supports a receiver-driven protocol EQDS to handle network incast in MoE-like workloads, achieving **4.9×**
 better message tail latency over InfiniBand built-in transport. UCCL is also compatible with many NIC vendors (Nvidia, AMD, AWS, etc.). 
 
+![Alt text]([path/to/image.png](https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/images/about-uccl/arch_cropped.jpg))
+
 ## Fast-evolving ML workloads outpaces slow-evolving networking.
 
 Machine learning (ML) workloads and their requirements for networking are evolving rapidly. Less than ten years ago, deep neural networks only had millions of parameters, and were trained atop hundreds of CPUs/GPUs with parameter servers or allreduce collective communication. After five years, large language models (LLMs) began to surge with billions of parameters, and were trained atop thousands of more powerful GPUs with multi-level parallelism and diverse collectives like allreduce, allgather, and reduce-scatter. In the recent two years, large-scale LLM serving has become the norm; prefill-decode disaggregation as an efficient serving technique, requires fast peer-to-peer communication. This year, serving Mixture-of-Experts (MoE) models like DeepSeek-V3 became very popular, featuring challenging all-to-all communication among hundreds of GPUs.
