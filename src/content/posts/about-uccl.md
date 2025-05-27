@@ -5,7 +5,9 @@ description: "Introducing UCCL, an extensible software transport layer for GPU n
 category:
   - One
 tags:
-  - Sky Computing
+  - Networking
+  - AI
+  - RDMA
 pubDate: 2025-01-01
 cover: https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/images/uccl.jpg
 coverAlt: About
