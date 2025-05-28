@@ -23,6 +23,7 @@ UCCL-Tran is a software-only extensible transport layer for GPU networking. It i
 
 UCCL-Tran achieves up to **3.2x higher performance** over NCCL on AWS, which translates into up to **1.4×** speedup for two ML applications (DeepSeek-V3 Serving, ResNet distributed training). UCCL-Tran provides a flexible and extensible framework that allows developers to **readily deploy custom transport protocols** in software tailored to the latest ML workloads. For example, UCCL-Tran supports a receiver-driven protocol EQDS to handle network incast in MoE-like workloads, achieving **4.9×**
 better message tail latency over InfiniBand built-in transport. UCCL-Tran is also compatible with many NIC vendors (Nvidia, AMD, AWS, etc.), preventing vendor lock-in. 
+More details can be found in our [UCCL-Tran paper](https://arxiv.org/pdf/2504.17307) and [GitHub repo](https://github.com/uccl-project/uccl). 
 
 ---
 ## Fast-evolving ML workloads outpaces slow-evolving networking
@@ -103,7 +104,7 @@ when copying them into the transport buffers.
 ---
 ## Evaluation
 
-To demonstrate the versatility of this interface and the power of UCCL-Tran's extensibility, we use three case studies. These case studies show that UCCL-Tran effectively enables transport-layer innovations that would otherwise require costly, time-consuming changes to today's network stack. You can find more details in our [UCCL-Tran paper](https://arxiv.org/abs/2412.19437).
+To demonstrate the versatility of this interface and the power of UCCL-Tran's extensibility, we use three case studies. These case studies show that UCCL-Tran effectively enables transport-layer innovations that would otherwise require costly, time-consuming changes to today's network stack. 
 
 1. We implement a multipath transport protocol that mitigates flow collisions by leveraging packet spraying—randomly sending packets from a single connection across different paths. This transport achieves 3.3 × higher throughput for collective communication over AWS's SRD on EFA NICs. 
     <p align="center">
