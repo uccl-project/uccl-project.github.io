@@ -76,14 +76,14 @@ when copying them into the transport buffers.</p>
  </p>
 </li>
 <li>
-<p>We implement the receiver-driven EQDS protocol to handle network incast in MoE-like workloads, reducing message tail latency by 4.9 × compared with InfiniBand’s built-in transport.</p>
+<p>We implement the receiver-driven EQDS<sup><a href="#user-content-fn-4" id="user-content-fnref-4" data-footnote-ref="" aria-describedby="footnote-label">4</a></sup> protocol to handle network incast in MoE-like workloads, reducing message tail latency by 4.9 × compared with InfiniBand’s built-in transport.</p>
  <p align="center">
    <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-uccl/incast.png" alt="UCCL-Tran incast" width="600">
    <em>Figure 6: Complementary CDF of FCT (Flow Completion Time) on Nvidia ConnectX-7 InfiniBand NICs when co-locating 15-to-1 incast traffic and permutation traffic.</em>
  </p>
 </li>
 <li>
-<p>We implement selective retransmission for efficient loss recovery and demonstrate its superiority over RDMA hardware transport under packet loss. Prior work has reported that RDMA hardware transport can only keep 20-40% of throughput under 0.1% packet loss<sup><a href="#user-content-fn-4" id="user-content-fnref-4" data-footnote-ref="" aria-describedby="footnote-label">4</a></sup>, while UCCL-Tran can keep 60-80%.</p>
+<p>We implement selective retransmission for efficient loss recovery and demonstrate its superiority over RDMA hardware transport under packet loss. Prior work has reported that RDMA hardware transport can only keep 20-40% of throughput under 0.1% packet loss<sup><a href="#user-content-fn-5" id="user-content-fnref-5" data-footnote-ref="" aria-describedby="footnote-label">5</a></sup>, while UCCL-Tran can keep 60-80%.</p>
  <p align="center">
    <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-uccl/packetloss.png" alt="UCCL-Tran packet loss" width="600">
    <em>Figure 7: Performance comparison on Nvidia ConnectX-7 InfiniBand NICs under different instrumented packet loss rates.</em>
@@ -103,16 +103,19 @@ when copying them into the transport buffers.</p>
 <section data-footnotes="" class="footnotes"><h2 class="sr-only" id="footnote-label">Footnotes</h2>
 <ol>
 <li id="user-content-fn-1">
-<p>Gangidi, Adithya, et al. “Rdma over ethernet for distributed training at meta scale.” Proceedings of the ACM SIGCOMM Conference 2024. <a href="https://engineering.fb.com/wp-content/uploads/2024/08/sigcomm24-final246.pdf">Paper link</a> <a href="#user-content-fnref-1" data-footnote-backref="" aria-label="Back to reference 1" class="data-footnote-backref">↩</a></p>
+<p>Gangidi, Adithya, et al. “Rdma over ethernet for distributed training at meta scale.” Proceedings of the ACM SIGCOMM Conference 2024. <a href="https://engineering.fb.com/wp-content/uploads/2024/08/sigcomm24-final246.pdf">Paper link</a>. <a href="#user-content-fnref-1" data-footnote-backref="" aria-label="Back to reference 1" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-2">
-<p>Liu, Aixin, et al. “Deepseek-v3 technical report.” arXiv preprint arXiv:2412.19437 (2024). <a href="https://arxiv.org/pdf/2412.19437">Paper link</a> <a href="#user-content-fnref-2" data-footnote-backref="" aria-label="Back to reference 2" class="data-footnote-backref">↩</a></p>
+<p>Liu, Aixin, et al. “Deepseek-v3 technical report.” arXiv preprint arXiv:2412.19437 (2024). <a href="https://arxiv.org/pdf/2412.19437">Paper link</a>. <a href="#user-content-fnref-2" data-footnote-backref="" aria-label="Back to reference 2" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-3">
-<p>Qian, Kun, et al. “Alibaba hpn: A data center network for large language model training.” Proceedings of the ACM SIGCOMM Conference 2024. <a href="https://ennanzhai.github.io/pub/sigcomm24-hpn.pdf">Paper link</a> <a href="#user-content-fnref-3" data-footnote-backref="" aria-label="Back to reference 3" class="data-footnote-backref">↩</a></p>
+<p>Qian, Kun, et al. “Alibaba hpn: A data center network for large language model training.” Proceedings of the ACM SIGCOMM Conference 2024. <a href="https://ennanzhai.github.io/pub/sigcomm24-hpn.pdf">Paper link</a>. <a href="#user-content-fnref-3" data-footnote-backref="" aria-label="Back to reference 3" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-4">
-<p>Li, Qiang, et al. “Flor: An open high performance RDMA framework over heterogeneous RNICs.” Proceedings of the USENIX OSDI Conference 2023. <a href="https://www.usenix.org/system/files/osdi23-li-qiang.pdf">Paper link</a>. Figure 7(b): curves of “lossy,1/1024” and “lossless,1/1024”. <a href="#user-content-fnref-4" data-footnote-backref="" aria-label="Back to reference 4" class="data-footnote-backref">↩</a></p>
+<p>Olteanu, Vladimir, et al. “An edge-queued datagram service for all datacenter traffic.” Proceedings of the USENIX OSDI Conference 2022. <a href="https://www.usenix.org/system/files/nsdi22-paper-olteanu.pdf">Paper link</a>. <a href="#user-content-fnref-4" data-footnote-backref="" aria-label="Back to reference 4" class="data-footnote-backref">↩</a></p>
+</li>
+<li id="user-content-fn-5">
+<p>Li, Qiang, et al. “Flor: An open high performance RDMA framework over heterogeneous RNICs.” Proceedings of the USENIX OSDI Conference 2023. <a href="https://www.usenix.org/system/files/osdi23-li-qiang.pdf">Paper link</a>. Figure 7(b): curves of “lossy,1/1024” and “lossless,1/1024”. <a href="#user-content-fnref-5" data-footnote-backref="" aria-label="Back to reference 5" class="data-footnote-backref">↩</a></p>
 </li>
 </ol>
 </section> </div> <div class="prose-a:no-underline"> <span class="mb-2 mr-2 inline-block rounded-full bg-neutral-200 px-3 py-1 text-sm hover:bg-neutral-500 dark:bg-neutral-600"> <a href="/tags/Networking/1/">Networking</a> </span><span class="mb-2 mr-2 inline-block rounded-full bg-neutral-200 px-3 py-1 text-sm hover:bg-neutral-500 dark:bg-neutral-600"> <a href="/tags/AI/1/">AI</a> </span><span class="mb-2 mr-2 inline-block rounded-full bg-neutral-200 px-3 py-1 text-sm hover:bg-neutral-500 dark:bg-neutral-600"> <a href="/tags/RDMA/1/">RDMA</a> </span> </div> <div class="flex justify-between"> <small>Publish on <span>2025-05-26</span>，Update on <span>2025-05-28</span></small> </div> </article> <div class="mt-4"> <div class="grid grid-cols-1 gap-4 md:grid-cols-3"> <div class="relative mb-4 overflow-hidden rounded-xl bg-white transition-transform duration-500 hover:-translate-y-1 hover:scale-105 dark:bg-neutral-900"> <a href="/posts/about-us/"> <picture> <source srcset="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/images/uccl_logo.png 392w, https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/images/uccl_logo.png 700w, https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/images/uccl_logo.png 980w, https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/images/uccl_logo.png 1960w" type="image/avif" sizes="(max-width: 360px) 392px, 
