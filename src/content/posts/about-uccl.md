@@ -21,23 +21,26 @@ UCCL is a software-only extensible transport layer for GPU networking. It is des
 UCCL achieves up to **3.2x higher performance** over NCCL on AWS, which translates into up to **1.4×** speedup for two ML applications (DeepSeek-V3 Serving, ResNet distributed training). UCCL provides a flexible and extensible framework that allows developers to **readily deploy custom transport protocols** in software tailored to the latest ML workloads. For example, UCCL supports a receiver-driven protocol EQDS to handle network incast in MoE-like workloads, achieving **4.9×**
 better message tail latency over InfiniBand built-in transport. UCCL is also compatible with many NIC vendors (Nvidia, AMD, AWS, etc.), preventing vendor lock-in. 
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-uccl/arch.png" alt="UCCL Architecture" width="600"/>
-  <br/>
-  <em>Figure 1: UCCL architecture</em>
-</p>
-
 ## Fast-evolving ML workloads outpaces slow-evolving networking
 
 ML workloads and their requirements for networking are evolving rapidly. Less than ten years ago, deep neural networks only had millions of parameters, and were trained atop hundreds of CPUs/GPUs with parameter servers or allreduce collective communication. After five years, large language models (LLMs) began to surge with billions of parameters, and were trained atop thousands of more powerful GPUs with multi-level parallelism and diverse collectives like allreduce, allgather, and reduce-scatter. In the recent two years, large-scale LLM serving has become the norm; prefill-decode disaggregation has emerged as an efficient serving technique, requiring fast peer-to-peer communication. This year, serving Mixture-of-Experts (MoE) models like DeepSeek-V3 became very popular, featuring challenging all-to-all communication among hundreds of GPUs.
 
 However, networking techniques especially the host network transport on RDMA NICs are hard to adapt and evolve to better suit the needs of ML workloads. Essentially, hardware changes are time-consuming and take much longer time than software changes. The **mismatch between the application and existing hardware** often translates into poor performance. 
 
-Operational evidence from several large-scale deployments underscores the problem. Meta found that DCQCN—the congestion-control scheme implemented in most datacenter NICs—performed poorly for large-language-model (LLM) training traffic, which exhibits low flow entropy and burstiness. As a result, Meta disabled NIC-level congestion control entirely. DeepSeek reached a similar conclusion while serving mixture-of-experts (MoE) models: it disabled congestion control to sustain the required all-to-all exchanges, but doing so left the RDMA fabric vulnerable to deadlocks, head-of-line blocking, and pervasive congestion. Alibaba diagnosed a different bottleneck: collective communication slowed dramatically because each RDMA connection could use only a single path, producing severe flow collisions. Their remedy was a rail-optimized dual-plane topology—a substantial re-engineering effort undertaken solely to compensate for limitations of existing NIC transport. Collectively, these experiences highlight the need for transport mechanisms that can be extended or replaced in software, without waiting for a new generation of hardware.
+Operational evidence from several large-scale deployments underscores the problem. Meta found that DCQCN—the congestion-control scheme implemented in most datacenter NICs—performed poorly for large-language-model (LLM) training traffic, which exhibits low flow entropy and burstiness[^1]. As a result, Meta disabled NIC-level congestion control entirely. DeepSeek reached a similar conclusion while serving mixture-of-experts (MoE) models: it disabled congestion control to sustain the required all-to-all exchanges[^2], but doing so left the RDMA fabric vulnerable to deadlocks, head-of-line blocking, and pervasive congestion. Alibaba diagnosed a different bottleneck: collective communication slowed dramatically because each RDMA connection could use only a single path, producing severe flow collisions[^3]. Their remedy was a rail-optimized dual-plane topology—a substantial re-engineering effort undertaken solely to compensate for limitations of existing NIC transport. Collectively, these experiences highlight the need for transport mechanisms that can be extended or replaced in software, without waiting for a new generation of hardware.
+
+[^1]: Gangidi, Adithya, et al. "Rdma over ethernet for distributed training at meta scale." Proceedings of the ACM SIGCOMM 2024 Conference. 2024. [Paper link](https://engineering.fb.com/wp-content/uploads/2024/08/sigcomm24-final246.pdf)
+[^2]: Liu, Aixin, et al. "Deepseek-v3 technical report." arXiv preprint arXiv:2412.19437 (2024). [Paper link](https://arxiv.org/pdf/2412.19437)
+[^3]: Qian, Kun, et al. "Alibaba hpn: A data center network for large language model training." Proceedings of the ACM SIGCOMM 2024 Conference. 2024. [Paper link](https://ennanzhai.github.io/pub/sigcomm24-hpn.pdf)
 
 ## UCCL: a software-only extensible transport layer for GPU networking
 
-UCCL is a software-only extensible transport layer for GPU networking. It is designed to address the challenges of fast-evolving ML workloads and the limitations of existing RDMA NICs. UCCL provides a flexible and extensible framework that allows developers to implement custom transport protocols and congestion control algorithms tailored to the specific needs of each ML workload.
+UCCL is a software-only extensible transport layer for GPU networking. It is designed to address the challenges of fast-evolving ML workloads and the limitations of existing RDMA NICs. UCCL provides a flexible and extensible framework that allows developers to implement custom transport protocols and congestion control algorithms tailored to the specific needs of each ML workload. 
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-uccl/arch.png" alt="UCCL Architecture" width="600"/>
+  <em>Figure 1: UCCL architecture.</em>
+</p>
 
 ## Key challenges addressed by UCCL
 
@@ -57,23 +60,36 @@ different control path logic like packet reliability and CC; this heterogeneity 
 
 ## Core UCCL Insights
 
-### Moving control paths to CPU with more stored states and faster processing
+### 1. Moving control paths to CPU with more stored states and faster processing
 
 UCCL’s architecture revolves around a clean separation of control logic and data movement. All decisions that benefit from rapid iteration—such as congestion control, path selection, and loss recovery—run in user space on the CPU, while the heavy‐weight transfer of tensor data stays on the NIC/GPU data path via GPUDirect DMA. This design places three concrete requirements on the transport substrate: minimal hardware intervention in the data path, direct GPU memory access, and compatibility with the diverse queue-pair (QP) types offered by different RDMA vendors. Whenever available, UCCL chooses the Unreliable Connection (UC) QP because it offers NIC-side segmentation/reassembly yet leaves congestion control and reliability to software. For NICs that lack UC, it falls back to Reliable Connection (RC) with hardware CC disabled, or, as a last resort, Unreliable Datagram (UD), accepting higher CPU cost in exchange for full software control. 
 
-Operating over UD, however, raises practical issues because the NIC no longer reassembles multi-packet messages. UCCL resolves this in two steps. First, it *uses scatter–gather* lists so the NIC merges the control header (allocated in host memory) and the data payload (resident in GPU memory) into a single packet on transmit and splits them on receive, ensuring the two always “fate-share” with respect to loss and ordering. Second, on the GPU side, out-of-order payloads must be re-stitched into contiguous message buffers; instead of launching an extra kernel, UCCL fuses a lightweight scatter-memcpy routine into the reduction kernels. The additional GPU bandwidth consumed is bounded by network throughput and therefore negligible on modern accelerators. Together, these design choices let UCCL present a uniform, extensible control plane across heterogeneous hardware while preserving line-rate data delivery to GPUs.
+<p align="center">
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-uccl/uc_rc_decouple.png" alt="UCCL UC/RC decoupling" width="600"/>
+  <em>Figure 2: Moving control paths to CPU via RDMA UC/RC.</em>
+</p>
 
-### Harnessing multi-path for avoiding path collision
+<p align="center">
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-uccl/ud_decouple.png" alt="UCCL UD decoupling" width="800"/>
+  <em>Figure 3: Moving control paths to CPU via RDMA UD.</em>
+</p>
+
+Operating over UD, however, raises practical issues because the NIC no longer reassembles multi-packet messages. UCCL resolves this in two steps. First, it *uses scatter–gather* lists so the NIC merges the control header (allocated in host memory) and the data payload (resident in GPU memory) into a single packet on transmit and splits them on receive, ensuring the two always ``fate-share'' with respect to loss and ordering. Second, on the GPU side, out-of-order payloads must be re-stitched into contiguous message buffers; instead of launching an extra kernel, UCCL fuses a lightweight scatter-memcpy routine into the reduction kernels. The additional GPU bandwidth consumed is bounded by network throughput and therefore negligible on modern accelerators. Together, these design choices let UCCL present a uniform, extensible control plane across heterogeneous hardware while preserving line-rate data delivery to GPUs.
+
+### 2. Harnessing multi-path for avoiding path collision
 
 One of the key motivations for GPU network extensibility is to harness the multipath capacity of modern datacenter networks. UCCL achieves this by using multiple UC, RC, or UD QPs. Basically, network traffic from different QPs will likely go through different network paths, as both RoCE and Infiniband usually use ECMP (Equal-Cost Multi-Path) for multipath routing with source and destination QP numbers as the hash inputs. For UC and RC, UCCL by default uses 256 QPs, which provides maximum 256 different network paths as used by recent transport research. For UD, UCCL uses a much smaller number of QPs by combining different source and destination QPs. For example, 16 source UD QPs and 16 destination UD QPs will provide maximum 16×16=256 different network paths, because for connection-less UD, each source QP can send packets to any destination QP. 
 
-#### Handling out-of-order packets
+<p align="center">
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-uccl/multipath.png" alt="UCCL multipathing" width="600"/>
+  <em>Figure 4: Harnessing multi-path.</em>
+</p>
 
-Many factors could cause out-of-order packet delivery, including multipathing, packet loss, and the unpredictable multi-QP scheduler in RDMA hardware. Existing RDMA NICs perform poorly when handling out-of-order packets, as they cannot maintain large reordering buffers and states due to limited on-chip SRAM constraints. In contrast, UCCL is able to handle out-of-order packets efficiently thanks to its software flexibility
+**Handling out-of-order packets:** Many factors could cause out-of-order packet delivery, including multipathing, packet loss, and the unpredictable multi-QP scheduler in RDMA hardware. Existing RDMA NICs perform poorly when handling out-of-order packets, as they cannot maintain large reordering buffers and states due to limited on-chip SRAM constraints. In contrast, UCCL is able to handle out-of-order packets efficiently thanks to its software flexibility
 and separation of data and control paths. Different from TCP, UCCL maintains its packet reordering buffers in the GPU memory and lets the NIC directly DMA network data there. For UC/RC, the reordering buffers are individual data chunks, and the sender CPU specifies in-order chunk addresses when posting verbs. For UD, the reordering buffers are individual packet payloads, and the GPU reduction kernel reorders packets
 when copying them into the transport buffers. 
 
-### Towards efficient software transport for ML networking
+### 3. Towards efficient software transport for ML networking
 **Run-to-completion execution:** Each UCCL engine thread runs RX, TX, pacing, timeout detection, and retransmission functionalities for a set of connections in an efficient run-to-completion manner. UCCL employs Deficit Round Robin (DRR) scheduling to fairly multiplex one engine thread among multiple functionalities and connections.
 
 **Connection splitting:** To handle 400+ Gbps traffic per NIC more efficiently, UCCL pivots away from the Flor design of a single CPU core for one connection, but leverages multiple cores for one connection with connection splitting. Basically, UCCL equally partitions the 256 QPs among all engine threads responsible for a specific NIC; each engine thread gets its own connection states for CC and LB, forming a sub-connection. Within each sub-connection, UCCL uses RDMA SRQ and SCQ (Shared Recv/Completion Queues) to reduce the overhead when polling multiple recv and completion queues. The application threads atop the UCCL plugin are responsible for choosing the least-loaded engine (e.g., the engine with the least unconsumed messages) when dispatching messages via SHM. In this way, UCCL could scale transport processing of a single connection to multiple cores, and handle transient load imbalance among CPUs at runtime. 
@@ -86,6 +102,20 @@ when copying them into the transport buffers.
 
 To demonstrate the versatility of this interface and the power of UCCL’s extensibility, we use three case studies. First, we implement a multipath transport protocol that mitigates flow collisions by leveraging packet spraying—randomly sending packets from a single connection across different paths. This transport achieves 3.3 × higher throughput for collective communication over AWS’s SRD on EFA NICs. Second, we implement the receiver-driven EQDS protocol to handle network incast in MoE-like workloads, reducing message tail latency by 4.9 × compared with InfiniBand’s built-in transport. Third, we implement selective retransmission for efficient loss recovery and demonstrate its superiority over RDMA hardware transport under packet loss. These case studies show that UCCL effectively enables transport-layer innovations that would otherwise require costly, time-consuming changes to today’s network stack.
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-uccl/alltoall_perf.png" alt="UCCL alltoall EFA" width="600"/>
+  <em>Figure 5: UCCL vs. NCCL on AWS EFA NICs.</em>
+</p>
+
 ## Future development plan
 
-Our future work has three focuses: (1) enabling dynamic membership, so GPU servers can join or leave an ongoing job without interruption; (2) introducing GPU-initiated, vendor-agnostic network peer-to-peer communication that spans NVIDIA, AWS EFA, Broadcom, and other NICs, thereby supporting both MoE all-to-all exchanges and high-rate KV-cache transfers in parameter-disaggregated deployments; and (3) re-architecting NCCL to unlock latent network-hardware capabilities through a scalable, efficient CPU proxy, low-cost asynchronous collectives that preserve compute-communication ordering guarantees, and device kernels implemented in the vendor-neutral Triton language.
+Our future work has three focuses: 
+* Enabling dynamic membership, so GPU servers can join or leave an ongoing job without interruption 
+* Introducing GPU-initiated, vendor-agnostic network peer-to-peer communication that spans NVIDIA, AWS EFA, Broadcom, and other NICs, thereby supporting both MoE all-to-all exchanges and high-rate KV-cache transfers in parameter-disaggregated deployments
+* Rearchitecting NCCL to unlock latent network-hardware capabilities through a scalable, efficient CPU proxy, low-cost asynchronous collectives that preserve compute-communication ordering guarantees, and device kernels implemented in the vendor-neutral Triton language.
+
+## Getting involved
+
+UCCL is an open-source project, and we welcome contributions from the community. You can find the source code on [github.com/uccl-project/uccl](https://github.com/uccl-project/uccl). We encourage you to try UCCL, report issues, and contribute to the project.
+
+---
