@@ -14,7 +14,7 @@ coverAlt: About
 author: UCCL Team
 ---
 
-UCCL (Ultra | Ultimate | Unified Communication Collective Library) is a next-generation AI/ML networking initiative at UC Berkeley's Sky Computing Lab. 
+UCCL (Ultra | Ultimate | Unified Communication Collective Library) is the next-generation AI/ML networking initiative at UC Berkeley's Sky Computing Lab. 
 We envision the next-generation AI/ML networking to have efficient CCL architectures, software-defined ML transport, and inter-vendor operability. 
 
 ### Team
@@ -62,6 +62,6 @@ The compute resources are also generously supported by [AWS](https://aws.amazon.
 The website templates are from [Inotelab](https://www.astrothemes.dev/author/inotelab/) and [NovaSky](https://novasky-ai.github.io/posts/about-us/)
 
 ### Contact
-X: [@uccl_project](https://x.com/uccl_project)
+X (Twitter): [@uccl_project](https://x.com/uccl_project)
 
 Github: [github.com/uccl-project/uccl](https://github.com/uccl-project/uccl)

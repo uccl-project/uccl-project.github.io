@@ -111,13 +111,13 @@ To demonstrate the versatility of this interface and the power of UCCL-Tran's ex
       <em>Figure 5: UCCL-Tran vs. NCCL on 4 AWS p4d.24xlarge VMs (NVLink disabled to simulate a larger testbed).</em>
     </p>
 
-2. We implement the receiver-driven EQDS protocol to handle network incast in MoE-like workloads, reducing message tail latency by 4.9 × compared with InfiniBand's built-in transport. 
+2. We implement the receiver-driven EQDS[^4] protocol to handle network incast in MoE-like workloads, reducing message tail latency by 4.9 × compared with InfiniBand's built-in transport. 
     <p align="center">
       <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-uccl/incast.png" alt="UCCL-Tran incast" width="600"/>
       <em>Figure 6: Complementary CDF of FCT (Flow Completion Time) on Nvidia ConnectX-7 InfiniBand NICs when co-locating 15-to-1 incast traffic and permutation traffic.</em>
     </p>
 
-3. We implement selective retransmission for efficient loss recovery and demonstrate its superiority over RDMA hardware transport under packet loss. Prior work has reported that RDMA hardware transport can only keep 20-40% of throughput under 0.1% packet loss[^4], while UCCL-Tran can keep 60-80%. 
+3. We implement selective retransmission for efficient loss recovery and demonstrate its superiority over RDMA hardware transport under packet loss. Prior work has reported that RDMA hardware transport can only keep 20-40% of throughput under 0.1% packet loss[^5], while UCCL-Tran can keep 60-80%. 
     <p align="center">
       <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-uccl/packetloss.png" alt="UCCL-Tran packet loss" width="600"/>
       <em>Figure 7: Performance comparison on Nvidia ConnectX-7 InfiniBand NICs under different instrumented packet loss rates.</em>
@@ -135,7 +135,8 @@ Our future work has three focuses:
 UCCL-Tran is an open-source project, and we welcome contributions from the community. You can find the source code on [github.com/uccl-project/uccl](https://github.com/uccl-project/uccl). We encourage you to try UCCL-Tran, report issues, and contribute to the project.
 
 ---
-[^1]: Gangidi, Adithya, et al. "Rdma over ethernet for distributed training at meta scale." Proceedings of the ACM SIGCOMM Conference 2024. [Paper link](https://engineering.fb.com/wp-content/uploads/2024/08/sigcomm24-final246.pdf)
-[^2]: Liu, Aixin, et al. "Deepseek-v3 technical report." arXiv preprint arXiv:2412.19437 (2024). [Paper link](https://arxiv.org/pdf/2412.19437)
-[^3]: Qian, Kun, et al. "Alibaba hpn: A data center network for large language model training." Proceedings of the ACM SIGCOMM Conference 2024. [Paper link](https://ennanzhai.github.io/pub/sigcomm24-hpn.pdf)
-[^4]: Li, Qiang, et al. "Flor: An open high performance RDMA framework over heterogeneous RNICs." Proceedings of the USENIX OSDI Conference 2023. [Paper link](https://www.usenix.org/system/files/osdi23-li-qiang.pdf). Figure 7(b): curves of "lossy,1/1024" and "lossless,1/1024".
+[^1]: Gangidi, Adithya, et al. "Rdma over ethernet for distributed training at meta scale." Proceedings of the ACM SIGCOMM Conference 2024. [Paper link](https://engineering.fb.com/wp-content/uploads/2024/08/sigcomm24-final246.pdf).
+[^2]: Liu, Aixin, et al. "Deepseek-v3 technical report." arXiv preprint arXiv:2412.19437 (2024). [Paper link](https://arxiv.org/pdf/2412.19437).
+[^3]: Qian, Kun, et al. "Alibaba hpn: A data center network for large language model training." Proceedings of the ACM SIGCOMM Conference 2024. [Paper link](https://ennanzhai.github.io/pub/sigcomm24-hpn.pdf).
+[^4]: Olteanu, Vladimir, et al. "An edge-queued datagram service for all datacenter traffic." Proceedings of the USENIX OSDI Conference 2022. [Paper link](https://www.usenix.org/system/files/nsdi22-paper-olteanu.pdf).
+[^5]: Li, Qiang, et al. "Flor: An open high performance RDMA framework over heterogeneous RNICs." Proceedings of the USENIX OSDI Conference 2023. [Paper link](https://www.usenix.org/system/files/osdi23-li-qiang.pdf). Figure 7(b): curves of "lossy,1/1024" and "lossless,1/1024".
