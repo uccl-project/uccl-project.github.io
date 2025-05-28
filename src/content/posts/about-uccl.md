@@ -1,7 +1,7 @@
 ---
-title: "UCCL: An Extensible Software Transport Layer for GPU Networking"
+title: "UCCL-Tran: An Extensible Software Transport Layer for GPU Networking"
 slug: about-uccl
-description: "UCCL is designed to be fast and extensible to meet the challenging requirements of modern ML/LLM workloads"
+description: "UCCL-Tran is designed to be fast and extensible to meet the challenging requirements of modern ML/LLM workloads"
 category:
   - One
 tags:
@@ -9,7 +9,7 @@ tags:
   - AI
   - RDMA
 pubDate: 2025-05-26
-cover: https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/images/uccl_logo.png
+cover: https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-uccl/uccl_tran_cover.png
 coverAlt: About
 author: UCCL Team
 ---
@@ -19,10 +19,10 @@ author: UCCL Team
 [Fengyuan Ren](https://nns.cs.tsinghua.edu.cn/personal/renfy/renfy.html), [Zhiying Xu](https://xuzhiying9510.github.io/), [Costin Raiciu](http://nets.cs.pub.ro/~costin/),
 [Ion Stoica](https://people.eecs.berkeley.edu/~istoica/) -- May 26, 2025**
 
-UCCL is a software-only extensible transport layer for GPU networking. It is designed to be **fast** and **extensible** to meet the challenging requirements of modern ML/LLM workloads. 
+UCCL-Tran is a software-only extensible transport layer for GPU networking. It is designed to be **fast** and **extensible** to meet the challenging requirements of modern ML/LLM workloads. 
 
-UCCL achieves up to **3.2x higher performance** over NCCL on AWS, which translates into up to **1.4×** speedup for two ML applications (DeepSeek-V3 Serving, ResNet distributed training). UCCL provides a flexible and extensible framework that allows developers to **readily deploy custom transport protocols** in software tailored to the latest ML workloads. For example, UCCL supports a receiver-driven protocol EQDS to handle network incast in MoE-like workloads, achieving **4.9×**
-better message tail latency over InfiniBand built-in transport. UCCL is also compatible with many NIC vendors (Nvidia, AMD, AWS, etc.), preventing vendor lock-in. 
+UCCL-Tran achieves up to **3.2x higher performance** over NCCL on AWS, which translates into up to **1.4×** speedup for two ML applications (DeepSeek-V3 Serving, ResNet distributed training). UCCL-Tran provides a flexible and extensible framework that allows developers to **readily deploy custom transport protocols** in software tailored to the latest ML workloads. For example, UCCL-Tran supports a receiver-driven protocol EQDS to handle network incast in MoE-like workloads, achieving **4.9×**
+better message tail latency over InfiniBand built-in transport. UCCL-Tran is also compatible with many NIC vendors (Nvidia, AMD, AWS, etc.), preventing vendor lock-in. 
 
 ---
 ## Fast-evolving ML workloads outpaces slow-evolving networking
@@ -33,17 +33,17 @@ However, networking techniques especially the host network transport on RDMA NIC
 
 Operational evidence from several large-scale deployments underscores the problem. Meta found that DCQCN—the congestion-control scheme implemented in most datacenter NICs—performed poorly for large-language-model (LLM) training traffic, which exhibits low flow entropy and burstiness[^1]. As a result, Meta disabled NIC-level congestion control entirely. DeepSeek reached a similar conclusion while serving mixture-of-experts (MoE) models: it disabled congestion control to sustain the required all-to-all exchanges[^2], but doing so left the RDMA fabric vulnerable to deadlocks, head-of-line blocking, and pervasive congestion. Alibaba diagnosed a different bottleneck: collective communication slowed dramatically because each RDMA connection could use only a single path, producing severe flow collisions[^3]. Their remedy was a rail-optimized dual-plane topology—a substantial re-engineering effort undertaken solely to compensate for limitations of existing NIC transport. Collectively, these experiences highlight the need for transport mechanisms that can be extended or replaced in software, without waiting for a new generation of hardware.
 
-## UCCL: a software-only extensible transport layer for GPU networking
+## UCCL-Tran: a software-only extensible transport layer for GPU networking
 
-UCCL is a software-only extensible transport layer for GPU networking. It is designed to address the challenges of fast-evolving ML workloads and the limitations of existing RDMA NICs. UCCL provides a flexible and extensible framework that allows developers to implement custom transport protocols and congestion control algorithms tailored to the specific needs of each ML workload. 
+UCCL-Tran is a software-only extensible transport layer for GPU networking. It is designed to address the challenges of fast-evolving ML workloads and the limitations of existing RDMA NICs. UCCL-Tran provides a flexible and extensible framework that allows developers to implement custom transport protocols and congestion control algorithms tailored to the specific needs of each ML workload. 
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-uccl/arch.png" alt="UCCL Architecture" width="600"/>
-  <em>Figure 1: UCCL architecture.</em>
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-uccl/arch.png" alt="UCCL-Tran Architecture" width="600"/>
+  <em>Figure 1: UCCL-Tran architecture.</em>
 </p>
 
 ---
-## Key challenges addressed by UCCL
+## Key challenges addressed by UCCL-Tran
 
 ### Decouple the data and control paths for existing RDMA NICs
 
@@ -60,66 +60,66 @@ Datacenters usually consist of multiple generations and vendors of RDMA NICs due
 different control path logic like packet reliability and CC; this heterogeneity reduces achievable bandwidth by 2-33× when communicating between NICs from different generations/vendors, as reported by Alibaba. Instead, if we can extensibly align these NICs' control path logic in software, we could avoid such a severe performance drop.
 
 ---
-## Core UCCL Insights
+## Core UCCL-Tran Insights
 
 ### 1. Moving control paths to CPU with more stored states and faster processing
 
-UCCL's architecture revolves around a clean separation of control logic and data movement. All decisions that benefit from rapid iteration—such as congestion control, path selection, and loss recovery—run in user space on the CPU, while the heavy‐weight transfer of tensor data stays on the NIC/GPU data path via GPUDirect DMA. This design places three concrete requirements on the transport substrate: minimal hardware intervention in the data path, direct GPU memory access, and compatibility with the diverse queue-pair (QP) types offered by different RDMA vendors. Whenever available, UCCL chooses the Unreliable Connection (UC) QP because it offers NIC-side segmentation/reassembly yet leaves congestion control and reliability to software. For NICs that lack UC, it falls back to Reliable Connection (RC) with hardware CC disabled, or, as a last resort, Unreliable Datagram (UD), accepting higher CPU cost in exchange for full software control. 
+UCCL-Tran's architecture revolves around a clean separation of control logic and data movement. All decisions that benefit from rapid iteration—such as congestion control, path selection, and loss recovery—run in user space on the CPU, while the heavy‐weight transfer of tensor data stays on the NIC/GPU data path via GPUDirect DMA. This design places three concrete requirements on the transport substrate: minimal hardware intervention in the data path, direct GPU memory access, and compatibility with the diverse queue-pair (QP) types offered by different RDMA vendors. Whenever available, UCCL-Tran chooses the Unreliable Connection (UC) QP because it offers NIC-side segmentation/reassembly yet leaves congestion control and reliability to software. For NICs that lack UC, it falls back to Reliable Connection (RC) with hardware CC disabled, or, as a last resort, Unreliable Datagram (UD), accepting higher CPU cost in exchange for full software control. 
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-uccl/uc_rc_decouple.png" alt="UCCL UC/RC decoupling" width="600"/>
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-uccl/uc_rc_decouple.png" alt="UCCL-Tran UC/RC decoupling" width="600"/>
   <em>Figure 2: Moving control paths to CPU via RDMA UC/RC.</em>
 </p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-uccl/ud_decouple.png" alt="UCCL UD decoupling" width="800"/>
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-uccl/ud_decouple.png" alt="UCCL-Tran UD decoupling" width="800"/>
   <em>Figure 3: Moving control paths to CPU via RDMA UD.</em>
 </p>
 
-Operating over UD, however, raises practical issues because the NIC no longer reassembles multi-packet messages. UCCL resolves this in two steps. First, it *uses scatter–gather* lists so the NIC merges the control header (allocated in host memory) and the data payload (resident in GPU memory) into a single packet on transmit and splits them on receive, ensuring the two always "fate-share" with respect to loss and ordering. Second, on the GPU side, out-of-order payloads must be re-stitched into contiguous message buffers; instead of launching an extra kernel, UCCL fuses a lightweight scatter-memcpy routine into the reduction kernels. The additional GPU bandwidth consumed is bounded by network throughput and therefore negligible on modern accelerators. Together, these design choices let UCCL present a uniform, extensible control plane across heterogeneous hardware while preserving line-rate data delivery to GPUs.
+Operating over UD, however, raises practical issues because the NIC no longer reassembles multi-packet messages. UCCL-Tran resolves this in two steps. First, it *uses scatter–gather* lists so the NIC merges the control header (allocated in host memory) and the data payload (resident in GPU memory) into a single packet on transmit and splits them on receive, ensuring the two always "fate-share" with respect to loss and ordering. Second, on the GPU side, out-of-order payloads must be re-stitched into contiguous message buffers; instead of launching an extra kernel, UCCL-Tran fuses a lightweight scatter-memcpy routine into the reduction kernels. The additional GPU bandwidth consumed is bounded by network throughput and therefore negligible on modern accelerators. Together, these design choices let UCCL-Tran present a uniform, extensible control plane across heterogeneous hardware while preserving line-rate data delivery to GPUs.
 
 ### 2. Harnessing multi-path for avoiding path collision
 
-One of the key motivations for GPU network extensibility is to harness the multipath capacity of modern datacenter networks. UCCL achieves this by using multiple UC, RC, or UD QPs. Basically, network traffic from different QPs will likely go through different network paths, as both RoCE and Infiniband usually use ECMP (Equal-Cost Multi-Path) for multipath routing with source and destination QP numbers as the hash inputs. For UC and RC, UCCL by default uses 256 QPs, which provides maximum 256 different network paths as used by recent transport research. For UD, UCCL uses a much smaller number of QPs by combining different source and destination QPs. For example, 16 source UD QPs and 16 destination UD QPs will provide maximum 16×16=256 different network paths, because for connection-less UD, each source QP can send packets to any destination QP. 
+One of the key motivations for GPU network extensibility is to harness the multipath capacity of modern datacenter networks. UCCL-Tran achieves this by using multiple UC, RC, or UD QPs. Basically, network traffic from different QPs will likely go through different network paths, as both RoCE and Infiniband usually use ECMP (Equal-Cost Multi-Path) for multipath routing with source and destination QP numbers as the hash inputs. For UC and RC, UCCL-Tran by default uses 256 QPs, which provides maximum 256 different network paths as used by recent transport research. For UD, UCCL-Tran uses a much smaller number of QPs by combining different source and destination QPs. For example, 16 source UD QPs and 16 destination UD QPs will provide maximum 16×16=256 different network paths, because for connection-less UD, each source QP can send packets to any destination QP. 
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-uccl/multipath.png" alt="UCCL multipathing" width="600"/>
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-uccl/multipath.png" alt="UCCL-Tran multipathing" width="600"/>
   <em>Figure 4: Harnessing multi-path.</em>
 </p>
 
-**Handling out-of-order packets:** Many factors could cause out-of-order packet delivery, including multipathing, packet loss, and the unpredictable multi-QP scheduler in RDMA hardware. Existing RDMA NICs perform poorly when handling out-of-order packets, as they cannot maintain large reordering buffers and states due to limited on-chip SRAM constraints. In contrast, UCCL is able to handle out-of-order packets efficiently thanks to its software flexibility
-and separation of data and control paths. Different from TCP, UCCL maintains its packet reordering buffers in the GPU memory and lets the NIC directly DMA network data there. For UC/RC, the reordering buffers are individual data chunks, and the sender CPU specifies in-order chunk addresses when posting verbs. For UD, the reordering buffers are individual packet payloads, and the GPU reduction kernel reorders packets
+**Handling out-of-order packets:** Many factors could cause out-of-order packet delivery, including multipathing, packet loss, and the unpredictable multi-QP scheduler in RDMA hardware. Existing RDMA NICs perform poorly when handling out-of-order packets, as they cannot maintain large reordering buffers and states due to limited on-chip SRAM constraints. In contrast, UCCL-Tran is able to handle out-of-order packets efficiently thanks to its software flexibility
+and separation of data and control paths. Different from TCP, UCCL-Tran maintains its packet reordering buffers in the GPU memory and lets the NIC directly DMA network data there. For UC/RC, the reordering buffers are individual data chunks, and the sender CPU specifies in-order chunk addresses when posting verbs. For UD, the reordering buffers are individual packet payloads, and the GPU reduction kernel reorders packets
 when copying them into the transport buffers. 
 
 ### 3. Towards efficient software transport for ML networking
-**Run-to-completion execution:** Each UCCL engine thread runs RX, TX, pacing, timeout detection, and retransmission functionalities for a set of connections in an efficient run-to-completion manner. UCCL employs Deficit Round Robin (DRR) scheduling to fairly multiplex one engine thread among multiple functionalities and connections.
+**Run-to-completion execution:** Each UCCL-Tran engine thread runs RX, TX, pacing, timeout detection, and retransmission functionalities for a set of connections in an efficient run-to-completion manner. UCCL-Tran employs Deficit Round Robin (DRR) scheduling to fairly multiplex one engine thread among multiple functionalities and connections.
 
-**Connection splitting:** To handle 400+ Gbps traffic per NIC more efficiently, UCCL pivots away from the Flor design of a single CPU core for one connection, but leverages multiple cores for one connection with connection splitting. Basically, UCCL equally partitions the 256 QPs among all engine threads responsible for a specific NIC; each engine thread gets its own connection states for CC and LB, forming a sub-connection. Within each sub-connection, UCCL uses RDMA SRQ and SCQ (Shared Recv/Completion Queues) to reduce the overhead when polling multiple recv and completion queues. The application threads atop the UCCL plugin are responsible for choosing the least-loaded engine (e.g., the engine with the least unconsumed messages) when dispatching messages via SHM. In this way, UCCL could scale transport processing of a single connection to multiple cores, and handle transient load imbalance among CPUs at runtime. 
+**Connection splitting:** To handle 400+ Gbps traffic per NIC more efficiently, UCCL-Tran pivots away from the Flor design of a single CPU core for one connection, but leverages multiple cores for one connection with connection splitting. Basically, UCCL-Tran equally partitions the 256 QPs among all engine threads responsible for a specific NIC; each engine thread gets its own connection states for CC and LB, forming a sub-connection. Within each sub-connection, UCCL-Tran uses RDMA SRQ and SCQ (Shared Recv/Completion Queues) to reduce the overhead when polling multiple recv and completion queues. The application threads atop the UCCL-Tran plugin are responsible for choosing the least-loaded engine (e.g., the engine with the least unconsumed messages) when dispatching messages via SHM. In this way, UCCL-Tran could scale transport processing of a single connection to multiple cores, and handle transient load imbalance among CPUs at runtime. 
 
-**Control coalescing**: There is an inherent tradeoff between the control decision granularity and software transport efficiency. One could run CC, LB, and reliability logic for each packet to achieve precise control of the transport behaviors, at the cost of consuming more CPU cores. Alternatively, one could relax the control granularity by coalescing several same-path packets and making control decisions together, thus with lower CPU consumption. For UC/RC, this also means an RDMA write could directly transmit several packets as a single data chunk, leveraging NIC-offloaded segmentation and reassembly. UCCL employs this control coalescing design with 32KB chunk size as default, striking a balanced tradeoff. Under this chunk size, **UCCL can saturate 400 Gbps, unidirectional bandwidth with 1 CPU core**, while not severely disrupting transport behaviors/performance. Nevertheless, UCCL could also adaptively adjust chunk size based on the congestion level, e.g., switching to a small chunk size to make more precise control when congestion window (`cwnd`) drops below a threshold or severe packet loss happens.
+**Control coalescing**: There is an inherent tradeoff between the control decision granularity and software transport efficiency. One could run CC, LB, and reliability logic for each packet to achieve precise control of the transport behaviors, at the cost of consuming more CPU cores. Alternatively, one could relax the control granularity by coalescing several same-path packets and making control decisions together, thus with lower CPU consumption. For UC/RC, this also means an RDMA write could directly transmit several packets as a single data chunk, leveraging NIC-offloaded segmentation and reassembly. UCCL-Tran employs this control coalescing design with 32KB chunk size as default, striking a balanced tradeoff. Under this chunk size, **UCCL-Tran can saturate 400 Gbps, unidirectional bandwidth with 1 CPU core**, while not severely disrupting transport behaviors/performance. Nevertheless, UCCL-Tran could also adaptively adjust chunk size based on the congestion level, e.g., switching to a small chunk size to make more precise control when congestion window (`cwnd`) drops below a threshold or severe packet loss happens.
 
-**Chained posting**: UD does not support NIC offloading for segmentation and reassembly, thus it incurs more Memory-Mapped Input/Output (MMIO) writes than UC/RC when issuing send/recv verbs (e.g., for individual packets). To reduce such overhead, UCCL leverages the chained posting feature of RDMA NICs to issue one MMIO write for posting up to 32 send/recv verbs. Concretely, the WQEs of these 32 verbs are chained together through the next pointer in previous WQEs, and get posted to the RDMA NIC in one MMIO write.
+**Chained posting**: UD does not support NIC offloading for segmentation and reassembly, thus it incurs more Memory-Mapped Input/Output (MMIO) writes than UC/RC when issuing send/recv verbs (e.g., for individual packets). To reduce such overhead, UCCL-Tran leverages the chained posting feature of RDMA NICs to issue one MMIO write for posting up to 32 send/recv verbs. Concretely, the WQEs of these 32 verbs are chained together through the next pointer in previous WQEs, and get posted to the RDMA NIC in one MMIO write.
 
 ---
 ## Evaluation
 
-To demonstrate the versatility of this interface and the power of UCCL's extensibility, we use three case studies. These case studies show that UCCL effectively enables transport-layer innovations that would otherwise require costly, time-consuming changes to today's network stack. You can find more details in our [UCCL paper](https://arxiv.org/abs/2412.19437).
+To demonstrate the versatility of this interface and the power of UCCL-Tran's extensibility, we use three case studies. These case studies show that UCCL-Tran effectively enables transport-layer innovations that would otherwise require costly, time-consuming changes to today's network stack. You can find more details in our [UCCL-Tran paper](https://arxiv.org/abs/2412.19437).
 
 1. We implement a multipath transport protocol that mitigates flow collisions by leveraging packet spraying—randomly sending packets from a single connection across different paths. This transport achieves 3.3 × higher throughput for collective communication over AWS's SRD on EFA NICs. 
     <p align="center">
-      <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-uccl/alltoall_perf.png" alt="UCCL alltoall EFA" width="600"/>
-      <em>Figure 5: UCCL vs. NCCL on 4 AWS p4d.24xlarge VMs (NVLink disabled to simulate a larger testbed).</em>
+      <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-uccl/alltoall_perf.png" alt="UCCL-Tran alltoall EFA" width="600"/>
+      <em>Figure 5: UCCL-Tran vs. NCCL on 4 AWS p4d.24xlarge VMs (NVLink disabled to simulate a larger testbed).</em>
     </p>
 
 2. We implement the receiver-driven EQDS protocol to handle network incast in MoE-like workloads, reducing message tail latency by 4.9 × compared with InfiniBand's built-in transport. 
     <p align="center">
-      <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-uccl/incast.png" alt="UCCL incast" width="600"/>
+      <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-uccl/incast.png" alt="UCCL-Tran incast" width="600"/>
       <em>Figure 6: Complementary CDF of FCT (Flow Completion Time) on Nvidia ConnectX-7 InfiniBand NICs when co-locating 15-to-1 incast traffic and permutation traffic.</em>
     </p>
 
-3. We implement selective retransmission for efficient loss recovery and demonstrate its superiority over RDMA hardware transport under packet loss. Prior work has reported that RDMA hardware transport can only keep 20-40% of throughput under 0.1% packet loss[^4], while UCCL can keep 60-80%. 
+3. We implement selective retransmission for efficient loss recovery and demonstrate its superiority over RDMA hardware transport under packet loss. Prior work has reported that RDMA hardware transport can only keep 20-40% of throughput under 0.1% packet loss[^4], while UCCL-Tran can keep 60-80%. 
     <p align="center">
-      <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-uccl/packetloss.png" alt="UCCL packet loss" width="600"/>
+      <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-uccl/packetloss.png" alt="UCCL-Tran packet loss" width="600"/>
       <em>Figure 7: Performance comparison on Nvidia ConnectX-7 InfiniBand NICs under different instrumented packet loss rates.</em>
     </p>
 
@@ -132,7 +132,7 @@ Our future work has three focuses:
 
 ## Getting involved
 
-UCCL is an open-source project, and we welcome contributions from the community. You can find the source code on [github.com/uccl-project/uccl](https://github.com/uccl-project/uccl). We encourage you to try UCCL, report issues, and contribute to the project.
+UCCL-Tran is an open-source project, and we welcome contributions from the community. You can find the source code on [github.com/uccl-project/uccl](https://github.com/uccl-project/uccl). We encourage you to try UCCL-Tran, report issues, and contribute to the project.
 
 ---
 [^1]: Gangidi, Adithya, et al. "Rdma over ethernet for distributed training at meta scale." Proceedings of the ACM SIGCOMM Conference 2024. [Paper link](https://engineering.fb.com/wp-content/uploads/2024/08/sigcomm24-final246.pdf)
