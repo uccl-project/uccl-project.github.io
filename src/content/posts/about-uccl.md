@@ -1,7 +1,7 @@
 ---
 title: "UCCL: An Extensible Software Transport Layer for GPU Networking"
 slug: about-uccl
-description: "Introducing UCCL, an extensible software transport layer for GPU networking"
+description: "UCCL is designed to be fast and extensible to meet the challenging requirements of modern ML/LLM workloads"
 category:
   - One
 tags:
