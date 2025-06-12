@@ -14,7 +14,7 @@ coverAlt: About
 author: UCCL Team
 ---
 
-UCCL (Ultra | Ultimate | Unified Communication Collective Library) is the next-generation AI/ML networking initiative at UC Berkeley's Sky Computing Lab. 
+UCCL (Ultra and Unified Communication Collective Library) is the next-generation AI/ML networking initiative at UC Berkeley's Sky Computing Lab. 
 We envision the next-generation AI/ML networking to have efficient CCL architectures, software-defined ML transport, and inter-vendor operability. 
 
 ### Team
