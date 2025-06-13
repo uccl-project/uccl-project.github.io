@@ -6,7 +6,7 @@
 
 UCCL-Tran is a software-only extensible transport layer for GPU networking. It is designed to be **fast** and **extensible** to meet the challenging requirements of modern ML/LLM workloads. 
 
-UCCL-Tran achieves up to **3.2x higher performance** over NCCL on AWS, which translates into up to **1.4×** speedup for two ML applications (DeepSeek-V3 Serving, ResNet distributed training). UCCL-Tran provides a flexible and extensible framework that allows developers to **readily deploy custom transport protocols** in software tailored to the latest ML workloads. For example, UCCL-Tran supports a receiver-driven protocol EQDS to handle network incast in MoE-like workloads, achieving **4.9×**
+UCCL-Tran achieves up to **3.3x higher performance** over NCCL on AWS, which translates into up to **1.4×** speedup for two ML applications (DeepSeek-V3 Serving, ResNet distributed training). UCCL-Tran provides a flexible and extensible framework that allows developers to **readily deploy custom transport protocols** in software tailored to the latest ML workloads. For example, UCCL-Tran supports a receiver-driven protocol EQDS to handle network incast in MoE-like workloads, achieving **4.9×**
 better message tail latency over InfiniBand built-in transport. UCCL-Tran is also compatible with many NIC vendors (Nvidia, AMD, AWS, etc.), preventing vendor lock-in. 
 More details can be found in our [UCCL-Tran paper](https://arxiv.org/pdf/2504.17307) and [GitHub repo](https://github.com/uccl-project/uccl). 
 
