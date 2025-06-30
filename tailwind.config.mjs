@@ -45,6 +45,64 @@ export default {
         transparent:
           "linear-gradient(to top, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0) 100%)",
       },
+      typography: ({ theme }) => ({
+        DEFAULT: {
+          css: {
+            a: {
+              color: theme("colors.blue.500"),
+              textDecoration: "none",
+              "&:hover": {
+                color: theme("colors.blue.700"),
+                textDecoration: "underline",
+              },
+            },
+            sup: {
+              fontSize: "inherit",
+              verticalAlign: "baseline !important",
+              position: "static",
+              color: theme("colors.blue.500"),
+              "&::before": { content: '"["' },
+              "&::after": { content: '"]"' },
+              "&:hover": {
+                textDecoration: "underline",
+                color: theme("colors.blue.700"),
+              },
+            },
+            "a.footnote-ref": {
+              "&::before": { content: '"["' },
+              "&::after": { content: '"]"' },
+            },
+          },
+        },
+        dark: {
+          css: {
+            a: {
+              color: theme("colors.blue.400"),
+              textDecoration: "none",
+              "&:hover": {
+                color: theme("colors.blue.600"),
+                textDecoration: "underline",
+              },
+            },
+            sup: {
+              fontSize: "inherit",
+              verticalAlign: "baseline !important",
+              position: "static",
+              color: theme("colors.blue.400"),
+              "&::before": { content: '"["' },
+              "&::after": { content: '"]"' },
+              "&:hover": {
+                textDecoration: "underline",
+                color: theme("colors.blue.600"),
+              },
+            },
+            "a.footnote-ref": {
+              "&::before": { content: '"["' },
+              "&::after": { content: '"]"' },
+            },
+          },
+        },
+      }),
     },
   },
   plugins: [require("preline/plugin"), require("@tailwindcss/typography")],
