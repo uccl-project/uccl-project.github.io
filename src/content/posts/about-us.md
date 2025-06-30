@@ -62,6 +62,6 @@ The compute resources are also generously supported by [AMD](https://www.amd.com
 The website templates are from [Inotelab](https://www.astrothemes.dev/author/inotelab/) and [NovaSky](https://novasky-ai.github.io/posts/about-us/).
 
 ### Contact
-X (Twitter): [@uccl_project](https://x.com/uccl_project)
+X (Twitter): [@uccl_proj](https://x.com/uccl_proj)
 
 Github: [github.com/uccl-project/uccl](https://github.com/uccl-project/uccl)
