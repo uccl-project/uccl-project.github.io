@@ -36,7 +36,8 @@ export const HeaderLinks = [
 
 // Footer Links, src/components/Footer.astro
 export const FooterLinks = [
-  { href: "https://sky.cs.berkeley.edu/", title: "Sky Computing Lab @ Berkeley" },
+  { href: "https://sky.cs.berkeley.edu/", title: "UC Berkeley Sky Lab" },
+  { href: "https://github.com/artsy-lab", title: "UC Davis ArtSy Lab" },
   { href: "/tags/", title: "Tags" },
 ];
 

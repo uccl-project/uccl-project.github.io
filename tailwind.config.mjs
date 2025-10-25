@@ -86,6 +86,24 @@ export default {
             "code::after": { content: "none" },
             "pre code": { backgroundColor: "transparent", padding: "0", borderRadius: "0" },
             maxWidth: "80ch", // Increase prose width by ~20% from default 65ch
+            // GitHub link styling
+            'a[href*="github.com"]': {
+              position: "relative",
+              paddingLeft: "1.30rem",
+              "&::before": {
+                content: '""',
+                position: "absolute",
+                left: "0.1rem",
+                top: "50%",
+                transform: "translateY(-50%)",
+                width: "1rem",
+                height: "1rem",
+                backgroundImage: 'url("/src/assets/github-icon.svg")',
+                backgroundSize: "contain",
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "center",
+              },
+            },
           },
         },
         dark: {
@@ -128,6 +146,24 @@ export default {
             "code::after": { content: "none" },
             "pre code": { backgroundColor: "transparent", padding: "0", borderRadius: "0" },
             maxWidth: "80ch", // Increase prose width by ~20% from default 65ch
+            // GitHub link styling
+            'a[href*="github.com"]': {
+              position: "relative",
+              paddingLeft: "1.30rem",
+              "&::before": {
+                content: '""',
+                position: "absolute",
+                left: "0.1rem",
+                top: "50%",
+                transform: "translateY(-50%)",
+                width: "1rem",
+                height: "1rem",
+                backgroundImage: 'url("/src/assets/github-icon.svg")',
+                backgroundSize: "contain",
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "center",
+              },
+            },
           },
         },
       }),

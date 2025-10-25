@@ -14,7 +14,7 @@ coverAlt: About
 author: UCCL Team
 ---
 
-UCCL (Ultra and Unified Communication Collective Library) is the next-generation AI/ML networking initiative at UC Berkeley's Sky Computing Lab. 
+UCCL (Ultra and Unified Collective Communication Library) is the next-generation AI/ML networking initiative at UC Berkeley's Sky Computing Lab. 
 We envision the next-generation AI/ML networking to have efficient CCL architectures, software-defined ML transport, and inter-vendor operability. 
 
 ### Team
@@ -44,6 +44,40 @@ We envision the next-generation AI/ML networking to have efficient CCL architect
         style="display: block; margin: 0 auto; border-radius:50%;" 
       /><br>
       <strong><a href="https://github.com/zhongjiechen">Zhongjie Chen</a></strong>
+    </td>
+    <td style="width: 25%; text-align: center; vertical-align: middle; height: 150px;">
+      <img
+        src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-us/yihan_profile.jpeg"
+        width="100"
+        style="display: block; margin: 0 auto; border-radius:50%;"
+      /><br>
+      <strong><a href="https://github.com/CalebZ9909">Yihan Zhang</a></strong>
+    </td>
+  </tr>
+  <tr>
+    <td style="width: 25%; text-align: center; vertical-align: middle; height: 150px;">
+      <img
+        src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-us/chihan_profile.png"
+        width="100"
+        style="display: block; margin: 0 auto; border-radius:50%;"
+      /><br>
+      <strong><a href="https://github.com/HermesCui">Chihan Cui</a></strong>
+    </td>
+    <td style="width: 25%; text-align: center; vertical-align: middle; height: 150px;">
+      <img
+        src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-us/jinyao_profile.png"
+        width="100"
+        style="display: block; margin: 0 auto; border-radius:50%;"
+      /><br>
+      <strong><a href="https://seclee.com/">Jinyao Liu</a></strong>
+    </td>
+    <td style="width: 25%; text-align: center; vertical-align: middle; height: 150px;">
+      <img
+        src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-us/shuang_profile.jpeg"
+        width="100"
+        style="display: block; margin: 0 auto; border-radius:50%;"
+      /><br>
+      <strong><a href="https://github.com/monopodium">Shuang Ma</a></strong>
     </td>
     <td style="width: 25%; text-align: center; vertical-align: middle; height: 150px;">
       <img
