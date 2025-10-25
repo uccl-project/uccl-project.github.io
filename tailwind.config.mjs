@@ -85,6 +85,7 @@ export default {
             "code::before": { content: "none" },
             "code::after": { content: "none" },
             "pre code": { backgroundColor: "transparent", padding: "0", borderRadius: "0" },
+            maxWidth: "80ch", // Increase prose width by ~20% from default 65ch
           },
         },
         dark: {
@@ -126,6 +127,7 @@ export default {
             "code::before": { content: "none" },
             "code::after": { content: "none" },
             "pre code": { backgroundColor: "transparent", padding: "0", borderRadius: "0" },
+            maxWidth: "80ch", // Increase prose width by ~20% from default 65ch
           },
         },
       }),
