@@ -57,9 +57,9 @@ We envision the next-generation AI/ML networking to have efficient CCL architect
 </table>
 
 ### Acknowledgement
-Members are funded by the [Berkeley Sky Computing Lab](https://sky.cs.berkeley.edu/). 
-The compute resources are also generously supported by [AMD](https://www.amd.com/en.html), [IBM](https://www.ibm.com/), [Lambda](https://lambda.ai/), [Broadcom](https://www.broadcom.com/), [Google Cloud](https://cloud.google.com/), and [CloudLab](https://www.cloudlab.us/). 
-The website templates are from [Inotelab](https://www.astrothemes.dev/author/inotelab/) and [NovaSky](https://novasky-ai.github.io/posts/about-us/).
+Members are funded by the [Berkeley Sky Computing Lab](https://sky.cs.berkeley.edu/) and the [UC Davis ArtSy lab](https://github.com/artsy-lab). 
+The compute resources are also generously supported by [AMD](https://www.amd.com/en.html), [AWS](https://aws.amazon.com/) [IBM](https://www.ibm.com/), [Lambda](https://lambda.ai/), [Broadcom](https://www.broadcom.com/), [Google Cloud](https://cloud.google.com/), and [CloudLab](https://www.cloudlab.us/). 
+The website templates are from [Inotelab](https://www.astrothemes.dev/author/inotelab/) and [NovaSky](https://novasky-ai.github.io/posts/about-us/) with heavy modifications.
 
 ### Contact
 X (Twitter): [@uccl_proj](https://x.com/uccl_proj)
