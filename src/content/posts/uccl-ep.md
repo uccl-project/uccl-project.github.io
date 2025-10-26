@@ -138,7 +138,7 @@ Across different EP sizes, the dispatch bandwidth exceeds 50 GB/s, while the com
 </em>
 </p>
 
-On a small testbed with GH200, we observe that UCCL-EP even outperforms the original DeepEP. We are surprised by the results, and hypothesize two reasons: the fast C-C interconnect on GH200 makes CPU-GPU communication very efficient; and the internal overhead of nvshmem. That said, we would like to verify the finding on larger testbeds. 
+On a small testbed with GH200, we observe that UCCL-EP even outperforms the original DeepEP. We are surprised by the results, and hypothesize two reasons: the fast NVLink-C2C interconnect on GH200 makes CPU-GPU communication very efficient; and the internal overhead of nvshmem. That said, we would like to verify the finding on larger testbeds. 
 
 Benchmark code and instructions can be found here:  
 https://github.com/uccl-project/uccl/tree/main/ep#benchmark 
