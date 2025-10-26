@@ -119,7 +119,7 @@ On EFA, we observe UCCL-EP significantly outperforms other baselines as we incre
 </em>
 </p>
 
-### On 2 nodes, H200 + EFA (400 Gbps)
+We test normal kernels on H200 (8× GPUs per node) with each node connected to an EFA 400 Gb/s RDMA network card. We follow the DeepSeek-V3 pretraining configuration (4096 tokens per batch, 7168 hidden, top-4 groups, top-8 experts, FP8 dispatch and BF16 combine).
 
 | Type | Dispatch FP8 #EP | Bottleneck bandwidth | Combine BF16 #EP | Bottleneck bandwidth |
 |:---------:|:------------:|:--------------------:|:-----------:|:--------------------:|
@@ -129,8 +129,6 @@ On EFA, we observe UCCL-EP significantly outperforms other baselines as we incre
 | Internode | 32 | 54 GB/s (RDMA) | 32 | 43 GB/s (RDMA) |
 
 Across different EP sizes, the dispatch bandwidth exceeds 50 GB/s, while the combine bandwidth stabilizes around 40 GB/s. The slightly lower combine bandwidth reflects the additional overhead of the combine operation (e.g., accumulation and reduction across experts). We are still investigating the relatively lower combine throughput compared to dispatch at EP=16. 
-
-### On 2 nodes, GH200 + CX7 (200 Gbps)
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep/ep-gh200.png" alt="UCCL-EP EFA results" width="600"/>
