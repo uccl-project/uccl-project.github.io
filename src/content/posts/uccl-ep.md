@@ -130,11 +130,11 @@ On EFA, we observe UCCL-EP significantly outperforms other baselines as we incre
 
 Across different EP sizes, the dispatch bandwidth exceeds 50 GB/s, while the combine bandwidth stabilizes around 40 GB/s. The slightly lower combine bandwidth reflects the additional overhead of the combine operation (e.g., accumulation and reduction across experts). We are still investigating the relatively lower combine throughput compared to dispatch at EP=16. 
 
-### On 2 nodes, GH200 + CX7 (1 200 Gbps port)
+### On 2 nodes, GH200 + CX7 (200 Gbps)
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep/ep-gh200.png" alt="UCCL-EP EFA results" width="600"/>
-  <em>Figure 4: On 2 nodes, GH200 + CX7 (1 200 Gbps port).
+  <em>Figure 4: On 2 nodes, GH200 + CX7 (200 Gbps).
 </em>
 </p>
 
