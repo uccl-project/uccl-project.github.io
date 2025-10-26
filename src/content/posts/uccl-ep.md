@@ -1,5 +1,5 @@
 ---
-title: "UCCL-EP: Flexible and Efficient Expert Parallelism for the Public Cloud and Beyond"
+title: "Previewing UCCL-EP: Flexible and Efficient Expert Parallelism for the Public Cloud and Beyond"
 slug: uccl-ep
 description: "GPU-driven communication (e.g., DeepEP) is the key to efficient and large-scale EP, but it cannot run on heterogeneous platforms in the public cloud due to tight coupling between GPU and NIC."
 category:
@@ -52,7 +52,7 @@ In the IBGDA model, however, GPUs issue RDMA operations directly without the CPU
 
 ---
 
-## Introducing UCCL EP
+## Previewing UCCL EP
 
 UCCL-EP directly tackles these tight-coupling issues and proposes a flexible yet efficient EP solution for the public cloud and heterogeneous device vendors, including GPU and NICs. UCCL-EP preserves the same APIs as DeepEP, supporting both the low latency and normal mode.
 
@@ -144,6 +144,8 @@ https://github.com/uccl-project/uccl/tree/main/ep#benchmark
 ---
 
 ## UCCL EP roadmap
+
+UCCL-EP is still in active development. We plan to release a formal post on application-level performance as well as performance on AMD GPUs and other NIC vendors. Our current roadmap includes:
 
 - Finishing porting to AMD GPUs and Broadcom NICs  
 - Advanced flow control and congestion management in the CPU  
