@@ -65,7 +65,7 @@ GPU-driven communication (e.g., DeepEP) is the key to efficient and large-scale 
 <p>To enable UCCL EP work with diverse GPU vendors, we have taken the first step in eliminating nvshmem dependencies, which is important for portability as well as other features (e.g. elastic scaling). We also observed interestingly, removing nvshmem dependency can sometimes lead to performance improvements, which we suspect to be due to the internal overhead of the nvshmem library.</p>
 <hr>
 <h2 id="performance">Performance</h2>
-<p>On EFA, we observe UCCL-EP significantly outperforms other baselines as we increase the number of tokens in the dispatch and combine.</p>
+<p>On EFA, we observe UCCL-EP significantly outperforms other baselines as we increase the number of tokens in the dispatch and combine. We used unmodified <a href="https://github.com/perplexityai/pplx-kernels/tree/master">Perplexity MoE Kernels</a> and ran on H200 with EFA NICs. For the NVSHMEM and Torch baselines, we wrote an efficient packing and unpacking kernel, and relied on their respective AlltoAll APIs to distribute packed tokens to destination ranks in a single contiguous transfer.</p>
 <p align="center">
   <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep/ep-efa.png" alt="UCCL-EP EFA results" width="500">
   <em>Figure 3: On 2 nodes, H200 + EFA (400 Gbps)
@@ -113,8 +113,7 @@ GPU-driven communication (e.g., DeepEP) is the key to efficient and large-scale 
 
 
 <table><thead><tr><th align="center">Type</th><th align="center">Dispatch FP8 #EP</th><th align="center">Bottleneck bandwidth</th><th align="center">Combine BF16 #EP</th><th align="center">Bottleneck bandwidth</th></tr></thead><tbody><tr><td align="center">Intranode</td><td align="center">8</td><td align="center">320 GB/s (NVLink)</td><td align="center">8</td><td align="center">319 GB/s (NVLink)</td></tr><tr><td align="center">Internode</td><td align="center">16</td><td align="center">50 GB/s (RDMA)</td><td align="center">16</td><td align="center">18 GB/s (RDMA)</td></tr><tr><td align="center">Internode</td><td align="center">24</td><td align="center">53 GB/s (RDMA)</td><td align="center">24</td><td align="center">26 GB/s (RDMA)</td></tr><tr><td align="center">Internode</td><td align="center">32</td><td align="center">54 GB/s (RDMA)</td><td align="center">32</td><td align="center">43 GB/s (RDMA)</td></tr></tbody></table>
-<p>UCCL-EP normal mode throughput across various EP sizes,
-for both dispatch and combine, on H200:8 + EFA (400 Gbps).</p>
+<p>Across different EP sizes, the dispatch bandwidth exceeds 50 GB/s, while the combine bandwidth stabilizes around 40 GB/s. The slightly lower combine bandwidth reflects the additional overhead of the combine operation (e.g., accumulation and reduction across experts). We are still investigating the relatively lower combine throughput compared to dispatch at EP=16.</p>
 <h3 id="on-2-nodes-gh200--cx7-1-200-gbps-port">On 2 nodes, GH200 + CX7 (1 200 Gbps port)</h3>
 <p align="center">
   <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep/ep-gh200.png" alt="UCCL-EP EFA results" width="600">
