@@ -1,5 +1,5 @@
 ---
-title: "Previewing UCCL-EP: Flexible and Efficient Expert Parallelism for the Public Cloud and Beyond"
+title: "Previewing UCCL-EP: Flexible and Efficient Expert Parallelism for Cloud and Beyond"
 slug: uccl-ep
 description: "GPU-driven communication (e.g., DeepEP) is the key to efficient and large-scale EP, but it cannot run on heterogeneous platforms in the public cloud due to tight coupling between GPU and NIC."
 category:
