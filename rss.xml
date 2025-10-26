@@ -1,4 +1,9 @@
-<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>UCCL</title><description>An amazing team!</description><link>https://uccl-project.github.io/</link><language>en-US</language><item><title>Previewing UCCL-EP: Flexible and Efficient Expert Parallelism for Cloud and Beyond</title><link>https://uccl-project.github.io/posts/uccl-ep/</link><guid isPermaLink="true">https://uccl-project.github.io/posts/uccl-ep/</guid><description>GPU-driven communication (e.g., DeepEP) is the key to efficient and large-scale EP, but it cannot run on heterogeneous platforms in the public cloud due to tight coupling between GPU and NIC.</description><pubDate>Mon, 27 Oct 2025 00:00:00 GMT</pubDate><content:encoded>**By: Ziming Mao, Yang Zhou, Yihan Zhang, Chihan Cui, Zhiying Xu, and other UCCL-EP contributors -- Oct 27, 2025**
+<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>UCCL</title><description>An amazing team!</description><link>https://uccl-project.github.io/</link><language>en-US</language><item><title>Previewing UCCL-EP: Flexible and Efficient Expert Parallelism for Cloud and Beyond</title><link>https://uccl-project.github.io/posts/uccl-ep/</link><guid isPermaLink="true">https://uccl-project.github.io/posts/uccl-ep/</guid><description>GPU-driven communication (e.g., DeepEP) is the key to efficient and large-scale EP, but it cannot run on heterogeneous platforms in the public cloud due to tight coupling between GPU and NIC.</description><pubDate>Mon, 27 Oct 2025 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;
+&lt;strong&gt;By: &lt;a href=&quot;https://maoziming.github.io/&quot;&gt;Ziming Mao&lt;/a&gt; (UC Berkeley), &lt;a href=&quot;https://yangzhou1997.github.io/&quot;&gt;Yang Zhou&lt;/a&gt; (UC Davis), &lt;a href=&quot;github.com/CalebZ9909&quot; class=&quot;no-github-icon&quot;&gt;Yihan Zhang&lt;/a&gt; (UC Davis), &lt;a href=&quot;https://github.com/HermesCui&quot; class=&quot;no-github-icon&quot;&gt;Chihan Cui&lt;/a&gt; (UW-Madison), &lt;a href=&quot;https://xuzhiying9510.github.io/&quot;&gt;Zhiying Xu&lt;/a&gt; (AWS), and other UCCL-EP contributors
+&lt;br&gt;
+Date: Oct 27, 2025
+&lt;/strong&gt;
+&lt;/p&gt;
 
 &lt;div class=&quot;tldr&quot;&gt;
 &lt;p&gt;
@@ -18,7 +23,7 @@ One popular library for EP is **DeepEP**, which leverages NVIDIA-specific NVSHME
 
 ---
 
-## Limitations of tightly coupling NIC and GPU
+## Limitations of Tightly Coupling NIC and GPU
 
 ### Lack of Portability
 
@@ -63,7 +68,7 @@ Moreover, each control command in expert parallelism typically represents a **ba
 
 ---
 
-## Designing an efficient CPU-GPU communication channel
+## Designing an Efficient CPU-GPU Communication Channel
 
 A central challenge in UCCL-EP is building an efficient **forwarding channel between GPUs and CPUs** that can sustain tens of millions of RDMA requests per second without becoming a bottleneck. UCCL-EP implements this channel as a carefully optimized **lock-free FIFO queue** shared between GPU producers and CPU consumers. Each GPU enqueues lightweight RDMA transfer descriptors into the queue, while multiple CPU threads dequeue and execute them through libibverbs.
 
@@ -79,13 +84,13 @@ This careful design allows each GPU to achieve over **50 million RDMA operations
 
 ---
 
-## Working with various GPU-NIC vendors
+## Working with Various GPU-NIC Vendors
 
 Different **NIC vendors** introduce additional system-level challenges due to variations in transport protocols and hardware capabilities. For instance, AWS EFA NICs use the **Scalable Reliable Datagram (SRD)** protocol, which employs advanced **multi-pathing** to mitigate congestion at scale. While this design improves throughput and reliability, it breaks the strict in-order delivery guarantee within a single SRD Queue Pair (QP). This becomes problematic for DeepEP-style communication, which relies on ordered RDMA writes followed by atomic operations to notify remote GPUs that writes are delivered to assigned locations in the RDMA transport buffer.
 
 To address this, **UCCL-EP** leverages its CPU-side flexibility to enforce **software-level message ordering**. Each RDMA write carries **immediate data** encoding a per-RDMA-channel sequence number, which the receiver uses to **reorder out-of-sequence messages** before committing them to GPU memory. Importantly, these only apply to control messages (e.g. atomics) and not the data payload. 
 
-Furthermore, In DeepEP’s NVIDIA-specific IBGDA path, GPUs rely on **hardware RDMA atomics** to signal remote completion. However, **EFA does not natively support RDMA atomics**, which poses a correctness challenge: the receiver must still know when a payload has been fully written before it can proceed to read or combine it.
+Furthermore, In DeepEP’s NVIDIA-specific IBGDA path, GPUs rely on **hardware RDMA atomics** to signal remote completion. However, EFA does not natively support RDMA atomics, which poses a correctness challenge: the receiver must still know when a payload has been fully written before it can proceed to read or combine it.
 
 To emulate this behavior, UCCL-EP implements **software-level atomics** using regular RDMA writes and immediate data. The sender writes the payload first, then issues a small RDMA write carrying an immediate value that acts as an atomic message (e.g., the new counter value or flag). On the receiver side, the CPU proxy updates a local completion counter — effectively reproducing the synchronization semantics of hardware atomics. 
 
@@ -99,7 +104,7 @@ On EFA, we observe UCCL-EP significantly outperforms other baselines as we incre
 
 &lt;p align=&quot;center&quot;&gt;
   &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep/ep-efa.png&quot; alt=&quot;UCCL-EP EFA results&quot; width=&quot;500&quot;/&gt;
-  &lt;em&gt;Figure 3: On 2 nodes, H200 + EFA (400 Gbps)
+  &lt;em&gt;Figure 3: On 2 nodes, H200 + EFA (400 Gbps).
 &lt;/em&gt;
 &lt;/p&gt;
 
@@ -122,12 +127,11 @@ Across different EP sizes, the dispatch bandwidth exceeds 50 GB/s, while the com
 
 On a small testbed with GH200, we observe that UCCL-EP even outperforms the original DeepEP. We are surprised by the results, and hypothesize two reasons: the fast NVLink-C2C interconnect with **CPU-GPU cache coherence** on GH200 makes CPU-GPU communication very efficient; and the internal overhead of nvshmem. That said, we would like to verify the finding on larger testbeds. 
 
-Benchmark code and instructions can be found here:  
-https://github.com/uccl-project/uccl/tree/main/ep#benchmark 
+Benchmark code and instructions can be found [here](https://github.com/uccl-project/uccl/tree/main/ep#benchmark).
 
 ---
 
-## UCCL EP roadmap
+## UCCL EP Roadmap
 
 UCCL-EP is still in active development. We plan to release a formal post on application-level performance as well as performance on AMD GPUs and other NIC vendors. Our current roadmap includes:
 
@@ -140,7 +144,7 @@ UCCL-EP is still in active development. We plan to release a formal post on appl
 
 ## Acknowledgements
 
-We thank AWS, Lambda Labs for providing us with the main testbeds. This research is supported by gifts from Accenture, AMD, Anyscale, AWS, Broadcom, Cisco, Google, IBM, Intel, Intesa Sanpaolo, Lambda, Lightspeed, Mibura, Microsoft, NVIDIA, Samsung SDS, and SAP.</content:encoded></item><item><title>Everything You Want to Know about KV Cache Transfer Engine</title><link>https://uccl-project.github.io/posts/kv-transfer-engine/</link><guid isPermaLink="true">https://uccl-project.github.io/posts/kv-transfer-engine/</guid><description>There have been many KV cache transfer engines for PD disaggregation, but nearly no benchmarks on their performance. This blog serves for this purpose---benchmarking and analyzing the performance of various KV transfer engines, so you can decide how to choose.</description><pubDate>Wed, 13 Aug 2025 00:00:00 GMT</pubDate><content:encoded>**By: UCCL Team -- Aug 13, 2025**
+We thank AWS, Lambda Labs for providing us with the main testbeds. We especially thank Ion Stoica and Costin Raiciu for their discussions and feedbacks. This research is supported by gifts from Accenture, AMD, Anyscale, AWS, Broadcom, Cisco, Google, IBM, Intel, Intesa Sanpaolo, Lambda, Lightspeed, Mibura, Microsoft, NVIDIA, Samsung SDS, and SAP.</content:encoded></item><item><title>Everything You Want to Know about KV Cache Transfer Engine</title><link>https://uccl-project.github.io/posts/kv-transfer-engine/</link><guid isPermaLink="true">https://uccl-project.github.io/posts/kv-transfer-engine/</guid><description>There have been many KV cache transfer engines for PD disaggregation, but nearly no benchmarks on their performance. This blog serves for this purpose---benchmarking and analyzing the performance of various KV transfer engines, so you can decide how to choose.</description><pubDate>Wed, 13 Aug 2025 00:00:00 GMT</pubDate><content:encoded>**By: UCCL Team -- Aug 13, 2025**
 
 KV cache transfer is becoming more and more important for modern disaggregated LLM serving with prefill and decode separation. It typically transfers the KV cache generated by the prefill GPU node to the separate decode GPU node via fast RDMA networks. Therefore, the KV cache transferring speed directly impacts the end-to-end request latency. 
 
