@@ -147,6 +147,7 @@ https://github.com/uccl-project/uccl/tree/main/ep#benchmark
 
 UCCL-EP is still in active development. We plan to release a formal post on application-level performance as well as performance on AMD GPUs and other NIC vendors. Our current roadmap includes:
 
+- Further improving UCCL-EP performance on EFA 
 - Finishing porting to AMD GPUs and Broadcom NICs (PR [#457](https://github.com/uccl-project/uccl/pull/457))
 - Advanced flow control and congestion management in the CPU  
 - Integrating into vLLM and SGLang—contributions are much welcomed! 
