@@ -111,7 +111,7 @@ To enable UCCL EP work with diverse GPU vendors, we have taken the first step in
 
 ## Performance
 
-On EFA, we observe UCCL-EP significantly outperforms other baselines as we increase the number of tokens in the dispatch and combine. 
+On EFA, we observe UCCL-EP significantly outperforms other baselines as we increase the number of tokens in the dispatch and combine. We used unmodified [Perplexity MoE Kernels](https://github.com/perplexityai/pplx-kernels/tree/master) and ran on H200 with EFA NICs. For the NVSHMEM and Torch baselines, we wrote an efficient packing and unpacking kernel, and relied on their respective AlltoAll APIs to distribute packed tokens to destination ranks in a single contiguous transfer. 
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep/ep-efa.png" alt="UCCL-EP EFA results" width="500"/>
@@ -128,9 +128,7 @@ On EFA, we observe UCCL-EP significantly outperforms other baselines as we incre
 | Internode | 24 | 53 GB/s (RDMA) | 24 | 26 GB/s (RDMA) |
 | Internode | 32 | 54 GB/s (RDMA) | 32 | 43 GB/s (RDMA) |
 
-UCCL-EP normal mode throughput across various EP sizes, 
-for both dispatch and combine, on H200:8 + EFA (400 Gbps). 
-
+Across different EP sizes, the dispatch bandwidth exceeds 50 GB/s, while the combine bandwidth stabilizes around 40 GB/s. The slightly lower combine bandwidth reflects the additional overhead of the combine operation (e.g., accumulation and reduction across experts). We are still investigating the relatively lower combine throughput compared to dispatch at EP=16. 
 
 ### On 2 nodes, GH200 + CX7 (1 200 Gbps port)
 
