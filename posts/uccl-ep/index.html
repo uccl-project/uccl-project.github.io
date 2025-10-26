@@ -29,7 +29,7 @@ GPU-driven communication (e.g., DeepEP) is the key to efficient and large-scale 
 <p>By moving NIC driver logic into GPU threads, DeepEP sacrifices <strong>fine-grained control and observability</strong> over the communication process. In traditional CPU-driven RDMA systems, the host manages <strong>flow control</strong>, <strong>queue depth</strong>, <strong>completion notifications</strong>, and <strong>load balancing across multiple network queues</strong>. These mechanisms are essential for ensuring fairness, congestion avoidance, and recovery under high network pressure.</p>
 <p>In the IBGDA model, however, GPUs issue RDMA operations directly without the CPU’s coordination. This makes it difficult to monitor or regulate traffic. For example, the GPU may post many outstanding RDMA writes without global awareness of NIC queue utilization, leading to congestion or dropped completions. Detecting transfer completion or handling network backpressure is also not possible in DeepEP, as IBGDA or NVSHMEM does not expose relevant interfaces.</p>
 <hr>
-<h2 id="previewing-uccl-ep">Previewing UCCL EP</h2>
+<h2 id="previewing-uccl-ep">Previewing UCCL-EP</h2>
 <p>UCCL-EP directly tackles these tight-coupling issues and proposes a flexible yet efficient EP solution for the public cloud and heterogeneous device vendors, including GPU and NICs. UCCL-EP preserves the same APIs as DeepEP, supporting both the low latency and normal mode.</p>
 <p>The core insight of UCCL-EP is that efficient expert-parallel communication, while benefiting from GPU <strong>initiation</strong>, does not require GPUs to <strong>directly</strong> control the NIC. Instead, UCCL-EP restores a clean separation of concerns between compute and control:</p>
 <ul>

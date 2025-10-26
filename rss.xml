@@ -36,7 +36,7 @@ In the IBGDA model, however, GPUs issue RDMA operations directly without the CPU
 
 ---
 
-## Previewing UCCL EP
+## Previewing UCCL-EP
 
 UCCL-EP directly tackles these tight-coupling issues and proposes a flexible yet efficient EP solution for the public cloud and heterogeneous device vendors, including GPU and NICs. UCCL-EP preserves the same APIs as DeepEP, supporting both the low latency and normal mode.
 
