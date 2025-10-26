@@ -161,4 +161,4 @@ UCCL-EP is still in active development. We plan to release a formal post on appl
 
 ## Acknowledgements
 
-We thank AWS, Lambda Labs for providing us with the main testbeds. We especially thank Kaichao You, Zhen Huang, Zhenyu Gu, Costin Raiciu, Ion Stoica for their discussions and feedbacks. This research is supported by gifts from Accenture, AMD, Anyscale, AWS, Broadcom, Cisco, Google, IBM, Intel, Intesa Sanpaolo, Lambda, Lightspeed, Mibura, Microsoft, NVIDIA, Samsung SDS, and SAP. 
+We thank AWS, Lambda Labs for providing us with the main testbeds. We especially thank Kaichao You, Zhen Huang, Zhenyu Gu, Costin Raiciu, Scott Shenker, Ion Stoica for their discussions and feedbacks. This research is supported by gifts from Accenture, AMD, Anyscale, AWS, Broadcom, Cisco, Google, IBM, Intel, Intesa Sanpaolo, Lambda, Lightspeed, Mibura, Microsoft, NVIDIA, Samsung SDS, and SAP. 
