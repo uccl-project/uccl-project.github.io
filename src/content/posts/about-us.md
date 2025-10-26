@@ -31,7 +31,7 @@ We envision the next-generation AI/ML networking to have efficient CCL architect
     </td>
     <td style="width: 25%; text-align: center; vertical-align: middle; height: 150px;">
       <img
-        src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-us/ziming_profile.png"
+        src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-us/ziming_profile.jpeg"
         width="100"
         style="display: block; margin: 0 auto; border-radius:50%;"
       /><br>
