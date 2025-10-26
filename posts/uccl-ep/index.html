@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"> <head><!-- Global Metadata --><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/svg+xml" href="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/images/uccl_logo.png"><meta name="generator" content="Astro v5.1.1"><!-- Canonical URL --><link rel="canonical" href="https://uccl-project.github.io/posts/uccl-ep/"><!-- Sitemap --><link rel="sitemap" href="/sitemap-index.xml"><!-- Primary Meta Tags --><title>UCCL-EP: Flexible and Efficient Expert Parallelism for the Public Cloud and Beyond</title><meta name="title" content="UCCL-EP: Flexible and Efficient Expert Parallelism for the Public Cloud and Beyond"><meta name="description" content="GPU-driven communication (e.g., DeepEP) is the key to efficient and large-scale EP, but it cannot run on heterogeneous platforms in the public cloud due to tight coupling between GPU and NIC."><!-- Open Graph / Facebook --><meta property="og:type" content="website"><meta property="og:url" content="https://uccl-project.github.io/posts/uccl-ep/"><meta property="og:title" content="UCCL-EP: Flexible and Efficient Expert Parallelism for the Public Cloud and Beyond"><meta property="og:description" content="GPU-driven communication (e.g., DeepEP) is the key to efficient and large-scale EP, but it cannot run on heterogeneous platforms in the public cloud due to tight coupling between GPU and NIC."><meta property="og:image" content="https://uccl-project.github.io/blog-placeholder-1.avif"><!-- Twitter --><meta property="twitter:card" content="summary_large_image"><meta property="twitter:url" content="https://uccl-project.github.io/posts/uccl-ep/"><meta property="twitter:title" content="UCCL-EP: Flexible and Efficient Expert Parallelism for the Public Cloud and Beyond"><meta property="twitter:description" content="GPU-driven communication (e.g., DeepEP) is the key to efficient and large-scale EP, but it cannot run on heterogeneous platforms in the public cloud due to tight coupling between GPU and NIC."><meta property="twitter:image" content="https://uccl-project.github.io/blog-placeholder-1.avif"><!-- Preline CSS --><script type="module" src="/_astro/BaseHead.astro_astro_type_script_index_0_lang.BtT675nX.js"></script><!-- Prism syntax highlighting --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-3wzg3yUeG6mXQz0YIZxZOKhHvJ3C0cI85FhF38sZ4N2VNivXzXcX4Jt9I7H5PHeTtNKgHdwNwp0UrEG3iu8IRw==" crossorigin="anonymous" referrerpolicy="no-referrer"><!-- Custom CSS for table borders --><link rel="stylesheet" href="/_astro/_page_.D5Wclqmb.css">
+<!DOCTYPE html><html lang="en"> <head><!-- Global Metadata --><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/svg+xml" href="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/images/uccl_logo.png"><meta name="generator" content="Astro v5.1.1"><!-- Canonical URL --><link rel="canonical" href="https://uccl-project.github.io/posts/uccl-ep/"><!-- Sitemap --><link rel="sitemap" href="/sitemap-index.xml"><!-- Primary Meta Tags --><title>UCCL-EP: Flexible and Efficient Expert Parallelism for the Public Cloud and Beyond</title><meta name="title" content="UCCL-EP: Flexible and Efficient Expert Parallelism for the Public Cloud and Beyond"><meta name="description" content="GPU-driven communication (e.g., DeepEP) is the key to efficient and large-scale EP, but it cannot run on heterogeneous platforms in the public cloud due to tight coupling between GPU and NIC."><!-- Open Graph / Facebook --><meta property="og:type" content="website"><meta property="og:url" content="https://uccl-project.github.io/posts/uccl-ep/"><meta property="og:title" content="UCCL-EP: Flexible and Efficient Expert Parallelism for the Public Cloud and Beyond"><meta property="og:description" content="GPU-driven communication (e.g., DeepEP) is the key to efficient and large-scale EP, but it cannot run on heterogeneous platforms in the public cloud due to tight coupling between GPU and NIC."><meta property="og:image" content="https://uccl-project.github.io/blog-placeholder-1.avif"><!-- Twitter --><meta property="twitter:card" content="summary_large_image"><meta property="twitter:url" content="https://uccl-project.github.io/posts/uccl-ep/"><meta property="twitter:title" content="UCCL-EP: Flexible and Efficient Expert Parallelism for the Public Cloud and Beyond"><meta property="twitter:description" content="GPU-driven communication (e.g., DeepEP) is the key to efficient and large-scale EP, but it cannot run on heterogeneous platforms in the public cloud due to tight coupling between GPU and NIC."><meta property="twitter:image" content="https://uccl-project.github.io/blog-placeholder-1.avif"><!-- Preline CSS --><script type="module" src="/_astro/BaseHead.astro_astro_type_script_index_0_lang.BtT675nX.js"></script><!-- Prism syntax highlighting --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-3wzg3yUeG6mXQz0YIZxZOKhHvJ3C0cI85FhF38sZ4N2VNivXzXcX4Jt9I7H5PHeTtNKgHdwNwp0UrEG3iu8IRw==" crossorigin="anonymous" referrerpolicy="no-referrer"><!-- Custom CSS for table borders --><link rel="stylesheet" href="/_astro/_page_.CGTITe1E.css">
 <style>[data-astro-image]{width:100%;height:auto;-o-object-fit:var(--fit);object-fit:var(--fit);-o-object-position:var(--pos);object-position:var(--pos);aspect-ratio:var(--w) / var(--h)}[data-astro-image=responsive]{max-width:calc(var(--w) * 1px);max-height:calc(var(--h) * 1px)}[data-astro-image=fixed]{width:calc(var(--w) * 1px);height:calc(var(--h) * 1px)}
 </style><script type="module" src="/_astro/page.DTIbhfSr.js"></script>
 <script>!(function(w,p,f,c){if(!window.crossOriginIsolated && !navigator.serviceWorker) return;c=w[p]=Object.assign(w[p]||{},{"lib":"/~partytown/","debug":false});c[f]=(c[f]||[]).concat(["dataLayer.push"])})(window,'partytown','forward');/* Partytown 0.10.2 - MIT builder.io */
@@ -14,16 +14,148 @@ const t={preserveBehavior:!1},e=e=>{if("string"==typeof e)return[e,t];const[n,r=
 GPU-driven communication (e.g., DeepEP) is the key to efficient and large-scale EP, but it cannot run on heterogeneous platforms in the public cloud due to tight coupling between GPU and NIC. UCCL-EP has exactly the same interface and functionality as DeepEP, but allows you to run GPU-driven communication for MoE models on public clouds, such as AWS, with superior performance to the state-of-the-art. Our ultimate goal with UCCL-EP is to democratize EP for heterogeneous GPUs and NIC vendors, including AMD GPUs, Broadcom NICs, AMD Pensando NICs, and more. UCCL-EP open-source: <a href="https://github.com/uccl-project/uccl/tree/main/ep">uccl-project/uccl/ep</a>
 </p>
 </div>
-<div class="note">
-<p>
-Your note content here with <strong>bold text</strong> and regular text.
-</p>
-</div>
-<div class="quote">
-<p>
-Some quote <a href="#">Source.</a>
-</p>
-</div> </div> <div class="prose-a:no-underline"> <span class="mb-2 mr-2 inline-block rounded-full bg-neutral-200 px-3 py-1 text-sm hover:bg-neutral-500 dark:bg-neutral-600"> <a href="/tags/MoE/1/">MoE</a> </span><span class="mb-2 mr-2 inline-block rounded-full bg-neutral-200 px-3 py-1 text-sm hover:bg-neutral-500 dark:bg-neutral-600"> <a href="/tags/DeepEP/1/">DeepEP</a> </span><span class="mb-2 mr-2 inline-block rounded-full bg-neutral-200 px-3 py-1 text-sm hover:bg-neutral-500 dark:bg-neutral-600"> <a href="/tags/IBGDA/1/">IBGDA</a> </span><span class="mb-2 mr-2 inline-block rounded-full bg-neutral-200 px-3 py-1 text-sm hover:bg-neutral-500 dark:bg-neutral-600"> <a href="/tags/RDMA/1/">RDMA</a> </span> </div> <div class="flex justify-between mt-4"> <small>Publish on <span>2025-10-27</span></small> </div> </article> <div class="mt-4"> <div class="grid grid-cols-1 gap-4 md:grid-cols-3"> <div class="relative mb-4 overflow-hidden rounded-xl bg-white transition-transform duration-500 hover:-translate-y-1 hover:scale-105 dark:bg-neutral-900"> <a href="/posts/kv-transfer-engine/"> <picture> <source srcset="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/kv-transfer-engine/kv-transfer-engine.png 392w, https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/kv-transfer-engine/kv-transfer-engine.png 700w, https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/kv-transfer-engine/kv-transfer-engine.png 980w, https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/kv-transfer-engine/kv-transfer-engine.png 1960w" type="image/avif" sizes="(max-width: 360px) 392px, 
+<h2 id="expert-parallelism-ep">Expert Parallelism (EP)</h2>
+<p>Expert Parallelism (EP) is widely used in large-scale Mixture-of-Experts (MoE) models, where different subsets of the model’s “experts” are placed on different GPUs across multiple nodes. During inference or training, each input token is routed—based on a learned gating function—to one or a few selected experts.</p>
+<p>This selective routing requires frequent dispatch (sending token embeddings to the correct expert GPUs) and combine (gathering expert outputs back to their original positions) operations across the network. These data exchanges are typically performed using Remote Direct Memory Access (RDMA) over high-speed interconnects such as InfiniBand or RoCE.</p>
+<p>Unlike traditional data or tensor parallelism, where communication involves large contiguous tensors (on the order of megabytes or gigabytes), EP communication is highly fine-grained. Each dispatch or combine operation often involves small message sizes—for example, 7 KB to 256 KB in systems like DeepSeek V3. Such small message sizes pose a challenge for general-purpose collective communication libraries like NCCL, which are optimized for high-throughput transfers of large payloads (e.g., in all-reduce or all-gather operations). When messages are this small, the per-transfer latency and synchronization overhead dominate, leading to poor utilization of network bandwidth. Consequently, EP systems often require custom, low-latency communication runtimes that can overlap computation and communication efficiently and handle a large number of concurrent small-message operations.</p>
+<hr>
+<h2 id="limitations-of-tightly-coupling-nic-and-gpu">Limitations of tightly coupling NIC and GPU</h2>
+<h3 id="lack-of-portability">Lack of Portability</h3>
+<p>DeepEP is tightly coupled with the NVIDIA software and hardware ecosystem. It depends on NVIDIA GPUs, NVIDIA NICs, and their proprietary networking stack (e.g., NVSHMEM, GPUDirect, and IBGDA). As a result, DeepEP can only run on NVIDIA-controlled platforms where these components are co-designed and supported.</p>
+<p>This design significantly limits portability. For instance, DeepEP cannot run on AWS cloud instances, which use Elastic Fabric Adapter (EFA) RDMA NICs instead of NVIDIA hardware. Similar incompatibilities arise on other public clouds and data center environments that deploy non-NVIDIA RDMA solutions, such as Broadcom Thor NICs, Google Cloud Falcon NICs, Alibaba eRDMA NICs, and AMD Pensando NICs. The same restriction applies to GPU vendors—DeepEP’s reliance on NVIDIA-specific APIs and device driver interfaces makes it difficult, if not impossible, to run on AMD or Intel GPUs, even when comparable RDMA-capable networking hardware is present.</p>
+<p>This lack of cross-vendor portability increasingly limits deployment flexibility as modern AI clusters become more heterogeneous across GPU architectures and networking fabrics.</p>
+<h3 id="lack-of-control-and-visibility">Lack of Control and Visibility</h3>
+<p>By moving NIC driver logic into GPU threads, DeepEP sacrifices fine-grained control and observability over the communication process. In traditional CPU-driven RDMA systems, the host manages flow control, queue depth, completion notifications, and load balancing across multiple network queues. These mechanisms are essential for ensuring fairness, congestion avoidance, and recovery under high network pressure.</p>
+<p>In the IBGDA model, however, GPUs issue RDMA operations directly without the CPU’s coordination. This makes it difficult to monitor or regulate traffic. For example, the GPU may post many outstanding RDMA writes without global awareness of NIC queue utilization, leading to congestion or dropped completions. Detecting transfer completion or handling network backpressure is also not possible in DeepEP, as IBGDA or NVSHMEM does not expose relevant interfaces.</p>
+<hr>
+<h2 id="introducing-uccl-ep">Introducing UCCL EP</h2>
+<p>UCCL-EP directly tackles these tight-coupling issues and proposes a flexible yet efficient EP solution for the public cloud and heterogeneous device vendors, including GPU and NICs. UCCL-EP preserves the same APIs as DeepEP, supporting both the low latency and normal mode.</p>
+<p>The core insight of UCCL-EP is that efficient expert-parallel communication, while benefiting from GPU initiation, does not require GPUs to directly control the NIC. Instead, UCCL-EP restores a clean separation of concerns between compute and control:</p>
+<ul>
+<li>GPUs retain their massive parallelism for data-intensive tasks — such as token packing, expert combination, NVL forwarding, and local RDMA buffering, and efficient overlap with the background RDMA communication.</li>
+<li>CPUs handle the control-intensive aspects of networking — including queue management, flow control, completion handling, and load balancing — through a lightweight, multi-threaded CPU proxy.</li>
+</ul>
+<p>Essentially, UCCL-EP decouples GPU computation from direct NIC control. Instead of having GPUs post RDMA operations directly to the NIC (as in NVIDIA’s IBGDA model), each GPU forwards lightweight control commands—such as “write this tensor to peer X”—to the CPU through a high-speed shared memory channel. A pool of multi-threaded CPU proxies then interprets these commands and issues the actual RDMA verbs to the NIC on the GPU’s behalf.</p>
+<p>We note that UCCL-EP’s approach shares similarity with NVSHMEM’s IBRC solution that uses CPU proxies as well, but differs from them by leveraging multiple CPU proxy threads for performance, and supporting a wide range of vendors for portability.</p>
+<hr>
+<h2 id="rdma-commands-initiated-by-the-gpu-are-handed-off-to-multiple-cpu-proxy-threads">RDMA commands initiated by the GPU are handed off to multiple CPU proxy threads</h2>
+<p>This design exploits a key observation: every RDMA NIC already exposes a standardized, vendor-neutral interface via the libibverbs library, maintained by the Linux-RDMA community. By having GPUs forward RDMA requests to CPU threads over PCIe, UCCL-EP can issue network operations on behalf of GPUs using the same verbs API that any NIC driver supports.</p>
+<p>The second observation underlying UCCL-EP’s design is that CPU–GPU communication latency is no longer the dominant bottleneck. Modern interconnects such as PCIe Gen5, NVLink, and emerging C2C (chip-to-chip) links offer microsecond-scale latency and tens to hundreds of GB/s bandwidth between CPUs and GPUs. This means that forwarding a control command from the GPU to the CPU is extremely fast—especially compared to the end-to-end latency of an RDMA operation that traverses the network.</p>
+<p>Moreover, each control command in expert parallelism typically represents a batched data movement involving multiple tokens (e.g., a dispatch or combine operation that transfers tens or hundreds of kilobytes). Therefore, the amortized cost of sending a command descriptor over PCIe is negligible relative to the data volume it represents. In other words, UCCL-EP uses the CPU for coarse-grained control, ensuring that the PCIe path is well within the performance envelope of small-message MoE workloads.</p>
+<hr>
+<h2 id="designing-an-efficient-cpu-gpu-communication-channel">Designing an efficient CPU-GPU communication channel</h2>
+<p>A central challenge in UCCL-EP is building an efficient forwarding channel between GPUs and CPUs that can sustain tens of millions of RDMA requests per second without becoming a bottleneck. UCCL-EP implements this channel as a carefully optimized lock-free FIFO queue shared between GPU producers and CPU consumers. Each GPU enqueues lightweight RDMA transfer descriptors into the queue, while multiple CPU threads dequeue and execute them through libibverbs.</p>
+<p>UCCL-EP employs multiple channels per GPU; The tail is read by CPU thread and allocated on host, the head is read and updated by GPU thread and allocated on device. It further caches the tail value on GPU for faster access. Each TransferCmd is small.</p>
+<p>This careful design allows each GPU to achieve over 50 million RDMA operations per second with modest latency overhead (as shown in UCCL PR #454), where the NIC’s intrinsic latency and network delay—not the CPU–GPU channel—becomes the dominant cost. Recent hardware trends make such hybrid coordination increasingly practical—systems like NVIDIA GH200, GB200/GB300, and the NVIDIA-Intel NVLink-C2C partnership all feature high-bandwidth, low-latency CPU–GPU interconnects that rival traditional NUMA memory links.</p>
+<hr>
+<h2 id="working-with-various-gpu-nic-vendors">Working with various GPU-NIC vendors</h2>
+<p>Different NIC vendors introduce additional system-level challenges due to variations in transport protocols and hardware capabilities. For instance, AWS EFA NICs use the Scalable Reliable Datagram (SRD) protocol, which employs advanced multi-pathing to mitigate congestion at scale. While this design improves throughput and reliability, it breaks the strict in-order delivery guarantee within a single SRD Queue Pair (QP). This becomes problematic for DeepEP-style communication, which relies on ordered RDMA writes followed by atomic operations to notify remote GPUs that the data has been written into its HBM.</p>
+<p>To address this, UCCL-EP leverages its CPU-side flexibility to enforce software-level message ordering. Each RDMA write carries immediate data encoding a per-channel sequence number, which the receiver uses to reorder out-of-sequence messages before committing them to GPU memory.</p>
+<p>Furthermore, In DeepEP’s NVIDIA-specific IBGDA path, GPUs rely on hardware RDMA atomics to signal remote completion. However, EFA does not natively support RDMA atomics, which poses a correctness challenge: the receiver must still know when a payload has been fully written before it can proceed to read or combine it.</p>
+<p>To emulate this behavior, UCCL-EP implements software-level atomics using regular RDMA writes and immediate data. The sender writes the payload first, then issues a small RDMA write carrying an immediate value that acts as an atomic message (e.g., the new counter value or flag). On the receiver side, the CPU proxy updates a local completion counter — effectively reproducing the synchronization semantics of hardware atomics.</p>
+<p>To enable UCCL EP work with diverse GPU vendors, we have taken the first step in eliminating nvshmem dependencies, which is important for portability as well as other features (e.g. elastic scaling). We also observed interestingly, removing nvshmem dependency can sometimes lead to performance improvements, which we suspect to be due to the internal overhead of the nvshmem library.</p>
+<hr>
+<h2 id="performance">Performance</h2>
+<p>On EFA, we observe UCCL-EP significantly outperforms other baselines as we increase the number of tokens in the dispatch and combine.</p>
+<h3 id="on-2-nodes-h200--efa-400-gbps">On 2 nodes, H200 + EFA (400 Gbps)</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th align="center">Type</th><th align="center">Dispatch FP8 #EP</th><th align="center">Bottleneck bandwidth</th><th align="center">Combine BF16 #EP</th><th align="center">Bottleneck bandwidth</th></tr></thead><tbody><tr><td align="center">Intranode</td><td align="center">8</td><td align="center">320 GB/s (NVLink)</td><td align="center">8</td><td align="center">319 GB/s (NVLink)</td></tr><tr><td align="center">Internode</td><td align="center">16</td><td align="center">50 GB/s (RDMA)</td><td align="center">16</td><td align="center">18 GB/s (RDMA)</td></tr><tr><td align="center">Internode</td><td align="center">24</td><td align="center">53 GB/s (RDMA)</td><td align="center">24</td><td align="center">26 GB/s (RDMA)</td></tr><tr><td align="center">Internode</td><td align="center">32</td><td align="center">54 GB/s (RDMA)</td><td align="center">32</td><td align="center">43 GB/s (RDMA)</td></tr></tbody></table>
+<p>UCCL-EP normal mode throughput across various EP sizes,
+for both dispatch and combine, on H200:8 + EFA (400 Gbps).</p>
+<p>We are still investigating the relatively lower combine throughput compared to dispatch at EP=16 and EP=24.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th align="center">Dispatch #EP</th><th align="center">Latency</th><th align="center">RDMA bandwidth</th><th align="center">Combine #EP</th><th align="center">Latency</th><th align="center">RDMA bandwidth</th></tr></thead><tbody><tr><td align="center">16</td><td align="center">226 us</td><td align="center">36 GB/s</td><td align="center">16</td><td align="center">293 us</td><td align="center">48 GB/s</td></tr><tr><td align="center">24</td><td align="center">386 us</td><td align="center">20 GB/s</td><td align="center">24</td><td align="center">580 us</td><td align="center">26 GB/s</td></tr><tr><td align="center">32</td><td align="center">465 us</td><td align="center">16 GB/s</td><td align="center">32</td><td align="center">694 us</td><td align="center">25 GB/s</td></tr></tbody></table>
+<p>UCCL-EP low-latency mode across various EP sizes,
+for both dispatch and combine, on H200:8 + EFA (400 Gbps).</p>
+<p>On a small testbed with GH200, we observe that UCCL-EP even outperforms the original DeepEP. We are surprised by the results, and hypothesize two reasons: the fast C-C interconnect on GH200 makes CPU-GPU communication very efficient; and the internal overhead of nvshmem. That said, we would like to verify the finding on larger testbeds.</p>
+<h3 id="on-2-nodes-gh200--cx7-1-200-gbps-port">On 2 nodes, GH200 + CX7 (1 200 Gbps port)</h3>
+<p>Benchmark code and instructions can be found here:<br>
+<a href="https://github.com/uccl-project/uccl/tree/main/ep#benchmark">https://github.com/uccl-project/uccl/tree/main/ep#benchmark</a></p>
+<hr>
+<h2 id="uccl-ep-roadmap">UCCL EP roadmap</h2>
+<ul>
+<li>Finishing porting to AMD GPUs and Broadcom NICs</li>
+<li>Advanced flow control and congestion management in the CPU</li>
+<li>Integrating into vLLM and SGLang—contributions are much welcomed!</li>
+</ul>
+<hr>
+<h2 id="acknowledgements">Acknowledgements</h2>
+<p>We thank AWS, Lambda Labs for providing us with the main testbeds. This research is supported by gifts from Accenture, AMD, Anyscale, AWS, Broadcom, Cisco, Google, IBM, Intel, Intesa Sanpaolo, Lambda, Lightspeed, Mibura, Microsoft, NVIDIA, Samsung SDS, and SAP.</p> </div> <div class="prose-a:no-underline"> <span class="mb-2 mr-2 inline-block rounded-full bg-neutral-200 px-3 py-1 text-sm hover:bg-neutral-500 dark:bg-neutral-600"> <a href="/tags/MoE/1/">MoE</a> </span><span class="mb-2 mr-2 inline-block rounded-full bg-neutral-200 px-3 py-1 text-sm hover:bg-neutral-500 dark:bg-neutral-600"> <a href="/tags/DeepEP/1/">DeepEP</a> </span><span class="mb-2 mr-2 inline-block rounded-full bg-neutral-200 px-3 py-1 text-sm hover:bg-neutral-500 dark:bg-neutral-600"> <a href="/tags/IBGDA/1/">IBGDA</a> </span><span class="mb-2 mr-2 inline-block rounded-full bg-neutral-200 px-3 py-1 text-sm hover:bg-neutral-500 dark:bg-neutral-600"> <a href="/tags/RDMA/1/">RDMA</a> </span> </div> <div class="flex justify-between mt-4"> <small>Publish on <span>2025-10-27</span></small> </div> </article> <div class="mt-4"> <div class="grid grid-cols-1 gap-4 md:grid-cols-3"> <div class="relative mb-4 overflow-hidden rounded-xl bg-white transition-transform duration-500 hover:-translate-y-1 hover:scale-105 dark:bg-neutral-900"> <a href="/posts/kv-transfer-engine/"> <picture> <source srcset="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/kv-transfer-engine/kv-transfer-engine.png 392w, https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/kv-transfer-engine/kv-transfer-engine.png 700w, https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/kv-transfer-engine/kv-transfer-engine.png 980w, https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/kv-transfer-engine/kv-transfer-engine.png 1960w" type="image/avif" sizes="(max-width: 360px) 392px, 
            (max-width: 720px) 700px, 
            (max-width: 1600px) 980px, 
            1960px">  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/kv-transfer-engine/kv-transfer-engine.png" srcset="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/kv-transfer-engine/kv-transfer-engine.png 392w, https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/kv-transfer-engine/kv-transfer-engine.png 700w, https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/kv-transfer-engine/kv-transfer-engine.png 980w, https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/kv-transfer-engine/kv-transfer-engine.png 1960w" alt="KV transfer engine" sizes="(max-width: 360px) 392px, 
