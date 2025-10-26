@@ -120,7 +120,7 @@ GPU-driven communication (e.g., DeepEP) is the key to efficient and large-scale 
   <em>Figure 4: On 2 nodes, GH200 + CX7 (1 200 Gbps port).
 </em>
 </p>
-<p>On a small testbed with GH200, we observe that UCCL-EP even outperforms the original DeepEP. We are surprised by the results, and hypothesize two reasons: the fast NVLink-C2C interconnect on GH200 makes CPU-GPU communication very efficient; and the internal overhead of nvshmem. That said, we would like to verify the finding on larger testbeds.</p>
+<p>On a small testbed with GH200, we observe that UCCL-EP even outperforms the original DeepEP. We are surprised by the results, and hypothesize two reasons: the fast NVLink-C2C interconnect with <strong>CPU-GPU cache coherence</strong> on GH200 makes CPU-GPU communication very efficient; and the internal overhead of nvshmem. That said, we would like to verify the finding on larger testbeds.</p>
 <p>Benchmark code and instructions can be found here:<br>
 <a href="https://github.com/uccl-project/uccl/tree/main/ep#benchmark">https://github.com/uccl-project/uccl/tree/main/ep#benchmark</a></p>
 <hr>
