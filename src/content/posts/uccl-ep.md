@@ -114,7 +114,7 @@ To enable UCCL EP work with diverse GPU vendors, we have taken the first step in
 On EFA, we observe UCCL-EP significantly outperforms other baselines as we increase the number of tokens in the dispatch and combine. 
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep/ep-efa.png" alt="UCCL-EP EFA results" width="600"/>
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep/ep-efa.png" alt="UCCL-EP EFA results" width="500"/>
   <em>Figure 3: On 2 nodes, H200 + EFA (400 Gbps)
 </em>
 </p>
