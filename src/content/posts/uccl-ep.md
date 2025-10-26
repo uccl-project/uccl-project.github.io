@@ -14,7 +14,13 @@ cover: https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/mai
 coverAlt: UCCL-EP
 author: UCCL Team
 ---
-**By: Ziming Mao, Yang Zhou, Yihan Zhang, Chihan Cui, Zhiying Xu, and other UCCL-EP contributors -- Oct 27, 2025**
+
+<p>
+<strong>By: <a href="https://maoziming.github.io/">Ziming Mao</a> (UC Berkeley), <a href="https://yangzhou1997.github.io/">Yang Zhou</a> (UC Davis), <a href="github.com/CalebZ9909" class="no-github-icon">Yihan Zhang</a> (UC Davis), <a href="https://github.com/HermesCui" class="no-github-icon">Chihan Cui</a> (UW-Madison), <a href="https://xuzhiying9510.github.io/">Zhiying Xu</a> (AWS), and other UCCL-EP contributors
+<br>
+Date: Oct 27, 2025
+</strong>
+</p>
 
 <div class="tldr">
 <p>
@@ -34,7 +40,7 @@ One popular library for EP is **DeepEP**, which leverages NVIDIA-specific NVSHME
 
 ---
 
-## Limitations of tightly coupling NIC and GPU
+## Limitations of Tightly Coupling NIC and GPU
 
 ### Lack of Portability
 
@@ -79,7 +85,7 @@ Moreover, each control command in expert parallelism typically represents a **ba
 
 ---
 
-## Designing an efficient CPU-GPU communication channel
+## Designing an Efficient CPU-GPU Communication Channel
 
 A central challenge in UCCL-EP is building an efficient **forwarding channel between GPUs and CPUs** that can sustain tens of millions of RDMA requests per second without becoming a bottleneck. UCCL-EP implements this channel as a carefully optimized **lock-free FIFO queue** shared between GPU producers and CPU consumers. Each GPU enqueues lightweight RDMA transfer descriptors into the queue, while multiple CPU threads dequeue and execute them through libibverbs.
 
@@ -95,13 +101,13 @@ This careful design allows each GPU to achieve over **50 million RDMA operations
 
 ---
 
-## Working with various GPU-NIC vendors
+## Working with Various GPU-NIC Vendors
 
 Different **NIC vendors** introduce additional system-level challenges due to variations in transport protocols and hardware capabilities. For instance, AWS EFA NICs use the **Scalable Reliable Datagram (SRD)** protocol, which employs advanced **multi-pathing** to mitigate congestion at scale. While this design improves throughput and reliability, it breaks the strict in-order delivery guarantee within a single SRD Queue Pair (QP). This becomes problematic for DeepEP-style communication, which relies on ordered RDMA writes followed by atomic operations to notify remote GPUs that writes are delivered to assigned locations in the RDMA transport buffer.
 
 To address this, **UCCL-EP** leverages its CPU-side flexibility to enforce **software-level message ordering**. Each RDMA write carries **immediate data** encoding a per-RDMA-channel sequence number, which the receiver uses to **reorder out-of-sequence messages** before committing them to GPU memory. Importantly, these only apply to control messages (e.g. atomics) and not the data payload. 
 
-Furthermore, In DeepEP’s NVIDIA-specific IBGDA path, GPUs rely on **hardware RDMA atomics** to signal remote completion. However, **EFA does not natively support RDMA atomics**, which poses a correctness challenge: the receiver must still know when a payload has been fully written before it can proceed to read or combine it.
+Furthermore, In DeepEP’s NVIDIA-specific IBGDA path, GPUs rely on **hardware RDMA atomics** to signal remote completion. However, EFA does not natively support RDMA atomics, which poses a correctness challenge: the receiver must still know when a payload has been fully written before it can proceed to read or combine it.
 
 To emulate this behavior, UCCL-EP implements **software-level atomics** using regular RDMA writes and immediate data. The sender writes the payload first, then issues a small RDMA write carrying an immediate value that acts as an atomic message (e.g., the new counter value or flag). On the receiver side, the CPU proxy updates a local completion counter — effectively reproducing the synchronization semantics of hardware atomics. 
 
@@ -115,7 +121,7 @@ On EFA, we observe UCCL-EP significantly outperforms other baselines as we incre
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep/ep-efa.png" alt="UCCL-EP EFA results" width="500"/>
-  <em>Figure 3: On 2 nodes, H200 + EFA (400 Gbps)
+  <em>Figure 3: On 2 nodes, H200 + EFA (400 Gbps).
 </em>
 </p>
 
@@ -138,12 +144,11 @@ Across different EP sizes, the dispatch bandwidth exceeds 50 GB/s, while the com
 
 On a small testbed with GH200, we observe that UCCL-EP even outperforms the original DeepEP. We are surprised by the results, and hypothesize two reasons: the fast NVLink-C2C interconnect with **CPU-GPU cache coherence** on GH200 makes CPU-GPU communication very efficient; and the internal overhead of nvshmem. That said, we would like to verify the finding on larger testbeds. 
 
-Benchmark code and instructions can be found here:  
-https://github.com/uccl-project/uccl/tree/main/ep#benchmark 
+Benchmark code and instructions can be found [here](https://github.com/uccl-project/uccl/tree/main/ep#benchmark).
 
 ---
 
-## UCCL EP roadmap
+## UCCL EP Roadmap
 
 UCCL-EP is still in active development. We plan to release a formal post on application-level performance as well as performance on AMD GPUs and other NIC vendors. Our current roadmap includes:
 
@@ -156,4 +161,4 @@ UCCL-EP is still in active development. We plan to release a formal post on appl
 
 ## Acknowledgements
 
-We thank AWS, Lambda Labs for providing us with the main testbeds. This research is supported by gifts from Accenture, AMD, Anyscale, AWS, Broadcom, Cisco, Google, IBM, Intel, Intesa Sanpaolo, Lambda, Lightspeed, Mibura, Microsoft, NVIDIA, Samsung SDS, and SAP. 
+We thank AWS, Lambda Labs for providing us with the main testbeds. We especially thank Ion Stoica and Costin Raiciu for their discussions and feedbacks. This research is supported by gifts from Accenture, AMD, Anyscale, AWS, Broadcom, Cisco, Google, IBM, Intel, Intesa Sanpaolo, Lambda, Lightspeed, Mibura, Microsoft, NVIDIA, Samsung SDS, and SAP. 

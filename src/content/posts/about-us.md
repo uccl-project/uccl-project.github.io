@@ -43,7 +43,7 @@ We envision the next-generation AI/ML networking to have efficient CCL architect
         width="100" 
         style="display: block; margin: 0 auto; border-radius:50%;" 
       /><br>
-      <strong><a href="https://github.com/zhongjiechen">Zhongjie Chen</a></strong>
+      <strong><a href="https://github.com/zhongjiechen" class="no-github-icon">Zhongjie Chen</a></strong>
     </td>
     <td style="width: 25%; text-align: center; vertical-align: middle; height: 150px;">
       <img
@@ -51,7 +51,7 @@ We envision the next-generation AI/ML networking to have efficient CCL architect
         width="100"
         style="display: block; margin: 0 auto; border-radius:50%;"
       /><br>
-      <strong><a href="https://github.com/CalebZ9909">Yihan Zhang</a></strong>
+      <strong><a href="https://github.com/CalebZ9909" class="no-github-icon">Yihan Zhang</a></strong>
     </td>
   </tr>
   <tr>
@@ -61,7 +61,7 @@ We envision the next-generation AI/ML networking to have efficient CCL architect
         width="100"
         style="display: block; margin: 0 auto; border-radius:50%;"
       /><br>
-      <strong><a href="https://github.com/HermesCui">Chihan Cui</a></strong>
+      <strong><a href="https://github.com/HermesCui" class="no-github-icon">Chihan Cui</a></strong>
     </td>
     <td style="width: 25%; text-align: center; vertical-align: middle; height: 150px;">
       <img
@@ -77,7 +77,7 @@ We envision the next-generation AI/ML networking to have efficient CCL architect
         width="100"
         style="display: block; margin: 0 auto; border-radius:50%;"
       /><br>
-      <strong><a href="https://github.com/monopodium">Shuang Ma</a></strong>
+      <strong><a href="https://github.com/monopodium" class="no-github-icon">Shuang Ma</a></strong>
     </td>
     <td style="width: 25%; text-align: center; vertical-align: middle; height: 150px;">
       <img
@@ -91,8 +91,8 @@ We envision the next-generation AI/ML networking to have efficient CCL architect
 </table>
 
 ### Acknowledgement
-Members are funded by the [Berkeley Sky Computing Lab](https://sky.cs.berkeley.edu/) and the [UC Davis ArtSy lab](https://github.com/artsy-lab). 
-The compute resources are also generously supported by [AMD](https://www.amd.com/en.html), [AWS](https://aws.amazon.com/) [IBM](https://www.ibm.com/), [Lambda](https://lambda.ai/), [Broadcom](https://www.broadcom.com/), [Google Cloud](https://cloud.google.com/), and [CloudLab](https://www.cloudlab.us/). 
+Members are funded by the <a href="https://sky.cs.berkeley.edu/">Berkeley Sky Computing Lab</a> and the <a href="https://github.com/artsy-lab" class="no-github-icon">UC Davis ArtSy lab</a>.
+The compute resources are also generously supported by [AMD](https://www.amd.com/en.html), [AWS](https://aws.amazon.com/), [IBM](https://www.ibm.com/), [Lambda](https://lambda.ai/), [Broadcom](https://www.broadcom.com/), [Google Cloud](https://cloud.google.com/), and [CloudLab](https://www.cloudlab.us/). 
 The website templates are from [Inotelab](https://www.astrothemes.dev/author/inotelab/) and [NovaSky](https://novasky-ai.github.io/posts/about-us/) with heavy modifications.
 
 ### Contact

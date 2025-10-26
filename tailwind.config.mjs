@@ -87,7 +87,7 @@ export default {
             "pre code": { backgroundColor: "transparent", padding: "0", borderRadius: "0" },
             maxWidth: "80ch", // Increase prose width by ~20% from default 65ch
             // GitHub link styling
-            'a[href*="github.com"]': {
+            'a[href*="github.com"]:not(.no-github-icon)': {
               position: "relative",
               paddingLeft: "1.30rem",
               "&::before": {
@@ -213,7 +213,7 @@ export default {
             "pre code": { backgroundColor: "transparent", padding: "0", borderRadius: "0" },
             maxWidth: "80ch", // Increase prose width by ~20% from default 65ch
             // GitHub link styling
-            'a[href*="github.com"]': {
+            'a[href*="github.com"]:not(.no-github-icon)': {
               position: "relative",
               paddingLeft: "1.30rem",
               "&::before": {
