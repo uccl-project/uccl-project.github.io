@@ -38,7 +38,6 @@ export const HeaderLinks = [
 export const FooterLinks = [
   { href: "https://sky.cs.berkeley.edu/", title: "UC Berkeley Sky Lab" },
   { href: "https://github.com/artsy-lab", title: "UC Davis ArtSy Lab" },
-  { href: "/tags/", title: "Tags" },
 ];
 
 // Social Links, src/components/Footer.astro

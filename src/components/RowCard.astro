@@ -33,22 +33,22 @@ const truncatedDescription = truncateUTF8String(post.data.description, 200);
 <div
   class="relative overflow-hidden rounded-xl border bg-white transition-transform duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-neutral-600 dark:bg-neutral-900"
 >
-  <a href={`/posts/${post.slug}/`} class="flex flex-row h-64">
-    <!-- Left side: Small square figure -->
-    <div class="w-64 flex-shrink-0">
+  <a href={`/posts/${post.slug}/`} class="flex flex-row h-48 sm:h-56 md:h-60 lg:h-64 mobile-row-card">
+    <!-- Left side: Responsive square figure -->
+    <div class="w-48 sm:w-56 md:w-60 lg:w-64 xl:w-72 flex-shrink-0 mobile-image">
       <OptimizedCover src={post.data.cover} alt={post.data.coverAlt} class="w-full h-full object-cover rounded-l-xl" />
     </div>
     
     <!-- Right side: Text content -->
-    <div class="flex-1 p-4 flex flex-col justify-center">
-      <div class="flex items-center gap-4 text-sm text-neutral-600 dark:text-neutral-400 mb-2">
+    <div class="flex-1 p-3 sm:p-4 flex flex-col justify-start mobile-text">
+      <div class="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 mb-1 sm:mb-2">
         <span>{post.data.tags.join(" ")}</span>
         <FormattedDate date={post.data.pubDate} />
       </div>
-      <h3 class="text-2xl font-bold text-neutral-900 dark:text-white mb-3">
+      <h3 class="text-base sm:text-xl md:text-2xl font-bold text-neutral-900 dark:text-white mb-2 sm:mb-3">
         {post.data.title}
       </h3>
-      <p class="text-neutral-700 dark:text-neutral-300 text-base leading-relaxed">
+      <p class="hidden sm:block text-sm sm:text-base text-neutral-700 dark:text-neutral-300 leading-relaxed">
         {truncatedDescription}
       </p>
     </div>

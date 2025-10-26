@@ -56,4 +56,70 @@ const { title, description, image = "/blog-placeholder-1.avif" } = Astro.props;
   .no-borders th {
     border: none !important;
   }
+  
+  /* Footer Layout */
+  .footer-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .footer-left,
+  .footer-center,
+  .footer-right {
+    text-align: center;
+  }
+  
+  /* Desktop footer - 3 column grid */
+  @media (min-width: 1025px) {
+    .footer-wrapper {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 2rem;
+    }
+    
+    .footer-left {
+      text-align: left;
+      justify-self: start;
+    }
+    
+    .footer-center {
+      text-align: center;
+      justify-self: center;
+    }
+    
+    .footer-right {
+      text-align: right;
+      justify-self: end;
+    }
+  }
+  
+  /* Tablet footer - vertical stack */
+  @media (min-width: 641px) and (max-width: 1024px) {
+    .footer-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+    }
+  }
+  
+  /* Mobile-specific fixes */
+  @media (max-width: 640px) {
+    .mobile-row-card {
+      flex-direction: column !important;
+      height: auto !important;
+    }
+    .mobile-row-card .mobile-image {
+      width: 100% !important;
+      height: 200px !important;
+      border-radius: 0.75rem 0.75rem 0 0 !important;
+    }
+    .mobile-row-card .mobile-text {
+      padding: 1rem !important;
+      width: 100% !important;
+    }
+  }
 </style>

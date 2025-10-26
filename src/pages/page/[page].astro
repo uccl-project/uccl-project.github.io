@@ -1,8 +1,7 @@
 ---
 import { getCollection } from "astro:content";
 import BaseLayout from "@layouts/BaseLayout.astro";
-import HeroCard from "@components/HeroCard.astro";
-import PostCard from "@components/CommonCard.astro";
+import RowCard from "@components/RowCard.astro";
 import Pagination from "@components/Pagination.astro";
 import { SITE_TITLE, SITE_DESCRIPTION } from "@consts";
 
@@ -47,31 +46,11 @@ const { page } = Astro.props;
 ---
 
 <BaseLayout title={SITE_TITLE} description={SITE_DESCRIPTION}>
-  {
-    page.currentPage === 1 ? (
-      <>
-        <div class="mb-4 grid grid-cols-1">
-          {page.data.length > 0 && <HeroCard post={page.data[0]} />}
-        </div>
-        <div class="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-2">
-          {page.data.slice(1, 3).map((post) => (
-            <PostCard post={post} />
-          ))}
-        </div>
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {page.data.slice(3).map((post) => (
-            <PostCard post={post} />
-          ))}
-        </div>
-      </>
-    ) : (
-      <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {page.data.map((post) => (
-          <PostCard post={post} />
-        ))}
-      </div>
-    )
-  }
+  <div class="flex flex-col gap-4">
+    {page.data.map((post) => (
+      <RowCard post={post} />
+    ))}
+  </div>
 
   <Pagination
     currentPage={page.currentPage}
