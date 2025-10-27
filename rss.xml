@@ -43,7 +43,7 @@ This lack of cross-vendor portability increasingly limits deployment flexibility
 
 By moving NIC driver logic into GPU threads, DeepEP sacrifices **fine-grained control and observability** over the communication process. In traditional CPU-driven RDMA systems, the host manages **flow control**, **queue depth**, **completion notifications**, and **load balancing across multiple network queues**. These mechanisms are essential for ensuring fairness, congestion avoidance, and recovery under high network pressure.
 
-In the IBGDA model, however, GPUs issue RDMA operations directly without the CPU’s coordination. This makes it difficult to monitor or regulate traffic. For example, the GPU may post many outstanding RDMA writes without global awareness of NIC queue utilization, leading to congestion or dropped completions. Detecting transfer completion or handling network backpressure is also not possible in DeepEP, as IBGDA or NVSHMEM does not expose relevant interfaces.
+In the IBGDA model, however, GPUs issue RDMA operations directly without the CPU’s coordination. In other words, GPU threads are ``blindly&quot; issuing one-sided operation. This makes it difficult to monitor or regulate traffic. For example, the GPU may post many outstanding RDMA writes without global awareness of NIC queue utilization, leading to congestion or dropped completions. Detecting transfer completion, measuring transfer latency, or handling network backpressure is also not possible in GPU or DeepEP, as IBGDA or NVSHMEM does not expose relevant interfaces.
 
 ---
 
