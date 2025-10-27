@@ -93,7 +93,7 @@ Moreover, each control command in expert parallelism typically represents a **ba
 
 ## Designing an Efficient CPU-GPU Communication Channel
 
-A central challenge in UCCL-EP is building an efficient **forwarding channel between GPUs and CPUs** that can sustain tens of millions of RDMA requests per second without becoming a bottleneck. UCCL-EP implements this channel as a carefully optimized **lock-free FIFO queue** shared between GPU producers and CPU consumers. Each GPU enqueues lightweight RDMA transfer descriptors into the queue, while multiple CPU threads dequeue and execute them.
+A central challenge in UCCL-EP is building an efficient **forwarding channel between GPUs and CPUs** that can sustain tens of millions of RDMA requests per second without becoming a bottleneck. UCCL-EP implements this channel as a **lock-free FIFO queue** shared between GPU producers and CPU consumers. Each GPU enqueues lightweight RDMA transfer descriptors into the queue, while multiple CPU threads dequeue and execute them.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep/ep-fifo.png" alt="UCCL-EP FIFO illustration" width="400"/>
@@ -107,15 +107,15 @@ UCCL-EP employs multiple channels per GPU; each channel has its own dedicated RD
 
 ## Working with Various GPU-NIC Vendors
 
-Different **NIC vendors** introduce additional system-level challenges due to variations in transport protocols and hardware capabilities. For instance, AWS EFA NICs use the **Scalable Reliable Datagram (SRD)** protocol, which employs advanced **multi-pathing** to mitigate congestion at scale. While this design improves throughput and reliability, it breaks the strict in-order delivery guarantee within a single SRD Queue Pair (QP). This becomes problematic for DeepEP-style communication, which relies on ordered RDMA writes followed by atomic operations to notify remote GPUs that writes are delivered to assigned locations in the RDMA transport buffer.
+Different **NIC vendors** introduce additional system-level challenges due to variations in transport protocols and hardware capabilities. For instance, AWS EFA NICs use the **Scalable Reliable Datagram (SRD)** protocol, which employs advanced **multi-pathing** to mitigate congestion at scale. While this design improves throughput and reliability, it does not provide the strict in-order delivery guarantee within a single SRD Queue Pair (QP). This becomes problematic for DeepEP-style communication, which relies on ordered RDMA writes followed by atomic operations to notify remote GPUs that writes are delivered to assigned locations in the RDMA transport buffer.
 
 To address this, **UCCL-EP** leverages its CPU-side flexibility to enforce **software-level message ordering**. Each RDMA write carries **immediate data** encoding a per-RDMA-channel sequence number, which the receiver uses to **reorder out-of-sequence messages** before committing them to GPU memory. Importantly, these only apply to control messages (e.g. atomics) and not the data payload. 
 
-Furthermore, In DeepEP’s NVIDIA-specific IBGDA path, GPUs rely on **hardware RDMA atomics** to signal remote completion. However, EFA does not natively support RDMA atomics, which poses a correctness challenge: the receiver must still know when a payload has been fully written before it can proceed to read or combine it.
+Furthermore, In DeepEP’s NVIDIA-specific IBGDA path, GPUs rely on **hardware RDMA atomics** to signal remote completion. However, some NIC providers (e.g. EFA) does not natively support RDMA atomics, which poses a correctness challenge: the receiver must still know when a payload has been fully written before it can proceed to read or combine it.
 
 To emulate this behavior, UCCL-EP implements **software-level atomics** using regular RDMA writes and immediate data. The sender writes the payload first, then issues a small RDMA write carrying an immediate value that acts as an atomic message (e.g., the new counter value or flag). On the receiver side, the CPU proxy updates a local completion counter — effectively reproducing the behavior hardware atomics. 
 
-A surprising benefit of this approach is that atomic can piggyback on existing write operation (as realized in one RDMA operation), whereas in DeepEP, it takes two operations (write + atomic). The fundamental reason is that UCCL-EP adopts a **two-sided** communication model, whereas GPU-driven approach is one-sided, where write with immediate is not supported. 
+A surprising benefit of this approach is that atomic can **piggyback on existing write operation** (as realized in one RDMA operation), whereas in DeepEP, it takes two operations (write + atomic). The fundamental reason is that UCCL-EP adopts a **two-sided** communication model, whereas the original DeepEP is one-sided due to GPU needing to directly talking to NIC. 
 
 To enable UCCL EP work with diverse GPU vendors, we have taken the first step in **eliminating nvshmem dependencies**, which is important for portability as well as other features (e.g. elastic scaling). We also observed interestingly, removing nvshmem dependency can sometimes lead to performance improvements, which we suspect to be due to the internal overhead of the nvshmem library. 
 
@@ -131,7 +131,7 @@ On EFA, we observe UCCL-EP significantly outperforms other baselines as we incre
 </em>
 </p>
 
-We tested normal kernels on H200 (8× GPUs per node) with each node connected to an EFA 400 Gb/s RDMA network card. We follow the DeepSeek-V3 pretraining configuration (4096 tokens per batch, 7168 hidden, top-4 groups, top-8 experts, FP8 dispatch and BF16 combine).
+We also tested normal kernels on H200 (8× GPUs per node) with each node connected to an EFA 400 Gb/s RDMA network card. We follow the DeepSeek-V3 pretraining configuration (4096 tokens per batch, 7168 hidden, top-4 groups, top-8 experts, FP8 dispatch and BF16 combine).
 
 | Type | Dispatch FP8 #EP | Bottleneck bandwidth | Combine BF16 #EP | Bottleneck bandwidth |
 |:---------:|:------------:|:--------------------:|:-----------:|:--------------------:|
@@ -140,11 +140,11 @@ We tested normal kernels on H200 (8× GPUs per node) with each node connected to
 | Internode | 24 | 53 GB/s (RDMA) | 24 | 26 GB/s (RDMA) |
 | Internode | 32 | 54 GB/s (RDMA) | 32 | 43 GB/s (RDMA) |
 
-Across different EP sizes, the dispatch bandwidth exceeds 50 GB/s, while the combine bandwidth stabilizes around 40 GB/s. The slightly lower combine bandwidth reflects the additional overhead of the combine operation (e.g., accumulation and reduction across experts). We are still investigating the relatively lower combine throughput compared to dispatch at EP=16.
+Across different EP sizes, the dispatch bandwidth exceeds 50 GB/s, while the combine bandwidth stabilizes around 40 GB/s. The slightly lower combine bandwidth reflects the additional overhead of the combine operation (e.g., weighted sum across experts), and that combine inherently sends fewer RDMA messages compared to dispatch (e.g. with TopK=8) due to per-node local aggregation, therefore the RDMA pipeline is not as full. We are still investigating the relatively lower combine throughput compared to dispatch at EP=16. 
 
-On a small testbed with GH200, we observe that UCCL-EP even outperforms the original DeepEP. We are surprised by the results, and hypothesize two reasons: the fast NVLink-C2C interconnect with **CPU-GPU cache coherence** on GH200 makes CPU-GPU communication very efficient; and the internal overhead of nvshmem. That said, we would like to verify the finding on larger testbeds. 
+On a small testbed with GH200, we observe that UCCL-EP even outperforms the original DeepEP. We are surprised by the results, and hypothesize two reasons: the fast NVLink-C2C interconnect with **CPU-GPU cache coherence** on GH200 makes CPU-GPU communication almost for ``free"; and the internal overhead of nvshmem. That said, we would like to verify the finding on larger testbeds. 
 
-Benchmark code and instructions can be found [here](https://github.com/uccl-project/uccl/tree/main/ep#benchmark).
+Additional results, benchmark code, and instructions can be found [here](https://github.com/uccl-project/uccl/tree/main/ep#benchmark).
 
 ---
 
