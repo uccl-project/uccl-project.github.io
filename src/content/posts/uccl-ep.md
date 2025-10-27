@@ -28,6 +28,12 @@ GPU-driven communication (e.g., DeepEP) is the key to efficient and large-scale 
 
 This selective routing requires frequent **dispatch** (sending token embeddings to the correct expert GPUs) and **combine** (gathering expert outputs back to their original positions) operations across the network. These data exchanges are typically performed using Remote Direct Memory Access (RDMA) over high-speed interconnects such as InfiniBand or RoCE.
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep/ep-overview.png" alt="EP illustration" width="600"/>
+  <em>Figure 1: RDMA commands initiated by the GPU are handed off to multiple CPU proxy threads. 
+</em>
+</p>
+
 Unlike traditional data or tensor parallelism, where communication involves large contiguous tensors (on the order of megabytes or gigabytes), EP communication is highly **fine-grained**. Each dispatch or combine operation often involves **small message sizes**—for example, 7 KB to 256 KB in systems like **DeepSeek V3**. Such small message sizes pose a challenge for **general-purpose collective communication libraries** like NCCL, which are optimized for high-throughput transfers of large payloads (e.g., in all-reduce or all-gather operations). When messages are this small, the per-transfer latency and synchronization overhead dominate, leading to poor utilization of network bandwidth. Consequently, EP systems often require **custom, low-latency communication runtimes** that can overlap computation and communication efficiently and handle a large number of concurrent small-message operations.
 
 One popular library for EP is **DeepEP**, which leverages NVIDIA-specific NVSHMEM/IBGDA techniques to let NVIDIA GPUs directly issue RDMA operations to NVIDIA NICs for small-message efficiency. IBGDA essentially runs the NIC driver functions inside the GPU SM cores, so that the GPUs can talk to NICs, bypassing the CPU. The GPU can thus enqueue RDMA writes, reads, or atomic operations straight to the NIC’s doorbell registers. However, while DeepEP has high performance, it suffers from two limitations caused by such **tight coupling between GPUs and NICs**.
@@ -67,7 +73,7 @@ We note that UCCL-EP’s approach shares similarity with NVSHMEM’s IBRC soluti
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep/ep-illustration.png" alt="UCCL-EP illustration" width="600"/>
-  <em>Figure 1: RDMA commands initiated by the GPU are handed off to multiple CPU proxy threads. 
+  <em>Figure 2: RDMA commands initiated by the GPU are handed off to multiple CPU proxy threads. 
 </em>
 </p>
 
@@ -85,7 +91,7 @@ A central challenge in UCCL-EP is building an efficient **forwarding channel bet
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep/ep-fifo.png" alt="UCCL-EP FIFO illustration" width="400"/>
-  <em>Figure 2: UCCL-EP employs multiple channels per GPU; The tail is read by CPU thread and allocated on host, the head is read and updated by GPU thread and allocated on device. It further caches the tail value on GPU for faster access. Each TransferCmd is small, occupying only 128 bits. 
+  <em>Figure 3: UCCL-EP employs multiple channels per GPU; The tail is read by CPU thread and allocated on host, the head is read and updated by GPU thread and allocated on device. It further caches the tail value on GPU for faster access. Each TransferCmd is small, occupying only 128 bits. 
 </em>
 </p>
 
@@ -115,7 +121,7 @@ On EFA, we observe UCCL-EP significantly outperforms other baselines as we incre
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep/ep-efa.png" alt="UCCL-EP EFA results" width="500"/>
-  <em>Figure 3: On 2 nodes, H200 + EFA (400 Gbps)
+  <em>Figure 4: On 2 nodes, H200 + EFA (400 Gbps)
 </em>
 </p>
 
