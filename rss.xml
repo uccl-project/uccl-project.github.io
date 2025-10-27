@@ -51,14 +51,14 @@ In the IBGDA model, however, GPUs issue RDMA operations directly without the CPU
 
 UCCL-EP directly tackles these tight-coupling issues and proposes a flexible yet efficient EP solution for the public cloud and heterogeneous device vendors, including GPU and NICs. UCCL-EP preserves the same APIs as DeepEP, supporting both the low latency (for inference) and normal mode (for training). 
 
-The core insight of UCCL-EP is that efficient expert-parallel communication, while benefiting from GPU **initiation**, does not require GPUs to **directly** control the NIC. Instead, UCCL-EP restores a clean separation of concerns between compute and control:
+The core insight of UCCL-EP is that efficient expert-parallel communication, while benefiting from GPU **initiation**, does not require GPUs to **directly** control the NIC. Instead, UCCL-EP restores a clean separation of concerns between GPU and CPU:
 
 - GPUs retain their massive parallelism for data-intensive tasks — such as token packing, expert combination, NVL forwarding, and local RDMA buffering, and efficient overlap with the background RDMA communication. GPU still initiates communication.
 - CPUs handle the control-intensive aspects of networking — including queue management, flow control, completion handling, and load balancing — through a lightweight, multi-threaded CPU proxy.
 
-Essentially, **UCCL-EP decouples GPU computation from direct NIC control**. Instead of having GPUs post RDMA operations directly to the NIC (as in NVIDIA’s IBGDA model), each GPU forwards **lightweight control commands**—such as “write this token to peer X”—to the CPU through a high-speed shared memory channel. A pool of **multi-threaded CPU proxies** then interprets these commands and issues the actual RDMA verbs to the NIC on the GPU’s behalf.
+Essentially, instead of having GPUs post RDMA operations directly to the NIC (as in NVIDIA’s IBGDA model), each GPU forwards **lightweight control commands**—such as “write this token to peer X”—to the CPU through an efficient shared memory channel. A pool of **multi-threaded CPU proxies** then interprets these commands and issues the actual RDMA verbs to the NIC on the GPU’s behalf. GPU still initiates communication, thereby overlapping with other copying and computation, while the CPU manages the complexity and control decisions of RDMA communication.
 
-We note that UCCL-EP’s approach shares similarity with NVSHMEM’s IBRC solution that uses CPU proxies as well, but differs from them by leveraging multiple CPU proxy threads for performance, and supporting a wide range of vendors for portability.
+We note that UCCL-EP’s approach shares similarity with NVSHMEM’s IBRC solution that uses CPU proxies as well, but differs significantly from them by leveraging multiple CPU proxy threads for performance, and supporting a wide range of vendors for portability.
 
 &lt;p align=&quot;center&quot;&gt;
   &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep/ep-illustration.png&quot; alt=&quot;UCCL-EP illustration&quot; width=&quot;600&quot;/&gt;
@@ -70,13 +70,13 @@ This design exploits a key observation: every RDMA NIC already exposes a standar
 
 The second observation underlying UCCL-EP’s design is that **CPU–GPU communication latency is not the dominant bottleneck**. Modern interconnects such as PCIe Gen5, NVLink, and C2C (chip-to-chip) links offer microsecond-scale latency and tens to hundreds of GB/s bandwidth between CPUs and GPUs. This means that forwarding a control command from the GPU to the CPU is extremely fast—especially compared to the end-to-end latency of an RDMA operation that traverses the network.
 
-Moreover, each control command in expert parallelism typically represents a **batched data movement involving multiple tokens** (e.g., a dispatch or combine operation that transfers tens or hundreds of kilobytes). Therefore, the amortized cost of sending a command descriptor over PCIe is negligible relative to the data volume it represents. 
+Moreover, each control command in expert parallelism typically represents a **batched data movement involving multiple tokens**. Therefore, the amortized cost of sending a command descriptor over PCIe is negligible relative to the data transferred. 
 
 ---
 
 ## Designing an Efficient CPU-GPU Communication Channel
 
-A central challenge in UCCL-EP is building an efficient **forwarding channel between GPUs and CPUs** that can sustain tens of millions of RDMA requests per second without becoming a bottleneck. UCCL-EP implements this channel as a carefully optimized **lock-free FIFO queue** shared between GPU producers and CPU consumers. Each GPU enqueues lightweight RDMA transfer descriptors into the queue, while multiple CPU threads dequeue and execute them through libibverbs.
+A central challenge in UCCL-EP is building an efficient **forwarding channel between GPUs and CPUs** that can sustain tens of millions of RDMA requests per second without becoming a bottleneck. UCCL-EP implements this channel as a carefully optimized **lock-free FIFO queue** shared between GPU producers and CPU consumers. Each GPU enqueues lightweight RDMA transfer descriptors into the queue, while multiple CPU threads dequeue and execute them.
 
 &lt;p align=&quot;center&quot;&gt;
   &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep/ep-fifo.png&quot; alt=&quot;UCCL-EP FIFO illustration&quot; width=&quot;400&quot;/&gt;
@@ -84,9 +84,7 @@ A central challenge in UCCL-EP is building an efficient **forwarding channel bet
 &lt;/em&gt;
 &lt;/p&gt;
 
-UCCL-EP employs multiple channels per GPU; The tail is read by CPU thread and allocated on host, the head is read and updated by GPU thread and allocated on device. It further caches the tail value on GPU for faster access. Each TransferCmd is small. 
-
-This careful design allows each GPU to achieve over **50 million RDMA operations** per second with modest latency overhead (as shown in UCCL PR [#454](https://github.com/uccl-project/uccl/pull/454)), where the NIC’s intrinsic latency and network delay—not the CPU–GPU channel—becomes the dominant cost. 
+UCCL-EP employs multiple channels per GPU; each channel has its own dedicated RDMA Queue Pair (QP). This  design allows each GPU to achieve over **50 million RDMA operations** per second with modest latency overhead (as shown in UCCL PR [#454](https://github.com/uccl-project/uccl/pull/454)), where the NIC’s intrinsic latency and network delay—not the CPU–GPU channel—becomes the dominant cost. 
 
 ---
 
@@ -98,7 +96,9 @@ To address this, **UCCL-EP** leverages its CPU-side flexibility to enforce **sof
 
 Furthermore, In DeepEP’s NVIDIA-specific IBGDA path, GPUs rely on **hardware RDMA atomics** to signal remote completion. However, EFA does not natively support RDMA atomics, which poses a correctness challenge: the receiver must still know when a payload has been fully written before it can proceed to read or combine it.
 
-To emulate this behavior, UCCL-EP implements **software-level atomics** using regular RDMA writes and immediate data. The sender writes the payload first, then issues a small RDMA write carrying an immediate value that acts as an atomic message (e.g., the new counter value or flag). On the receiver side, the CPU proxy updates a local completion counter — effectively reproducing the synchronization semantics of hardware atomics. 
+To emulate this behavior, UCCL-EP implements **software-level atomics** using regular RDMA writes and immediate data. The sender writes the payload first, then issues a small RDMA write carrying an immediate value that acts as an atomic message (e.g., the new counter value or flag). On the receiver side, the CPU proxy updates a local completion counter — effectively reproducing the behavior hardware atomics. 
+
+A surprising benefit of this approach is that atomic can piggyback on existing write operation (as realized in one RDMA operation), whereas in DeepEP, it takes two operations (write + atomic). The fundamental reason is that UCCL-EP adopts a **two-sided** communication model, whereas GPU-driven approach is one-sided, where write with immediate is not supported. 
 
 To enable UCCL EP work with diverse GPU vendors, we have taken the first step in **eliminating nvshmem dependencies**, which is important for portability as well as other features (e.g. elastic scaling). We also observed interestingly, removing nvshmem dependency can sometimes lead to performance improvements, which we suspect to be due to the internal overhead of the nvshmem library. 
 
@@ -114,7 +114,7 @@ On EFA, we observe UCCL-EP significantly outperforms other baselines as we incre
 &lt;/em&gt;
 &lt;/p&gt;
 
-We test normal kernels on H200 (8× GPUs per node) with each node connected to an EFA 400 Gb/s RDMA network card. We follow the DeepSeek-V3 pretraining configuration (4096 tokens per batch, 7168 hidden, top-4 groups, top-8 experts, FP8 dispatch and BF16 combine).
+We tested normal kernels on H200 (8× GPUs per node) with each node connected to an EFA 400 Gb/s RDMA network card. We follow the DeepSeek-V3 pretraining configuration (4096 tokens per batch, 7168 hidden, top-4 groups, top-8 experts, FP8 dispatch and BF16 combine).
 
 | Type | Dispatch FP8 #EP | Bottleneck bandwidth | Combine BF16 #EP | Bottleneck bandwidth |
 |:---------:|:------------:|:--------------------:|:-----------:|:--------------------:|
@@ -123,7 +123,7 @@ We test normal kernels on H200 (8× GPUs per node) with each node connected to a
 | Internode | 24 | 53 GB/s (RDMA) | 24 | 26 GB/s (RDMA) |
 | Internode | 32 | 54 GB/s (RDMA) | 32 | 43 GB/s (RDMA) |
 
-Across different EP sizes, the dispatch bandwidth exceeds 50 GB/s, while the combine bandwidth stabilizes around 40 GB/s. The slightly lower combine bandwidth reflects the additional overhead of the combine operation (e.g., accumulation and reduction across experts). We are still investigating the relatively lower combine throughput compared to dispatch at EP=16. 
+Across different EP sizes, the dispatch bandwidth exceeds 50 GB/s, while the combine bandwidth stabilizes around 40 GB/s. The slightly lower combine bandwidth reflects the additional overhead of the combine operation (e.g., accumulation and reduction across experts). We are still investigating the relatively lower combine throughput compared to dispatch at EP=16.
 
 On a small testbed with GH200, we observe that UCCL-EP even outperforms the original DeepEP. We are surprised by the results, and hypothesize two reasons: the fast NVLink-C2C interconnect with **CPU-GPU cache coherence** on GH200 makes CPU-GPU communication very efficient; and the internal overhead of nvshmem. That said, we would like to verify the finding on larger testbeds. 
 
@@ -133,7 +133,7 @@ Benchmark code and instructions can be found [here](https://github.com/uccl-proj
 
 ## UCCL EP Roadmap
 
-UCCL-EP is still in active development. We plan to release a formal post on application-level performance as well as performance on AMD GPUs and other NIC vendors. Our current roadmap includes:
+UCCL-EP is still in active development, and we expect new results in the coming months. We plan to release a formal blog on application-level performance as well as performance on AMD GPUs and other NIC vendors. Our current roadmap includes:
 
 - Further improving UCCL-EP performance on EFA 
 - Finishing porting to AMD GPUs and Broadcom NICs (PR [#457](https://github.com/uccl-project/uccl/pull/457))
