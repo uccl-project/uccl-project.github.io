@@ -136,12 +136,6 @@ We test normal kernels on H200 (8× GPUs per node) with each node connected to a
 
 Across different EP sizes, the dispatch bandwidth exceeds 50 GB/s, while the combine bandwidth stabilizes around 40 GB/s. The slightly lower combine bandwidth reflects the additional overhead of the combine operation (e.g., accumulation and reduction across experts). We are still investigating the relatively lower combine throughput compared to dispatch at EP=16. 
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep/ep-gh200.png" alt="UCCL-EP EFA results" width="600"/>
-  <em>Figure 4: On 2 nodes, GH200 + CX7 (200 Gbps).
-</em>
-</p>
-
 On a small testbed with GH200, we observe that UCCL-EP even outperforms the original DeepEP. We are surprised by the results, and hypothesize two reasons: the fast NVLink-C2C interconnect with **CPU-GPU cache coherence** on GH200 makes CPU-GPU communication very efficient; and the internal overhead of nvshmem. That said, we would like to verify the finding on larger testbeds. 
 
 Benchmark code and instructions can be found [here](https://github.com/uccl-project/uccl/tree/main/ep#benchmark).
