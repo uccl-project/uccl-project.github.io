@@ -119,11 +119,6 @@ GPU-driven communication (e.g., DeepEP) is the key to efficient and large-scale 
 
 <table><thead><tr><th align="center">Type</th><th align="center">Dispatch FP8 #EP</th><th align="center">Bottleneck bandwidth</th><th align="center">Combine BF16 #EP</th><th align="center">Bottleneck bandwidth</th></tr></thead><tbody><tr><td align="center">Intranode</td><td align="center">8</td><td align="center">320 GB/s (NVLink)</td><td align="center">8</td><td align="center">319 GB/s (NVLink)</td></tr><tr><td align="center">Internode</td><td align="center">16</td><td align="center">50 GB/s (RDMA)</td><td align="center">16</td><td align="center">18 GB/s (RDMA)</td></tr><tr><td align="center">Internode</td><td align="center">24</td><td align="center">53 GB/s (RDMA)</td><td align="center">24</td><td align="center">26 GB/s (RDMA)</td></tr><tr><td align="center">Internode</td><td align="center">32</td><td align="center">54 GB/s (RDMA)</td><td align="center">32</td><td align="center">43 GB/s (RDMA)</td></tr></tbody></table>
 <p>Across different EP sizes, the dispatch bandwidth exceeds 50 GB/s, while the combine bandwidth stabilizes around 40 GB/s. The slightly lower combine bandwidth reflects the additional overhead of the combine operation (e.g., accumulation and reduction across experts). We are still investigating the relatively lower combine throughput compared to dispatch at EP=16.</p>
-<p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep/ep-gh200.png" alt="UCCL-EP EFA results" width="600">
-  <em>Figure 4: On 2 nodes, GH200 + CX7 (200 Gbps).
-</em>
-</p>
 <p>On a small testbed with GH200, we observe that UCCL-EP even outperforms the original DeepEP. We are surprised by the results, and hypothesize two reasons: the fast NVLink-C2C interconnect with <strong>CPU-GPU cache coherence</strong> on GH200 makes CPU-GPU communication very efficient; and the internal overhead of nvshmem. That said, we would like to verify the finding on larger testbeds.</p>
 <p>Benchmark code and instructions can be found <a href="https://github.com/uccl-project/uccl/tree/main/ep#benchmark">here</a>.</p>
 <hr>
