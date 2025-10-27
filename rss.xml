@@ -43,20 +43,20 @@ This lack of cross-vendor portability increasingly limits deployment flexibility
 
 By moving NIC driver logic into GPU threads, DeepEP sacrifices **fine-grained control and observability** over the communication process. In traditional CPU-driven RDMA systems, the host manages **flow control**, **queue depth**, **completion notifications**, and **load balancing across multiple network queues**. These mechanisms are essential for ensuring low tail latency, congestion avoidance, and recovery under high network pressure.
 
-In the IBGDA model, however, GPUs issue RDMA operations directly without the CPU’s coordination. In other words, GPU threads are ``blindly&quot; issuing one-sided operation. This makes it difficult to monitor or regulate traffic. For example, the GPU may post many outstanding RDMA writes without global awareness of NIC queue utilization, leading to congestion or dropped completions. Detecting transfer completion, measuring transfer latency, or handling network backpressure is also not possible in GPU or DeepEP, as IBGDA or NVSHMEM does not expose relevant interfaces.
+In the IBGDA model, however, GPUs issue RDMA operations directly without the CPU’s coordination. In other words, GPU threads are ``blindly&quot; issuing one-sided operation. This makes it difficult to monitor or regulate traffic. For example, the GPU may post many outstanding RDMA writes without awareness of NIC queue utilization, leading to congestion or high tail latency. Detecting transfer completion, measuring transfer latency, or handling network backpressure is also not possible in GPU or DeepEP, as IBGDA or NVSHMEM does not expose relevant interfaces.
 
 ---
 
 ## UCCL-EP
 
-UCCL-EP directly tackles these tight-coupling issues and proposes a flexible yet efficient EP solution for the public cloud and heterogeneous device vendors, including GPU and NICs. UCCL-EP preserves the same APIs as DeepEP, supporting both the low latency (for inference) and normal mode (for training). 
+UCCL-EP directly tackles these challenges and proposes a flexible yet efficient EP solution for the public cloud and heterogeneous device vendors, including GPU and NICs. UCCL-EP preserves the same APIs as DeepEP, supporting both the **low latency** (for inference) and **normal mode** (for training). 
 
 The core insight of UCCL-EP is that efficient expert-parallel communication, while benefiting from GPU **initiation**, does not require GPUs to **directly** control the NIC. Instead, UCCL-EP restores a clean separation of concerns between GPU and CPU:
 
-- GPUs retain their massive parallelism for data-intensive tasks — such as token packing, expert combination, NVL forwarding, and local RDMA buffering, and efficient overlap with the background RDMA communication. GPU still initiates communication.
+- GPUs retain their massive parallelism for data-intensive tasks — such as token packing, expert combination, NVL forwarding, and local RDMA buffering, and efficient overlap with the background RDMA communication. GPU still *initiates* communication.
 - CPUs handle the control-intensive aspects of networking — including queue management, flow control, completion handling, and load balancing — through a lightweight, multi-threaded CPU proxy.
 
-Essentially, instead of having GPUs post RDMA operations directly to the NIC (as in NVIDIA’s IBGDA model), each GPU forwards **lightweight control commands**—such as “write this token to peer X”—to the CPU through an efficient shared memory channel. A pool of **multi-threaded CPU proxies** then interprets these commands and issues the actual RDMA verbs to the NIC on the GPU’s behalf. GPU still initiates communication, thereby overlapping with other copying and computation, while the CPU manages the complexity and control decisions of RDMA communication.
+Essentially, instead of having GPUs post RDMA operations directly to the NIC (as in NVIDIA’s IBGDA model), each GPU forwards **lightweight control commands**—such as “write this token to peer X”—to the CPU through an efficient shared memory channel. A pool of **multi-threaded CPU proxies** then interprets these commands and issues the actual RDMA verbs to the NIC on the GPU’s behalf. GPU still initiates communication, thereby overlapping with on-GPU data copying and computation, while the CPU manages the complexity and control decisions of RDMA communication.
 
 We note that UCCL-EP’s approach shares similarity with NVSHMEM’s IBRC solution that uses CPU proxies as well, but differs significantly from them by leveraging multiple CPU proxy threads for performance, and supporting a wide range of vendors for portability.
 
