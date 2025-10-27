@@ -127,7 +127,7 @@ On EFA, we observe UCCL-EP significantly outperforms other baselines as we incre
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep/ep-efa.png" alt="UCCL-EP EFA results" width="500"/>
-  <em>Figure 4: On 2 nodes, H200 + EFA (400 Gbps)
+  <em>Figure 4: On 2 nodes, H200 + EFA (400 Gbps). PPLX errored out for 4096 tokens.
 </em>
 </p>
 
