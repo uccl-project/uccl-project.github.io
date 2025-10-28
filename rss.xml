@@ -49,7 +49,7 @@ In the IBGDA model, however, GPUs issue RDMA operations directly without the CPU
 
 ## UCCL-EP
 
-UCCL-EP directly tackles these challenges and proposes a flexible yet efficient EP solution for the public cloud and heterogeneous device vendors, including GPU and NICs. UCCL-EP preserves the same APIs as DeepEP, supporting both the **low latency** (for inference) and **normal mode** (for training). 
+UCCL-EP directly tackles these challenges and proposes a flexible yet efficient EP solution for the public cloud and heterogeneous device vendors, including GPU and NICs. UCCL-EP preserves the same APIs as DeepEP, supporting both the **low latency** (for decode) and **normal mode** (for prefill and training). 
 
 The core insight of UCCL-EP is that efficient expert-parallel communication, while benefiting from GPU **initiation**, does not require GPUs to **directly** control the NIC. Instead, UCCL-EP restores a clean separation of concerns between GPU and CPU:
 
