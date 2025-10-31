@@ -170,6 +170,18 @@ export default {
               paddingLeft: "0",
               margin: "0",
             },
+            // Heading anchor styling
+            ".heading-anchor": {
+              textDecoration: "none",
+              color: "inherit",
+              "&:hover": {
+                textDecoration: "none",
+              },
+            },
+            "h1, h2, h3, h4, h5, h6": {
+              position: "relative",
+              scrollMarginTop: "5rem",
+            },
           },
         },
         dark: {
@@ -295,6 +307,18 @@ export default {
             ".quote p": {
               paddingLeft: "0",
               margin: "0",
+            },
+            // Heading anchor styling
+            ".heading-anchor": {
+              textDecoration: "none",
+              color: "inherit",
+              "&:hover": {
+                textDecoration: "none",
+              },
+            },
+            "h1, h2, h3, h4, h5, h6": {
+              position: "relative",
+              scrollMarginTop: "5rem",
             },
           },
         },

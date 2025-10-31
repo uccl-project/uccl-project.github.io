@@ -7,6 +7,8 @@ import pagefind from "astro-pagefind";
 import icon from "astro-icon";
 import tailwind from "@astrojs/tailwind";
 import rehypePrism from "rehype-prism-plus";
+import rehypeSlug from "rehype-slug";
+import rehypeAutolinkHeadings from "rehype-autolink-headings";
 
 // https://astro.build/config
 export default defineConfig({
@@ -29,7 +31,16 @@ export default defineConfig({
 
   markdown: {
     remarkPlugins: [remarkModifiedTime],
-    rehypePlugins: [rehypePrism],
+    rehypePlugins: [
+      rehypeSlug,
+      [rehypeAutolinkHeadings, {
+        behavior: 'wrap',
+        properties: {
+          className: ['heading-anchor'],
+        },
+      }],
+      rehypePrism
+    ],
   },
 
   integrations: [
