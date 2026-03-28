@@ -102,27 +102,6 @@ At small batch sizes (128 tokens), PPLX achieves lower latency because UCCL-EP (
   <em>EP32 dispatch (left) and combine (right) latency vs. number of tokens on p5en (H200 + EFA 400 Gbps).</em>
 </p>
 
-##### Normal Mode Bandwidth (p5en)
-
-Following the DeepSeek-V3 pretraining configuration (4096 tokens, 7168 hidden, top-4 groups, top-8 experts, FP8 dispatch / BF16 combine):
-
-| Type | Dispatch FP8 #EP | Bottleneck BW & Latency | Combine BF16 #EP | Bottleneck BW & Latency |
-|:---:|:---:|:---:|:---:|:---:|
-| Intranode | 8 | 320 GB/s (NVLink), 500 us | 8 | 319 GB/s (NVLink), 973 us |
-| Internode | 16 | 50 GB/s (RDMA), 1196 us | 16 | 18 GB/s (RDMA), 6379 us |
-| Internode | 24 | 53 GB/s (RDMA), 1633 us | 24 | 26 GB/s (RDMA), 6365 us |
-| Internode | 32 | 54 GB/s (RDMA), 2022 us | 32 | 43 GB/s (RDMA), 4899 us |
-
-##### Low-Latency Mode (p5en)
-
-Following a DeepSeek-V3 inference setting (128 tokens, 7168 hidden, top-8 experts, FP8 dispatch / BF16 combine):
-
-| Dispatch #EP | Latency | RDMA BW | Combine #EP | Latency | RDMA BW |
-|:---:|:---:|:---:|:---:|:---:|:---:|
-| 16 | 226 us | 36 GB/s | 16 | 293 us | 48 GB/s |
-| 24 | 386 us | 20 GB/s | 24 | 580 us | 26 GB/s |
-| 32 | 465 us | 16 GB/s | 32 | 694 us | 25 GB/s |
-
 #### B200 + EFA (p6-b200)
 
 On p6-b200 instances (8x B200, 8x 400 Gb/s EFA), we see similar trends with UCCL-EP outperforming PPLX at larger token counts:
@@ -133,22 +112,33 @@ On p6-b200 instances (8x B200, 8x 400 Gb/s EFA), we see similar trends with UCCL
   <em>EP32 dispatch (left) and combine (right) comparison on p6-b200 (B200 + EFA 400 Gbps).</em>
 </p>
 
-##### Normal Mode Bandwidth (p6-b200)
+##### Normal Mode Bandwidth (EFA)
 
-| Type | Dispatch FP8 #EP | Bottleneck BW & Latency | Combine BF16 #EP | Bottleneck BW & Latency |
+Following the DeepSeek-V3 pretraining configuration (4096 tokens, 7168 hidden, top-4 groups, top-8 experts, FP8 dispatch / BF16 combine):
+
+| Platform | Type | #EP | Dispatch BW & Latency | Combine BW & Latency |
 |:---:|:---:|:---:|:---:|:---:|
-| Intranode | 8 | 280 GB/s (NVLink), 571 us | 8 | 426 GB/s (NVLink), 727 us |
-| Internode | 16 | 53 GB/s (RDMA), 1141 us | 16 | 60 GB/s (RDMA), 1965 us |
-| Internode | 24 | 53 GB/s (RDMA), 1637 us | 24 | 59 GB/s (RDMA), 2887 us |
-| Internode | 32 | 53 GB/s (RDMA), 2072 us | 32 | 57 GB/s (RDMA), 3724 us |
+| p5en (H200) | Intranode | 8 | 320 GB/s (NVLink), 500 us | 319 GB/s (NVLink), 973 us |
+| p5en (H200) | Internode | 16 | 50 GB/s (RDMA), 1196 us | 18 GB/s (RDMA), 6379 us |
+| p5en (H200) | Internode | 24 | 53 GB/s (RDMA), 1633 us | 26 GB/s (RDMA), 6365 us |
+| p5en (H200) | Internode | 32 | 54 GB/s (RDMA), 2022 us | 43 GB/s (RDMA), 4899 us |
+| p6 (B200) | Intranode | 8 | 280 GB/s (NVLink), 571 us | 426 GB/s (NVLink), 727 us |
+| p6 (B200) | Internode | 16 | 53 GB/s (RDMA), 1141 us | 60 GB/s (RDMA), 1965 us |
+| p6 (B200) | Internode | 24 | 53 GB/s (RDMA), 1637 us | 59 GB/s (RDMA), 2887 us |
+| p6 (B200) | Internode | 32 | 53 GB/s (RDMA), 2072 us | 57 GB/s (RDMA), 3724 us |
 
-##### Low-Latency Mode (p6-b200)
+##### Low-Latency Mode (EFA)
 
-| Dispatch #EP | Latency | RDMA BW | Combine #EP | Latency | RDMA BW |
+Following a DeepSeek-V3 inference setting (128 tokens, 7168 hidden, top-8 experts, FP8 dispatch / BF16 combine):
+
+| Platform | #EP | Dispatch Latency | Dispatch BW | Combine Latency | Combine BW |
 |:---:|:---:|:---:|:---:|:---:|:---:|
-| 16 | 228 us | 33 GB/s | 16 | 318 us | 46 GB/s |
-| 24 | 448 us | 17 GB/s | 24 | 566 us | 26 GB/s |
-| 32 | 406 us | 19 GB/s | 32 | 617 us | 24 GB/s |
+| p5en (H200) | 16 | 226 us | 36 GB/s | 293 us | 48 GB/s |
+| p5en (H200) | 24 | 386 us | 20 GB/s | 580 us | 26 GB/s |
+| p5en (H200) | 32 | 465 us | 16 GB/s | 694 us | 25 GB/s |
+| p6 (B200) | 16 | 228 us | 33 GB/s | 318 us | 46 GB/s |
+| p6 (B200) | 24 | 448 us | 17 GB/s | 566 us | 26 GB/s |
+| p6 (B200) | 32 | 406 us | 19 GB/s | 617 us | 24 GB/s |
 
 ---
 
@@ -178,38 +168,28 @@ UCCL-EP is the first system to enable GPU-initiated token-level EP communication
 
 UCCL-EP achieves similar performance across both NIC vendors, demonstrating true portability. On MI300X + CX7 IB, UCCL-EP achieves comparable performance to DeepEP on the NVIDIA-only platform.
 
-#### Normal Mode Bandwidth on AMD MI300X + CX7 IB
+#### Normal Mode Bandwidth (AMD)
 
-| Type | FP8 Dispatch #EP | BW | BF16 Dispatch #EP | BW | Combine #EP | BW |
-|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| Intranode | 8 | 260 GB/s (xGMI) | 8 | 295 GB/s (xGMI) | 8 | 304 GB/s (xGMI) |
-| Internode | 16 | 74 GB/s (RDMA) | 16 | 82 GB/s (RDMA) | 16 | 78 GB/s (RDMA) |
-| Internode | 32 | 60 GB/s (RDMA) | 32 | 61 GB/s (RDMA) | 32 | 60 GB/s (RDMA) |
-| Internode | 64 | 52 GB/s (RDMA) | 32 | 53 GB/s (RDMA) | 64 | 51 GB/s (RDMA) |
-
-#### Normal Mode Bandwidth on AMD MI355X + Pollara AI NIC IB
-
-| Type | FP8 Dispatch #EP | BW | BF16 Dispatch #EP | BW | Combine #EP | BW |
-|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| Intranode | 8 | 299 GB/s (xGMI) | 8 | 336 GB/s (xGMI) | 8 | 333 GB/s (xGMI) |
-| Internode | 16 | 82 GB/s (RDMA) | 16 | 82 GB/s (RDMA) | 16 | 82 GB/s (RDMA) |
-| Internode | 32 | 59 GB/s (RDMA) | 32 | 58 GB/s (RDMA) | 32 | 59 GB/s (RDMA) |
-| Internode | 64 | 50 GB/s (RDMA) | 32 | 49 GB/s (RDMA) | 64 | 49 GB/s (RDMA) |
-
-#### Normal Mode Bandwidth on AMD MI300X + Broadcom Thor-2
-
-| Type | FP8 Dispatch #EP | BW | BF16 Dispatch #EP | BW | Combine #EP | BW |
-|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| Internode | 16 | 71 GB/s (RDMA) | 16 | 81 GB/s (RDMA) | 16 | 45 GB/s (RDMA) |
-| Internode | 32 | 49 GB/s (RDMA) | 32 | 55 GB/s (RDMA) | 32 | 50 GB/s (RDMA) |
-
-#### Low-Latency Mode on AMD MI300X + CX7 IB
-
-| Dispatch #EP | Latency | RDMA BW | Combine #EP | Latency | RDMA BW |
+| Platform | Type | #EP | FP8 Dispatch BW | BF16 Dispatch BW | Combine BW |
 |:---:|:---:|:---:|:---:|:---:|:---:|
-| 8 | 65 us | 114 GB/s | 8 | 92 us | 157 GB/s |
-| 16 | 136 us | 55 GB/s | 16 | 207 us | 70 GB/s |
-| 32 | 224 us | 30 GB/s | 32 | 341 us | 42 GB/s |
+| MI300X + CX7 IB | Intranode | 8 | 260 GB/s (xGMI) | 295 GB/s (xGMI) | 304 GB/s (xGMI) |
+| MI300X + CX7 IB | Internode | 16 | 74 GB/s (RDMA) | 82 GB/s (RDMA) | 78 GB/s (RDMA) |
+| MI300X + CX7 IB | Internode | 32 | 60 GB/s (RDMA) | 61 GB/s (RDMA) | 60 GB/s (RDMA) |
+| MI300X + CX7 IB | Internode | 64 | 52 GB/s (RDMA) | 53 GB/s (RDMA) | 51 GB/s (RDMA) |
+| MI355X + Pollara | Intranode | 8 | 299 GB/s (xGMI) | 336 GB/s (xGMI) | 333 GB/s (xGMI) |
+| MI355X + Pollara | Internode | 16 | 82 GB/s (RDMA) | 82 GB/s (RDMA) | 82 GB/s (RDMA) |
+| MI355X + Pollara | Internode | 32 | 59 GB/s (RDMA) | 58 GB/s (RDMA) | 59 GB/s (RDMA) |
+| MI355X + Pollara | Internode | 64 | 50 GB/s (RDMA) | 49 GB/s (RDMA) | 49 GB/s (RDMA) |
+| MI300X + Broadcom | Internode | 16 | 71 GB/s (RDMA) | 81 GB/s (RDMA) | 45 GB/s (RDMA) |
+| MI300X + Broadcom | Internode | 32 | 49 GB/s (RDMA) | 55 GB/s (RDMA) | 50 GB/s (RDMA) |
+
+#### Low-Latency Mode (AMD MI300X + CX7 IB)
+
+| #EP | Dispatch Latency | Dispatch BW | Combine Latency | Combine BW |
+|:---:|:---:|:---:|:---:|:---:|
+| 8 | 65 us | 114 GB/s | 92 us | 157 GB/s |
+| 16 | 136 us | 55 GB/s | 207 us | 70 GB/s |
+| 32 | 224 us | 30 GB/s | 341 us | 42 GB/s |
 
 ---
 
@@ -217,7 +197,7 @@ UCCL-EP achieves similar performance across both NIC vendors, demonstrating true
 
 ### SGLang Inference on AWS (NVIDIA + EFA)
 
-We evaluate UCCL-EP in SGLang v0.5.3 on a prefill-heavy workload (input length 4096, output length 5) on p5en instances. We compare against NCCL, as DeepEP cannot run on EFA and PPLX had not been integrated into open-source inference engines at the time of evaluation.
+We evaluate UCCL-EP in SGLang v0.5.3 on a prefill-heavy workload on p5en instances. We compare against NCCL, as DeepEP cannot run on EFA and PPLX had not been integrated into open-source inference engines at the time of evaluation.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/sglang_deepseek_r1_throughput.png" alt="SGLang DeepSeek R1 throughput" width="400"/>
