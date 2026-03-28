@@ -26,7 +26,7 @@ Date: Dec 20, 2025
 
 <div class="tldr">
 <p>
-We present the full evaluation of <strong>UCCL-EP</strong>, a portable expert-parallel communication system that achieves DeepEP-level performance across heterogeneous GPU and NIC hardware. UCCL-EP outperforms the best existing EP solution (PPLX) by up to <strong>2.3x</strong> for dispatch and combine on AWS EFA. On the NVIDIA-only InfiniBand platform, UCCL-EP achieves performance within 5% of the original DeepEP. For end-to-end applications, UCCL-EP speeds up SGLang inference throughput by up to <strong>40%</strong> over NCCL and improves Megatron-LM training throughput by up to <strong>45%</strong> over RCCL on AMD GPUs.
+We present <strong>UCCL-EP</strong>, a portable expert-parallel communication system that achieves DeepEP-level performance across heterogeneous GPU and NIC hardware. UCCL-EP outperforms the best existing EP solution (PPLX) by up to <strong>2.3x</strong> for dispatch and combine on AWS EFA. On the NVIDIA-only InfiniBand platform, UCCL-EP achieves performance within 5% of the original DeepEP. For end-to-end applications, UCCL-EP speeds up SGLang inference throughput by up to <strong>40%</strong> over NCCL and improves Megatron-LM training throughput by up to <strong>45%</strong> over RCCL on AMD GPUs.
 </p>
 <p>
 Paper: <a href="https://arxiv.org/pdf/2512.19849">arxiv.org/pdf/2512.19849</a> | Code: <a href="https://github.com/uccl-project/uccl/tree/main/ep">uccl-project/uccl/ep</a>
@@ -35,7 +35,7 @@ Paper: <a href="https://arxiv.org/pdf/2512.19849">arxiv.org/pdf/2512.19849</a> |
 
 ## Recap: Why UCCL-EP?
 
-In our [previous blog post](/uccl-ep), we introduced UCCL-EP and the key challenge it addresses: state-of-the-art EP communication systems like DeepEP achieve high performance through GPU-initiated token-level RDMA, but are tightly coupled to the NVIDIA GPU + NVIDIA NIC ecosystem (via IBGDA). This tight coupling prevents running on public clouds like AWS (which use EFA NICs), on AMD GPUs, or on alternative NIC vendors like Broadcom.
+In our [previous blog post](/posts/uccl-ep/), we introduced UCCL-EP and the key challenge it addresses: state-of-the-art EP communication systems like DeepEP achieve high performance through GPU-initiated token-level RDMA, but are tightly coupled to the NVIDIA GPU + NVIDIA NIC ecosystem (via IBGDA). This tight coupling prevents running on public clouds like AWS (which use EFA NICs), on AMD GPUs, or on alternative NIC vendors like Broadcom.
 
 UCCL-EP solves this with a clean separation of concerns:
 
@@ -266,6 +266,8 @@ This is particularly important for **Broadcom Thor-2** and **AMD Pollara AI** NI
 
 Without flow control, these NICs can encounter CQE error 12 (Transport Retry Counter Exceeded) under high load.
 
+To check: Yang
+
 ---
 
 ## UCCL-EP LL: Towards More Efficient Small Messages
@@ -278,15 +280,10 @@ A natural optimization is to pack tokens in a **best-effort manner** before send
 
 ## A Note on Fair Comparison with PPLX Kernels
 
-When comparing against PPLX kernels, we used the latest version ([pplx-garden](https://github.com/perplexityai/pplx-garden)) rather than the older [pplx-kernels](https://github.com/perplexityai/pplx-kernels), as the newer version has better performance. We use the same GPU resources (same number of SMs per GPU) to ensure fairness.
-
-Key observations:
-- PPLX has an inherent advantage at **small token counts** because it packs tokens into contiguous larger transfers, which benefits from EFA's higher throughput for larger messages.
-- UCCL-EP (and DeepEP) has an advantage at **larger token counts** because GPU-initiated token-level communication enables better overlapping, deduplication, and hierarchical reduce.
-- At EP=32, PPLX errored out for 4096 tokens on the older p5en testbed, while UCCL-EP continued to function correctly.
+TODO: Lam. 
 
 ---
 
 ## Acknowledgements
 
-We thank AWS, Lambda Labs, Nebius, OCI, and Vultr for providing us with testbeds. We especially thank Kaichao You, Lequn Chen, Zhen Huang, Zhenyu Gu, Costin Raiciu, Scott Shenker, Ion Stoica for their discussions and feedback. This research is supported by gifts from Accenture, AMD, Anyscale, AWS, Broadcom, Cisco, Google, IBM, Intel, Intesa Sanpaolo, Lambda, Lightspeed, Mibura, Microsoft, NVIDIA, Samsung SDS, and SAP.
+This research is supported by gifts from Accenture, AMD, Anyscale, AWS, Broadcom, Cisco, Google, IBM, Intel, Intesa Sanpaolo, Lambda, Lightspeed, Mibura, Microsoft, NVIDIA, Samsung SDS, and SAP.
