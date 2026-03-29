@@ -26,7 +26,7 @@ Date: Dec 20, 2025
 
 <div class="tldr">
 <p>
-We present <strong>UCCL-EP</strong>, a portable expert-parallel communication system that achieves DeepEP-level performance across heterogeneous GPU and NIC hardware. UCCL-EP outperforms the best existing EP solution (PPLX) by up to <strong>2.3x</strong> for dispatch and combine on AWS EFA. On the NVIDIA-only InfiniBand platform, UCCL-EP achieves performance within 5% of the original DeepEP. For end-to-end applications, UCCL-EP speeds up SGLang inference throughput by up to <strong>40%</strong> over NCCL and improves Megatron-LM training throughput by up to <strong>45%</strong> over RCCL on AMD GPUs.
+We present <strong>UCCL-EP</strong>, a portable expert-parallel communication library that achieves DeepEP-level performance across heterogeneous GPU and NIC hardware. UCCL-EP outperforms the best existing EP solution by up to <strong>2.3x</strong> for dispatch and combine on AWS EFA. On the NVIDIA-only InfiniBand platform, UCCL-EP achieves performance within 5% of the original DeepEP. For end-to-end applications, UCCL-EP speeds up SGLang inference throughput by up to <strong>40%</strong> over NCCL and improves Megatron-LM training throughput by up to <strong>45%</strong> over RCCL on AMD GPUs.
 </p>
 <p>
 Paper: <a href="https://arxiv.org/pdf/2512.19849">arxiv.org/pdf/2512.19849</a> | Code: <a href="https://github.com/uccl-project/uccl/tree/main/ep">uccl-project/uccl/ep</a>
@@ -35,14 +35,14 @@ Paper: <a href="https://arxiv.org/pdf/2512.19849">arxiv.org/pdf/2512.19849</a> |
 
 ## Recap: Why UCCL-EP?
 
-In our [previous blog post](/posts/uccl-ep/), we introduced UCCL-EP and the key challenge it addresses: state-of-the-art EP communication systems like DeepEP achieve high performance through GPU-initiated token-level RDMA, but are tightly coupled to the NVIDIA GPU + NVIDIA NIC ecosystem (via IBGDA). This tight coupling prevents running on public clouds like AWS (which use EFA NICs), on AMD GPUs, or on alternative NIC vendors like Broadcom.
+In our [previous blog post](https://uccl-project.github.io/posts/uccl-ep/), we introduced UCCL-EP and the key challenge it addresses: state-of-the-art EP communication systems like DeepEP achieve high performance through <strong>GPU-initiated token-level RDMA</strong>, but are tightly coupled to the NVIDIA GPU + NVIDIA NIC ecosystem (via IBGDA). This tight coupling prevents running on public clouds like AWS (which use EFA NICs), on AMD GPUs, or on alternative NIC vendors like Broadcom.
 
 UCCL-EP solves this with a clean separation of concerns:
 
 - **GPUs** retain fine-grained token-level communication initiation for maximal overlap with computation.
 - **CPUs** handle the control-intensive networking aspects — queue management, flow control, ordering enforcement — through a lightweight, multi-threaded proxy.
 
-This architecture reduces the porting effort from O(m x n) (for m GPU vendors and n NIC vendors) down to O(m), as the CPU proxy speaks the portable `libibverbs` API that all RDMA NICs support.
+This architecture reduces the porting effort from O(m x n) (left figure, for m GPU vendors and n NIC vendors) down to O(m) (right figure), as the CPU proxy can use the `libibverbs` API that all RDMA NICs support.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/uep_intro_ibgda.png" alt="IBGDA-style: O(m x n) porting effort" width="400"/>
@@ -50,12 +50,16 @@ This architecture reduces the porting effort from O(m x n) (for m GPU vendors an
   <em>Left: IBGDA-style GPU-initiated communication requires O(m x n) porting effort across GPU and NIC vendors. Right: UCCL-EP reduces this to O(m) by using the CPU as a portable intermediary via libibverbs.</em>
 </p>
 
+UCCL-EP architecture is shown in the figure below. GPUs delegate token-routing commands to multi-threaded CPU proxies via lock-free FIFO channels. CPU proxies issue GPUDirect RDMA on behalf of GPUs, while managing ordering, flow control, and completion handling. 
+
 <p align="center">
   <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/uep_architecture.png" alt="UCCL-EP Architecture" width="600"/>
-  <em>UCCL-EP architecture. GPUs delegate token-routing commands to multi-threaded CPU proxies via lock-free FIFO channels. CPU proxies issue GPUDirect RDMA on behalf of GPUs, while managing ordering, flow control, and completion handling.</em>
+  <em>UCCL-EP architecture.</em>
 </p>
 
-**CPU Proxy with Lock-Free FIFO Channels.** UCCL-EP uses a 128-bit `TransferCmd` descriptor that GPU threads enqueue into shared, lock-free FIFO channels. CPU proxy threads dequeue these commands and issue the corresponding RDMA operations. The FIFO design caches the tail index on GPU memory, minimizing PCIe traversals. Each GPU uses multiple FIFO channels, each mapped to a dedicated RDMA Queue Pair (QP), enabling over **50 million RDMA operations per second** per GPU.
+We discuss two key techniques in UCCL-EP:
+
+**CPU Proxy with Lock-Free FIFO Channels.** UCCL-EP uses a 128-bit `TransferCmd` descriptor that GPU threads enqueue into shared, lock-free FIFO channels. CPU proxy threads dequeue these commands and issue the corresponding RDMA operations. The FIFO design caches the tail index on GPU memory, minimizing PCIe traversals. Each GPU uses multiple FIFO channels, each mapped to a dedicated RDMA Queue Pair (QP), enabling over **50 million RDMA operations per second** per GPU. The additional latency is small (< 4us per operation) compared to the typical latency of dispatch/combine operations.
 
 **Immediate-Data-Based Ordering for Heterogeneous NICs.** Different NICs provide different delivery guarantees. For example, AWS EFA uses the Scalable Reliable Datagram (SRD) protocol with multi-pathing, which does not guarantee in-order delivery within a single QP. UCCL-EP embeds per-channel sequence numbers into RDMA immediate data, allowing the receiver-side CPU proxy to reorder out-of-sequence control messages before committing them to GPU memory. This approach also enables **software-level atomics** — piggybacking completion notifications on regular RDMA writes — which is both more portable (no hardware atomic support required) and more efficient (one RDMA operation instead of two for write + atomic).
 
@@ -63,7 +67,7 @@ This architecture reduces the porting effort from O(m x n) (for m GPU vendors an
 
 ## Evaluation Testbeds
 
-We evaluate UCCL-EP on a diverse set of platforms spanning NVIDIA and AMD GPUs with EFA, InfiniBand, and Broadcom NICs. All testbeds are rented from public cloud providers.
+We have since evaluated UCCL-EP on a diverse set of platforms spanning NVIDIA and AMD GPUs with EFA, InfiniBand, and Broadcom NICs. 
 
 | Name | Servers | GPU | NIC | CPU | Cloud |
 |:----:|:-------:|:---:|:---:|:---:|:-----:|
@@ -73,6 +77,7 @@ We evaluate UCCL-EP on a diverse set of platforms spanning NVIDIA and AMD GPUs w
 | NV_GH200 | 2 | NVIDIA GH200 x1 | ConnectX-7 200G x1 | 72 cores | Lambda |
 | AMD_IB | 4-16 | AMD MI300X x8 | ConnectX-7 400G x8 | 128 cores | OCI |
 | AMD_BRC | 4 | AMD MI300X x8 | Broadcom Thor-2 400G x8 | 128 cores | Vultr |
+| AMD_AINIC | 4 | AMD MI355X x8 | Pollara AI NIC IB x8 | 128 cores | AMD |
 
 **Baselines:** NCCL/RCCL, DeepEP (NVIDIA-only), Perplexity Kernels (PPLX), and CPU-assisted IBGDA. UCCL-EP uses 4 CPU proxy threads per GPU.
 
