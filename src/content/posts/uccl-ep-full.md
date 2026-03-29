@@ -44,11 +44,11 @@ UCCL-EP solves this with a clean separation of concerns:
 
 This architecture reduces the porting effort from O(m x n) (left figure, for m GPU vendors and n NIC vendors) down to O(m) (right figure), as the CPU proxy can use the `libibverbs` API that all RDMA NICs support.
 
-<p align="center">
+<div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
   <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/uep_intro_ibgda.png" alt="IBGDA-style: O(m x n) porting effort" width="400"/>
   <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/uep_intro_ucclep.png" alt="UCCL-EP: O(m) porting effort" width="400"/>
-  <em>Left: IBGDA-style GPU-initiated communication requires O(m x n) porting effort across GPU and NIC vendors. Right: UCCL-EP reduces this to O(m) by using the CPU as a portable intermediary via libibverbs.</em>
-</p>
+</div>
+<p align="center"><em>Left: IBGDA-style GPU-initiated communication requires O(m x n) porting effort across GPU and NIC vendors. Right: UCCL-EP reduces this to O(m) by using the CPU as a portable intermediary via libibverbs.</em></p>
 
 UCCL-EP architecture is shown in the figure below. GPUs delegate token-routing commands to multi-threaded CPU proxies via lock-free FIFO channels. CPU proxies issue GPUDirect RDMA on behalf of GPUs, while managing ordering, flow control, and completion handling. 
 
@@ -93,11 +93,11 @@ On p5en instances (8x H200, 16x 200 Gb/s EFA), we measure EP32 dispatch and comb
 
 At small batch sizes (128 tokens), PPLX achieves lower latency because UCCL-EP (extending DeepEP) issues messages at 7 KB token granularity, whereas PPLX packs tokens into larger messages. However, as the token count increases, **UCCL-EP quickly overtakes PPLX** — delivering **2.3x lower dispatch latency** and **1.1–1.5x lower combine latency** for medium and large batches.
 
-<p align="center">
+<div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
   <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/p5en_dispatch_latency_vs_tokens_pplx_uccl.jpg" alt="p5en dispatch latency vs tokens" width="400"/>
   <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/p5en_combine_latency_vs_tokens_pplx_uccl.jpg" alt="p5en combine latency vs tokens" width="400"/>
-  <em>EP32 dispatch (left) and combine (right) latency vs. number of tokens on p5en (H200 + EFA 400 Gbps).</em>
-</p>
+</div>
+<p align="center"><em>EP32 dispatch (left) and combine (right) latency vs. number of tokens on p5en (H200 + EFA 400 Gbps).</em></p>
 
 We present more results in the table below. 
 
@@ -147,11 +147,11 @@ On the Nebius testbed (H100 + CX7 InfiniBand), we compare UCCL-EP against both t
 
 In **LL mode**, UCCL-EP incurs slightly higher latency than DeepEP and PPLX due to the CPU proxy overhead on small messages. However, in **HT mode**, UCCL-EP achieves latency **within 5% of DeepEP** for dispatch while outperforming PPLX by **2.1x** (dispatch) and **1.6x** (combine). This shows that UCCL-EP preserves DeepEP-level performance on throughput-oriented workloads even without IBGDA.
 
-<p align="center">
+<div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
   <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/nebius_dispatch_ll_ht.png" alt="Nebius dispatch" width="400"/>
   <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/nebius_combine_ll_ht.png" alt="Nebius combine" width="400"/>
-  <em>EP32 dispatch (left) and combine (right) comparison on H100 + CX7 InfiniBand. UCCL-EP matches DeepEP in HT mode and significantly outperforms PPLX.</em>
-</p>
+</div>
+<p align="center"><em>EP32 dispatch (left) and combine (right) comparison on H100 + CX7 InfiniBand. UCCL-EP matches DeepEP in HT mode and significantly outperforms PPLX.</em></p>
 
 ---
 
@@ -159,11 +159,11 @@ In **LL mode**, UCCL-EP incurs slightly higher latency than DeepEP and PPLX due 
 
 UCCL-EP enables GPU-initiated token-level EP communication on AMD GPUs. We evaluate on MI300X with both CX7 InfiniBand (OCI) and Broadcom Thor-2 NICs (Vultr).
 
-<p align="center">
+<div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
   <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/amd_dispatch_ll_ht.png" alt="AMD dispatch" width="400"/>
   <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/amd_combine_ll_ht.png" alt="AMD combine" width="400"/>
-  <em>EP32 dispatch (left) and combine (right) on AMD MI300X with CX7 IB and Broadcom Thor-2 NICs.</em>
-</p>
+</div>
+<p align="center"><em>EP32 dispatch (left) and combine (right) on AMD MI300X with CX7 IB and Broadcom Thor-2 NICs.</em></p>
 
 <!-- UCCL-EP achieves similar performance across both NIC vendors, demonstrating true portability. On MI300X + CX7 IB, UCCL-EP achieves comparable performance to DeepEP on the NVIDIA-only platform. -->
 
@@ -201,11 +201,11 @@ More results across heterogeneous platforms are shown in the tables below.
 
 We evaluate end-to-end Megatron-LM training of DeepSeek-V3 (downscaled to 32 layers and 379B parameters) on 16 MI300X nodes using the AMD Primus/Megatron-LM framework.
 
-<p align="center">
+<div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
   <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/amd_megatron_deepseekv3_tflops.png" alt="Megatron-LM TFLOPS" width="400"/>
   <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/amd_megatron_deepseekv3_tokens.png" alt="Megatron-LM tokens/s" width="400"/>
-  <em>Megatron-LM training throughput (TFLOPS and tokens/s) on 16-node AMD MI300X + Broadcom Thor-2.</em>
-</p>
+</div>
+<p align="center"><em>Megatron-LM training throughput (TFLOPS and tokens/s) on 16-node AMD MI300X + Broadcom Thor-2.</em></p>
 
 Across all configurations, UCCL-EP matches or exceeds the TFLOPS by **7–36%** and throughput by **7–45%** compared to RCCL. These results show that UCCL-EP provides significant performance benefits for MoE training on AMD hardware.
 
@@ -215,11 +215,11 @@ Across all configurations, UCCL-EP matches or exceeds the TFLOPS by **7–36%** 
 
 We evaluate UCCL-EP in SGLang v0.5.3 on a prefill-heavy workload on p5en instances. We compare against NCCL, as DeepEP cannot run on EFA and PPLX had not been integrated into open-source inference engines at the time of evaluation.
 
-<p align="center">
+<div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
   <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/sglang_deepseek_r1_throughput.png" alt="SGLang DeepSeek R1 throughput" width="400"/>
   <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/sglang_qwen3_throughput.png" alt="SGLang Qwen3 throughput" width="400"/>
-  <em>SGLang throughput comparison using UCCL-EP vs. NCCL on p5en. Left: DeepSeek R1 (671B). Right: Qwen3 (235B).</em>
-</p>
+</div>
+<p align="center"><em>SGLang throughput comparison using UCCL-EP vs. NCCL on p5en. Left: DeepSeek R1 (671B). Right: Qwen3 (235B).</em></p>
 
 **DeepSeek R1 (671B):**
 - EP=16: UCCL-EP reaches **46K tok/s** input throughput, about 5% higher than NCCL.
