@@ -79,7 +79,7 @@ We have since evaluated UCCL-EP on a diverse set of platforms spanning NVIDIA an
 | AMD_BRC | 4 | AMD MI300X x8 | Broadcom Thor-2 400G x8 | 128 cores | Vultr |
 | AMD_AINIC | 4 | AMD MI355X x8 | Pollara AI NIC IB x8 | 128 cores | AMD |
 
-**Baselines:** NCCL/RCCL, DeepEP (NVIDIA-only), Perplexity Kernels (PPLX), and CPU-assisted IBGDA. UCCL-EP uses 4 CPU proxy threads per GPU.
+**Baselines:** NCCL/RCCL, DeepEP (NVIDIA-only), Perplexity Kernels ([PPLX](https://github.com/perplexityai/pplx-garden)), and CPU-assisted IBGDA. UCCL-EP uses 4 CPU proxy threads per GPU.
 
 ---
 
@@ -99,7 +99,9 @@ At small batch sizes (128 tokens), PPLX achieves lower latency because UCCL-EP (
   <em>EP32 dispatch (left) and combine (right) latency vs. number of tokens on p5en (H200 + EFA 400 Gbps).</em>
 </p>
 
-#### B200 + EFA (p6-b200)
+We present more results in the table below. 
+
+<!-- #### B200 + EFA (p6-b200)
 
 On p6-b200 instances (8x B200, 8x 400 Gb/s EFA), we see similar trends with UCCL-EP outperforming PPLX at larger token counts:
 
@@ -107,7 +109,7 @@ On p6-b200 instances (8x B200, 8x 400 Gb/s EFA), we see similar trends with UCCL
   <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/p6_dispatch_ll_ht.png" alt="p6 dispatch" width="400"/>
   <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/p6_combine_ll_ht.png" alt="p6 combine" width="400"/>
   <em>EP32 dispatch (left) and combine (right) comparison on p6-b200 (B200 + EFA 400 Gbps).</em>
-</p>
+</p> -->
 
 ##### Normal Mode Bandwidth (EFA)
 
@@ -155,7 +157,7 @@ In **LL mode**, UCCL-EP incurs slightly higher latency than DeepEP and PPLX due 
 
 ### On AMD GPUs
 
-UCCL-EP is the first system to enable GPU-initiated token-level EP communication on AMD GPUs. We evaluate on MI300X with both CX7 InfiniBand (OCI) and Broadcom Thor-2 NICs (Vultr).
+UCCL-EP enables GPU-initiated token-level EP communication on AMD GPUs. We evaluate on MI300X with both CX7 InfiniBand (OCI) and Broadcom Thor-2 NICs (Vultr).
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/amd_dispatch_ll_ht.png" alt="AMD dispatch" width="400"/>
@@ -163,7 +165,9 @@ UCCL-EP is the first system to enable GPU-initiated token-level EP communication
   <em>EP32 dispatch (left) and combine (right) on AMD MI300X with CX7 IB and Broadcom Thor-2 NICs.</em>
 </p>
 
-UCCL-EP achieves similar performance across both NIC vendors, demonstrating true portability. On MI300X + CX7 IB, UCCL-EP achieves comparable performance to DeepEP on the NVIDIA-only platform.
+<!-- UCCL-EP achieves similar performance across both NIC vendors, demonstrating true portability. On MI300X + CX7 IB, UCCL-EP achieves comparable performance to DeepEP on the NVIDIA-only platform. -->
+
+More results across heterogeneous platforms are shown in the tables below. 
 
 #### Normal Mode Bandwidth (AMD)
 
@@ -192,26 +196,6 @@ UCCL-EP achieves similar performance across both NIC vendors, demonstrating true
 
 ## Application-Level Results
 
-### SGLang Inference on AWS (NVIDIA + EFA)
-
-We evaluate UCCL-EP in SGLang v0.5.3 on a prefill-heavy workload on p5en instances. We compare against NCCL, as DeepEP cannot run on EFA and PPLX had not been integrated into open-source inference engines at the time of evaluation.
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/sglang_deepseek_r1_throughput.png" alt="SGLang DeepSeek R1 throughput" width="400"/>
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/sglang_qwen3_throughput.png" alt="SGLang Qwen3 throughput" width="400"/>
-  <em>SGLang throughput comparison using UCCL-EP vs. NCCL on p5en. Left: DeepSeek R1 (671B). Right: Qwen3 (235B).</em>
-</p>
-
-**DeepSeek R1 (671B):**
-- EP=16: UCCL-EP reaches **46K tok/s** input throughput, about 5% higher than NCCL.
-- EP=32: UCCL-EP improves to **74K tok/s**, a **1.6x** prefill speedup over its own EP=16 run.
-
-**Qwen3 (235B):**
-- EP=32: UCCL-EP reaches **62K tok/s** vs. 44K tok/s for NCCL — about **40% higher** throughput.
-
-UCCL-EP enables larger EP configurations (EP=32) where NCCL either significantly underperforms or cannot run, as confirmed with SGLang maintainers. CPU utilization increases modestly from an average 8% to 22%.
-
----
 
 ### Megatron-LM Training on AMD (MI300X + Broadcom)
 
@@ -227,9 +211,30 @@ Across all configurations, UCCL-EP matches or exceeds the TFLOPS by **7–36%** 
 
 ---
 
+### SGLang Inference on AWS (NVIDIA + EFA)
+
+We evaluate UCCL-EP in SGLang v0.5.3 on a prefill-heavy workload on p5en instances. We compare against NCCL, as DeepEP cannot run on EFA and PPLX had not been integrated into open-source inference engines at the time of evaluation.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/sglang_deepseek_r1_throughput.png" alt="SGLang DeepSeek R1 throughput" width="400"/>
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/sglang_qwen3_throughput.png" alt="SGLang Qwen3 throughput" width="400"/>
+  <em>SGLang throughput comparison using UCCL-EP vs. NCCL on p5en. Left: DeepSeek R1 (671B). Right: Qwen3 (235B).</em>
+</p>
+
+**DeepSeek R1 (671B):**
+- EP=16: UCCL-EP reaches **46K tok/s** input throughput, about 5% higher than NCCL.
+- EP=32: UCCL-EP improves to **74K tok/s**, a **1.6x** speedup over its own EP=16 run.
+
+**Qwen3 (235B):**
+- EP=32: UCCL-EP reaches **62K tok/s** vs. 44K tok/s for NCCL — about **40% higher** throughput.
+
+UCCL-EP enables larger EP configurations (EP=32) where NCCL either significantly underperforms or cannot run. CPU utilization increases modestly from an average 8% to 22%.
+
+---
+
 ## The Importance of Flow Control
 
-A key advantage of UCCL-EP's CPU proxy architecture is the ability to implement **flow control and congestion management** — something that is extremely difficult with IBGDA, where GPU threads blindly issue one-sided RDMA operations without awareness of NIC queue utilization.
+A key advantage of UCCL-EP's CPU proxy architecture is the ability to implement **flow control** — which otherwise is difficult with IBGDA, where GPU threads typically blindly issue one-sided RDMA operations without network delay or completion.
 
 We observe that the number of outstanding RDMA requests can have a significant impact on various NICs, particularly affecting **tail latency**. This becomes increasingly critical as the number of destinations increases, where a single straggler can slow down the entire dispatch or combine operation.
 
@@ -237,13 +242,9 @@ UCCL-EP's CPU proxy supports request tracking and pacing:
 - If outstanding requests grow too high, the proxy **temporarily buffers messages** at the sender to avoid incast at the receiver.
 - The proxy can **shard outgoing requests across multiple NICs and QPs** to avoid congestion and adapt to NIC-specific characteristics.
 
-This is particularly important for **Broadcom Thor-2** and **AMD Pollara AI** NICs, where strict flow control is necessary to avoid transport errors:
-- For Broadcom Thor-2: `UCCL_IB_MAX_INFLIGHT_BYTES=1572864 UCCL_IB_MAX_INFLIGHT_NORMAL=1`
-- For AMD Pollara AI NIC: `UCCL_IB_MAX_INFLIGHT_BYTES=2097152 UCCL_IB_MAX_INFLIGHT_NORMAL=1`
+This is particularly important for **Broadcom Thor-2** and **AMD Pollara AI** NICs, where strict flow control is necessary to avoid transport errors. We provide the following environment variables to enable flow control: `UCCL_IB_MAX_INFLIGHT_BYTES` and `UCCL_IB_MAX_INFLIGHT_NORMAL`.
 
 Without flow control, these NICs can encounter CQE error 12 (Transport Retry Counter Exceeded) under high load.
-
-To check: Yang
 
 ---
 
@@ -251,7 +252,7 @@ To check: Yang
 
 UCCL-EP's low-latency (LL) kernel, extending DeepEP, currently issues one 7 KB token per RDMA message. On EFA NICs, this is suboptimal because the current EFA firmware cannot process small tokens at a high enough rate (AWS has confirmed they are working on a firmware fix). PPLX, by contrast, packs tokens into larger messages, giving it an advantage at small batch sizes.
 
-A natural optimization is to pack tokens in a **best-effort manner** before sending — combining the per-token flexibility of DeepEP with the batched efficiency of PPLX. We consider this optimization orthogonal to UCCL-EP's core contribution in portable EP communication architecture.
+A natural optimization is to pack tokens in a **best-effort manner** before sending — combining the per-token flexibility of DeepEP with the batched efficiency of PPLX. We consider this optimization orthogonal to UCCL-EP's core contribution in portable EP communication architecture. On the latest UCCL-EP, we have implemented per-expert batching of tokens for low-latency mode, leading to <strong>10%</strong> speedup on EFA for small messages.
 
 ---
 
