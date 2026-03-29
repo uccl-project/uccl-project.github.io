@@ -257,7 +257,7 @@ A natural optimization is to pack tokens in a **best-effort manner** before send
 We evaluate these LL improvements on p5en while comparing against PPLX on both FP8 and BF16 dispatch paths (see the fair-comparison figure below).
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/lam/assets/uccl-ep-full/p5en_dispatch_bf16_fp8_uccl_vs_pplx.png" alt="p5en dispatch BF16 to FP8 UCCL vs PPLX fair measurement" width="400"/>
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/p5en_dispatch_bf16_fp8_uccl_vs_pplx.png" alt="p5en dispatch BF16 to FP8 UCCL vs PPLX fair measurement" width="400"/>
   <em>P5en comparison with PPLX for BF16 and FP8 dispatch paths.</em>
 </p>
 
