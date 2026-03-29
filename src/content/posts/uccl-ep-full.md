@@ -18,7 +18,7 @@ author: UCCL Team
 ---
 
 <p>
-<strong>By: <a href="https://maoziming.github.io/">Ziming Mao</a> (UC Berkeley), Chon Lam Lao (Harvard), <a href="https://yangzhou1997.github.io/">Yang Zhou</a> (UC Davis), <a href="github.com/CalebZ9909" class="no-github-icon">Yihan Zhang</a> (UC Davis), <a href="https://github.com/HermesCui" class="no-github-icon">Chihan Cui</a> (UW-Madison), <a href="https://zhongjiechen.github.io/" class="no-github-icon">Zhongjie Chen</a> (Tsinghua), <a href="https://xuzhiying9510.github.io/">Zhiying Xu</a> (AWS), and other UCCL-EP contributors
+<strong>By: <a href="https://maoziming.github.io/">Ziming Mao</a> (UC Berkeley), <a href="https://laochanlam.com/">Chon Lam Lao</a> (Harvard), <a href="https://yangzhou1997.github.io/">Yang Zhou</a> (UC Davis), <a href="github.com/CalebZ9909" class="no-github-icon">Yihan Zhang</a> (UC Davis), <a href="https://github.com/HermesCui" class="no-github-icon">Chihan Cui</a> (UW-Madison), <a href="https://zhongjiechen.github.io/" class="no-github-icon">Zhongjie Chen</a> (Tsinghua), <a href="https://xuzhiying9510.github.io/">Zhiying Xu</a> (AWS), and other UCCL-EP contributors
 <br>
 Date: Dec 20, 2025
 </strong>
@@ -254,11 +254,21 @@ UCCL-EP's low-latency (LL) kernel, extending DeepEP, currently issues one 7 KB t
 
 A natural optimization is to pack tokens in a **best-effort manner** before sending — combining the per-token flexibility of DeepEP with the batched efficiency of PPLX. We consider this optimization orthogonal to UCCL-EP's core contribution in portable EP communication architecture. On the latest UCCL-EP, we have implemented per-expert batching of tokens for low-latency mode, leading to <strong>10%</strong> speedup on EFA for small messages.
 
+We also add a PPLX comparison on p5en for both FP8 and BF16 dispatch paths (see the fair-comparison figure below).
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/p5en_dispatch_bf16_fp8_uccl_vs_pplx.png" alt="p5en dispatch BF16 to FP8 UCCL vs PPLX fair measurement" width="700"/>
+  <em>P5en comparison with PPLX for BF16 and FP8 dispatch paths.</em>
+</p>
+
+
 ---
 
 ## A Note on Fair Comparison with PPLX Kernels
 
-TODO: Lam. 
+One important caveat is that **PPLX does not support in-kernel BF16->FP8 conversion**. Therefore, in this apples-to-apples comparison we report PPLX timing for the **FP8 kernel + communication path only**, excluding external BF16->FP8 pre-cast time.
+
+Under this fair-measurement setting, the PPLX dispatch time is **232.30 us**.
 
 ---
 
