@@ -232,23 +232,7 @@ UCCL-EP enables larger EP configurations (EP=32) where NCCL either significantly
 
 ---
 
-## The Importance of Flow Control
-
-A key advantage of UCCL-EP's CPU proxy architecture is the ability to implement **flow control** — which otherwise is difficult with IBGDA, where GPU threads typically blindly issue one-sided RDMA operations without awareness of NIC queue pressure or completion.
-
-We observe that the number of outstanding RDMA requests can have a significant impact on various NICs, particularly affecting **tail latency**. This becomes increasingly critical as the number of destinations increases, where a single straggler can slow down the entire dispatch or combine operation.
-
-We illustrate this on **Broadcom Thor-2** (EP32, normal mode) by sweeping communication configurations, such as various NVLink chunk sizes and RDMA chunk sizes. **Without flow control, non-optimal configurations catastrophically degrade** — bandwidth can collapse from ~49 GB/s to as low as **4.4 GB/s**, and notify latency can explode from hundreds of microseconds to **over 70 ms**. With flow control (e.g., 1.5 MB inflight limit), performance is **stable across all configurations**.
-
-UCCL-EP's CPU proxy supports request tracking and pacing:
-- If outstanding requests grow too high, the proxy **temporarily buffers messages** at the sender to avoid incast at the receiver.
-- The proxy can **shard outgoing requests across multiple NICs and QPs** to avoid congestion and adapt to NIC-specific characteristics.
-
-This is particularly important for **Broadcom Thor-2** and **AMD Pollara AI** NICs. We provide the environment variables `UCCL_IB_MAX_INFLIGHT_BYTES` and `UCCL_IB_MAX_INFLIGHT_NORMAL` to configure flow control. Without it, these NICs can encounter CQE error 12 (Transport Retry Counter Exceeded) under high load.
-
----
-
-## UCCL-EP LL: Towards More Efficient Small Messages
+## Towards More Efficient Low-latency kernels
 
 UCCL-EP's low-latency (LL) kernel, extending DeepEP, currently issues one 7 KB token per RDMA message. On EFA NICs, this is suboptimal because the current EFA firmware cannot process small tokens at a high enough rate (AWS has confirmed they are working on a firmware fix). PPLX, by contrast, packs tokens into larger messages, giving it an advantage at small batch sizes.
 
@@ -268,6 +252,21 @@ We evaluate these LL improvements on p5en while comparing against PPLX on both F
 
 </small>
 
+---
+
+## Enabling Flow Control
+
+A key advantage of UCCL-EP's CPU proxy architecture is the ability to implement **flow control** — which otherwise is difficult with IBGDA, where GPU threads typically blindly issue one-sided RDMA operations without awareness of NIC queue pressure or completion.
+
+We observe that the number of outstanding RDMA requests can have a significant impact on various NICs, particularly affecting **tail latency**. This becomes increasingly critical as the number of destinations increases, where a single straggler can slow down the entire dispatch or combine operation.
+
+We illustrate this on **Broadcom Thor-2** (EP32, normal mode) by sweeping communication configurations, such as various NVLink chunk sizes and RDMA chunk sizes. **Without flow control, non-optimal configurations catastrophically degrade** — bandwidth can collapse from ~49 GB/s to as low as **4.4 GB/s**, and notify latency can explode from hundreds of microseconds to **over 70 ms**. With flow control (e.g., 1.5 MB inflight limit), performance is **stable across all configurations**.
+
+UCCL-EP's CPU proxy supports request tracking and pacing:
+- If outstanding requests grow too high, the proxy **temporarily buffers messages** at the sender to avoid incast at the receiver.
+- The proxy can **shard outgoing requests across multiple NICs and QPs** to avoid congestion and adapt to NIC-specific characteristics.
+
+This is particularly important for **Broadcom Thor-2** and **AMD Pollara AI** NICs. We provide the environment variables `UCCL_IB_MAX_INFLIGHT_BYTES` and `UCCL_IB_MAX_INFLIGHT_NORMAL` to configure flow control. Without it, these NICs can encounter CQE error 12 (Transport Retry Counter Exceeded) under high load.
 
 ---
 
