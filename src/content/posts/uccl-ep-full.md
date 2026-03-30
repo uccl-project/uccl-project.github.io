@@ -12,7 +12,7 @@ tags:
   - AMD
   - EFA
 pubDate: 2026-03-28
-cover: https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/UEP-intro-figure.jpg
+cover: https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep-full/uccl-ep-full.png
 coverAlt: UCCL-EP
 author: UCCL Team
 ---
