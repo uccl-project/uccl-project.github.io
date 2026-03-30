@@ -42,7 +42,7 @@ UCCL-EP solves this with a clean separation of concerns:
 - **GPUs** retain fine-grained token-level communication initiation for maximal overlap with computation.
 - **CPUs** handle the control-intensive networking aspects — queue management, flow control, ordering enforcement — through a lightweight, multi-threaded proxy.
 
-This architecture reduces the porting effort from O(m x n) (left figure, for m GPU vendors and n NIC vendors) down to O(m) (right figure), as the CPU proxy can use the `libibverbs` API that all RDMA NICs support. UCCL-EP provides **drop-in support for vLLM and SGLang**, making it easy to adopt without modifying inference engine code.
+This architecture reduces the porting effort from O(m x n) (left figure, for m GPU vendors and n NIC vendors) down to O(m) (right figure), as the CPU proxy can use the `libibverbs` API that most RDMA NICs support. In fact, UCCL-EP provides **drop-in support for vLLM, SGLang, and Megatron-LM**, making it easy to adopt without modifying application or framework code.
 
 <div class="not-prose my-6 grid w-full grid-cols-2 items-start justify-items-center gap-5 [&_img]:!my-0 [&_img]:h-auto [&_img]:max-w-[400px] [&_img]:min-w-0 [&_img]:w-full">
   <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/uep_intro_ibgda.png" alt="IBGDA-style: O(m x n) porting effort" width="400"/>
@@ -57,7 +57,7 @@ UCCL-EP architecture is shown in the figure below. GPUs delegate token-routing c
   <em>UCCL-EP architecture.</em>
 </p>
 
-We discuss two key techniques in UCCL-EP:
+We discuss two key techniques in UCCL-EP (please refer to the [paper](https://arxiv.org/pdf/2512.19849) for more details):
 
 **CPU Proxy with Lock-Free FIFO Channels.** UCCL-EP uses a 128-bit `TransferCmd` descriptor that GPU threads enqueue into shared, lock-free FIFO channels. CPU proxy threads dequeue these commands and issue the corresponding RDMA operations. The FIFO design caches the tail index on GPU memory, minimizing PCIe traversals. Each GPU uses multiple FIFO channels, each mapped to a dedicated RDMA Queue Pair (QP), enabling over **50 million RDMA operations per second** per GPU. The additional latency is small (< 4us per operation) compared to the typical latency of dispatch/combine operations.
 
