@@ -89,6 +89,43 @@ Please reach out to us if you would like to improve and evaluate EP communicatio
 
 ---
 
+## Application Results
+
+### Megatron-LM Training on AMD (MI300X + Broadcom)
+
+We evaluate end-to-end Megatron-LM training of DeepSeek-V3 on 16 MI300X nodes (128 GPUs) using the AMD Primus/Megatron-LM framework.
+
+<div class="not-prose my-6 grid w-full grid-cols-2 items-start justify-items-center gap-5 [&_img]:!my-0 [&_img]:h-auto [&_img]:max-w-[400px] [&_img]:min-w-0 [&_img]:w-full">
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/amd_megatron_deepseekv3_tflops.png" alt="Megatron-LM TFLOPS" width="400"/>
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/amd_megatron_deepseekv3_tokens.png" alt="Megatron-LM tokens/s" width="400"/>
+</div>
+<p align="center"><em>Megatron-LM training throughput (TFLOPS and tokens/s) on 16-node AMD MI300X + Broadcom Thor-2.</em></p>
+
+Across all configurations, UCCL-EP matches or exceeds the TFLOPS by **7–36%** and throughput by **7–45%** compared to RCCL. These results show that UCCL-EP provides significant performance benefits for MoE training.
+
+---
+
+### SGLang Inference on AWS (NVIDIA + EFA)
+
+We evaluate UCCL-EP in SGLang v0.5.3 on a prefill-heavy workload on p5en instances. We compare against NCCL, as DeepEP cannot run on EFA and PPLX had not been integrated into open-source inference engines at the time of evaluation.
+
+<div class="not-prose my-6 grid w-full grid-cols-2 items-start justify-items-center gap-5 [&_img]:!my-0 [&_img]:h-auto [&_img]:max-w-[400px] [&_img]:min-w-0 [&_img]:w-full">
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/sglang_deepseek_r1_throughput.png" alt="SGLang DeepSeek R1 throughput" width="400"/>
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/sglang_qwen3_throughput.png" alt="SGLang Qwen3 throughput" width="400"/>
+</div>
+<p align="center"><em>SGLang throughput comparison using UCCL-EP vs. NCCL on p5en. Left: DeepSeek R1 (671B). Right: Qwen3 (235B).</em></p>
+
+**DeepSeek R1 (671B):**
+- EP=16: UCCL-EP reaches **46K tok/s** input throughput, about 5% higher than NCCL.
+- EP=32: UCCL-EP improves to **74K tok/s**, a **1.6x** speedup over its own EP=16 run.
+
+**Qwen3 (235B):**
+- EP=32: UCCL-EP reaches **62K tok/s** vs. 44K tok/s for NCCL — about **40% higher** throughput.
+
+UCCL-EP enables larger EP configurations (EP=32) where NCCL either significantly underperforms or cannot run. CPU utilization increases modestly from an average 8% to 22%.
+
+---
+
 ## Microbenchmark Results
 
 ### On AWS EFA (NVIDIA GPUs)
@@ -198,44 +235,6 @@ After these GPU-side changes, UCCL-EP immediately ran on AMD platforms with any 
 
 ---
 
-## Application Results
-
-
-### Megatron-LM Training on AMD (MI300X + Broadcom)
-
-We evaluate end-to-end Megatron-LM training of DeepSeek-V3 on 16 MI300X nodes (128 GPUs) using the AMD Primus/Megatron-LM framework.
-
-<div class="not-prose my-6 grid w-full grid-cols-2 items-start justify-items-center gap-5 [&_img]:!my-0 [&_img]:h-auto [&_img]:max-w-[400px] [&_img]:min-w-0 [&_img]:w-full">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/amd_megatron_deepseekv3_tflops.png" alt="Megatron-LM TFLOPS" width="400"/>
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/amd_megatron_deepseekv3_tokens.png" alt="Megatron-LM tokens/s" width="400"/>
-</div>
-<p align="center"><em>Megatron-LM training throughput (TFLOPS and tokens/s) on 16-node AMD MI300X + Broadcom Thor-2.</em></p>
-
-Across all configurations, UCCL-EP matches or exceeds the TFLOPS by **7–36%** and throughput by **7–45%** compared to RCCL. These results show that UCCL-EP provides significant performance benefits for MoE training.
-
----
-
-### SGLang Inference on AWS (NVIDIA + EFA)
-
-We evaluate UCCL-EP in SGLang v0.5.3 on a prefill-heavy workload on p5en instances. We compare against NCCL, as DeepEP cannot run on EFA and PPLX had not been integrated into open-source inference engines at the time of evaluation.
-
-<div class="not-prose my-6 grid w-full grid-cols-2 items-start justify-items-center gap-5 [&_img]:!my-0 [&_img]:h-auto [&_img]:max-w-[400px] [&_img]:min-w-0 [&_img]:w-full">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/sglang_deepseek_r1_throughput.png" alt="SGLang DeepSeek R1 throughput" width="400"/>
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/sglang_qwen3_throughput.png" alt="SGLang Qwen3 throughput" width="400"/>
-</div>
-<p align="center"><em>SGLang throughput comparison using UCCL-EP vs. NCCL on p5en. Left: DeepSeek R1 (671B). Right: Qwen3 (235B).</em></p>
-
-**DeepSeek R1 (671B):**
-- EP=16: UCCL-EP reaches **46K tok/s** input throughput, about 5% higher than NCCL.
-- EP=32: UCCL-EP improves to **74K tok/s**, a **1.6x** speedup over its own EP=16 run.
-
-**Qwen3 (235B):**
-- EP=32: UCCL-EP reaches **62K tok/s** vs. 44K tok/s for NCCL — about **40% higher** throughput.
-
-UCCL-EP enables larger EP configurations (EP=32) where NCCL either significantly underperforms or cannot run. CPU utilization increases modestly from an average 8% to 22%.
-
----
-
 ## Towards More Efficient Low-latency kernels
 
 UCCL-EP's low-latency (LL) kernel, extending DeepEP, currently issues one 7 KB token per RDMA message. On EFA NICs, this is suboptimal because the current EFA firmware cannot process small tokens at a high enough rate (AWS has confirmed they are working on a firmware fix). PPLX, by contrast, packs tokens into larger messages, giving it an advantage at small batch sizes.
@@ -252,7 +251,7 @@ We evaluate these LL improvements on p5en while comparing against PPLX on both F
 
 <small>
 
-**A Note on Fair Comparison with PPLX Kernels:** PPLX uses a different measurement methodology than our original DeepEP-inherited setup. To ensure fairness, we evaluate the results above using a script that aligns with the PPLX measurement methodology. One caveat is that PPLX does not support in-kernel BF16->FP8 conversion. For fairness, the FP8 results we report include BF16->FP8 casting time before entering the PPLX kernel (**266.90 us**). The PPLX dispatch time excluding external BF16->FP8 pre-cast time is **232.30 us**.
+**A Note on Fair Comparison with PPLX Kernels:** PPLX uses a different measurement methodology than our original DeepEP-inherited setup. To ensure fairness, we evaluate the results above using a script that aligns with the PPLX measurement methodology. One caveat is that PPLX does not support in-kernel BF16->FP8 conversion. For fairness, the FP8 results we report include BF16->FP8 casting time before entering the PPLX kernel (266.90 us). The PPLX dispatch time excluding external BF16->FP8 pre-cast time is 232.30 us.
 
 </small>
 
@@ -264,7 +263,7 @@ A key advantage of UCCL-EP's CPU proxy architecture is the ability to implement 
 
 We observe that the number of outstanding RDMA requests can have a significant impact on various NICs, particularly affecting **tail latency**. This becomes increasingly critical as the number of destinations increases, where a single straggler can slow down the entire dispatch or combine operation.
 
-We illustrate this on **Broadcom Thor-2** (EP32, normal mode) by sweeping communication configurations, such as various NVLink chunk sizes and RDMA chunk sizes. **Without flow control, non-optimal configurations catastrophically degrade** — bandwidth can collapse from ~49 GB/s to as low as **4.4 GB/s**, and notify latency can explode from hundreds of microseconds to **over 70 ms**. With flow control (e.g., 1.5 MB inflight limit), performance is **stable across all configurations**.
+We illustrate this on **Broadcom Thor-2** (EP32, normal mode) by sweeping communication configurations, such as various NVLink chunk sizes and RDMA chunk sizes. **Without flow control, non-optimal configurations catastrophically degrade** — bandwidth can collapse from ~49 GB/s to as low as **4.4 GB/s**, and notify latency can explode from hundreds of microseconds to **over 70 ms**. With flow control (e.g., 1.5 MB inflight limit), performance is stable across all configurations.
 
 UCCL-EP's CPU proxy supports request tracking and pacing:
 - If outstanding requests grow too high, the proxy **temporarily buffers messages** at the sender to avoid incast at the receiver.
