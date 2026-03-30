@@ -7,7 +7,7 @@ Date: Dec 20, 2025
 
 &lt;div class=&quot;tldr&quot;&gt;
 &lt;p&gt;
-We present &lt;strong&gt;UCCL-EP&lt;/strong&gt;, a portable expert-parallel communication library that achieves DeepEP-level performance across heterogeneous GPU and NIC hardware. UCCL-EP outperforms the best existing EP solution by up to &lt;strong&gt;2.3x&lt;/strong&gt; for dispatch and combine on AWS EFA. On the NVIDIA-only InfiniBand platform, UCCL-EP achieves performance within 5% of the original DeepEP. For end-to-end applications, UCCL-EP speeds up SGLang inference throughput by up to &lt;strong&gt;40%&lt;/strong&gt; over NCCL and improves Megatron-LM training throughput by up to &lt;strong&gt;45%&lt;/strong&gt; over RCCL on AMD GPUs.
+We present &lt;strong&gt;UCCL-EP&lt;/strong&gt;, a portable expert-parallel communication library that achieves state-of-the-art performance across &lt;strong&gt;heterogeneous GPU and NIC hardware&lt;/strong&gt;. UCCL-EP outperforms the best existing EP solution by up to &lt;strong&gt;2.3x&lt;/strong&gt; for dispatch and combine on AWS EFA. For end-to-end applications, UCCL-EP improves Megatron-LM training throughput by up to &lt;strong&gt;45%&lt;/strong&gt; over RCCL on 128 AMD GPUs andspeeds up SGLang inference throughput by up to &lt;strong&gt;40%&lt;/strong&gt; over NCCL over 32 H200 GPUs.
 &lt;/p&gt;
 &lt;p&gt;
 Paper: &lt;a href=&quot;https://arxiv.org/pdf/2512.19849&quot;&gt;arxiv.org/pdf/2512.19849&lt;/a&gt; | Code: &lt;a href=&quot;https://github.com/uccl-project/uccl/tree/main/ep&quot;&gt;uccl-project/uccl/ep&lt;/a&gt;
