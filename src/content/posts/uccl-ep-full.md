@@ -85,6 +85,8 @@ We have since evaluated UCCL-EP on a diverse set of platforms spanning NVIDIA an
 
 **Baselines:** NCCL/RCCL, DeepEP (NVIDIA-only), Perplexity Kernels ([PPLX](https://github.com/perplexityai/pplx-garden)), and CPU-assisted IBGDA. UCCL-EP uses 4 CPU proxy threads per GPU.
 
+Please reach out to us if you would like to improve and evaluate EP communication on your own platform!
+
 ---
 
 ## Microbenchmark Results
@@ -142,20 +144,6 @@ Following a DeepSeek-V3 inference setting (128 tokens, 7168 hidden, top-8 expert
 | p6 (B200) | 16 | 228 us | 33 GB/s | 318 us | 46 GB/s |
 | p6 (B200) | 24 | 448 us | 17 GB/s | 566 us | 26 GB/s |
 | p6 (B200) | 32 | 406 us | 19 GB/s | 617 us | 24 GB/s |
-
----
-
-### On InfiniBand (NVIDIA CX7)
-
-On the Nebius testbed (H100 + CX7 InfiniBand), we compare UCCL-EP against both the original DeepEP and PPLX at EP32.
-
-In **LL mode**, UCCL-EP incurs slightly higher latency than DeepEP and PPLX due to the CPU proxy overhead on small messages. However, in **HT mode**, UCCL-EP achieves latency **within 5% of DeepEP** for dispatch while outperforming PPLX by **2.1x** (dispatch) and **1.6x** (combine). This shows that UCCL-EP preserves DeepEP-level performance on throughput-oriented workloads even without IBGDA.
-
-<div class="not-prose my-6 grid w-full grid-cols-2 items-start justify-items-center gap-5 [&_img]:!my-0 [&_img]:h-auto [&_img]:max-w-[400px] [&_img]:min-w-0 [&_img]:w-full">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/nebius_dispatch_ll_ht.png" alt="Nebius dispatch" width="400"/>
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/nebius_combine_ll_ht.png" alt="Nebius combine" width="400"/>
-</div>
-<p align="center"><em>EP32 dispatch (left) and combine (right) comparison on H100 + CX7 InfiniBand. UCCL-EP matches DeepEP in HT mode and significantly outperforms PPLX.</em></p>
 
 ---
 
