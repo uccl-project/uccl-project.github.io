@@ -262,13 +262,11 @@ We evaluate these LL improvements on p5en while comparing against PPLX on both F
 </p>
 
 
----
+<small>
 
-## A Note on Fair Comparison with PPLX Kernels
+**A Note on Fair Comparison with PPLX Kernels:** PPLX uses a different measurement methodology than our original DeepEP-inherited setup. To ensure fairness, we evaluate the results above using a script that aligns with the PPLX measurement methodology. One caveat is that PPLX does not support in-kernel BF16->FP8 conversion. For fairness, the FP8 results we report include BF16->FP8 casting time before entering the PPLX kernel (**266.90 us**). The PPLX dispatch time excluding external BF16->FP8 pre-cast time is **232.30 us**.
 
-- PPLX uses a different measurement methodology than our original DeepEP-inherited setup. To ensure fairness, we evaluate the results above using a script that aligns with the PPLX measurement methodology.
-
-- One caveat is that PPLX does not support in-kernel BF16->FP8 conversion. For fairness, the FP8 results we report include BF16->FP8 casting time before entering the PPLX kernel (**266.90 us**). The PPLX dispatch time excluding external BF16->FP8 pre-cast time is **232.30 us**.
+</small>
 
 
 ---
