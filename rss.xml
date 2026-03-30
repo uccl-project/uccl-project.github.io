@@ -1,4 +1,275 @@
-<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>UCCL</title><description>An amazing team!</description><link>https://uccl-project.github.io/</link><language>en-US</language><item><title>Previewing UCCL-EP: Flexible and Efficient Expert Parallelism for Cloud and Beyond</title><link>https://uccl-project.github.io/posts/uccl-ep/</link><guid isPermaLink="true">https://uccl-project.github.io/posts/uccl-ep/</guid><description>GPU-driven communication (e.g., DeepEP) is the key to efficient and large-scale EP, but it cannot run on heterogeneous platforms in the public cloud due to tight coupling between GPU and NIC.</description><pubDate>Mon, 27 Oct 2025 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;
+<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>UCCL</title><description>An amazing team!</description><link>https://uccl-project.github.io/</link><language>en-US</language><item><title>UCCL-EP: Portable Expert-Parallel Communication — Full Results</title><link>https://uccl-project.github.io/posts/uccl-ep-full/</link><guid isPermaLink="true">https://uccl-project.github.io/posts/uccl-ep-full/</guid><description>Full evaluation of UCCL-EP across NVIDIA and AMD GPUs, AWS EFA, InfiniBand, and Broadcom NICs — with application-level results on SGLang inference and Megatron-LM training.</description><pubDate>Sat, 28 Mar 2026 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;
+&lt;strong&gt;By: &lt;a href=&quot;https://maoziming.github.io/&quot;&gt;Ziming Mao&lt;/a&gt; (UC Berkeley), &lt;a href=&quot;https://laochanlam.com/&quot;&gt;ChonLam Lao&lt;/a&gt; (Harvard), &lt;a href=&quot;https://yangzhou1997.github.io/&quot;&gt;Yang Zhou&lt;/a&gt; (UC Davis), &lt;a href=&quot;github.com/CalebZ9909&quot; class=&quot;no-github-icon&quot;&gt;Yihan Zhang&lt;/a&gt; (UC Davis), &lt;a href=&quot;https://github.com/HermesCui&quot; class=&quot;no-github-icon&quot;&gt;Chihan Cui&lt;/a&gt; (UW-Madison), &lt;a href=&quot;https://zhongjiechen.github.io/&quot; class=&quot;no-github-icon&quot;&gt;Zhongjie Chen&lt;/a&gt; (Tsinghua), &lt;a href=&quot;https://xuzhiying9510.github.io/&quot;&gt;Zhiying Xu&lt;/a&gt; (AWS), and other UCCL-EP contributors
+&lt;br&gt;
+Date: Dec 20, 2025
+&lt;/strong&gt;
+&lt;/p&gt;
+
+&lt;div class=&quot;tldr&quot;&gt;
+&lt;p&gt;
+We present &lt;strong&gt;UCCL-EP&lt;/strong&gt;, a portable expert-parallel communication library that achieves DeepEP-level performance across heterogeneous GPU and NIC hardware. UCCL-EP outperforms the best existing EP solution by up to &lt;strong&gt;2.3x&lt;/strong&gt; for dispatch and combine on AWS EFA. On the NVIDIA-only InfiniBand platform, UCCL-EP achieves performance within 5% of the original DeepEP. For end-to-end applications, UCCL-EP speeds up SGLang inference throughput by up to &lt;strong&gt;40%&lt;/strong&gt; over NCCL and improves Megatron-LM training throughput by up to &lt;strong&gt;45%&lt;/strong&gt; over RCCL on AMD GPUs.
+&lt;/p&gt;
+&lt;p&gt;
+Paper: &lt;a href=&quot;https://arxiv.org/pdf/2512.19849&quot;&gt;arxiv.org/pdf/2512.19849&lt;/a&gt; | Code: &lt;a href=&quot;https://github.com/uccl-project/uccl/tree/main/ep&quot;&gt;uccl-project/uccl/ep&lt;/a&gt;
+&lt;/p&gt;
+&lt;/div&gt;
+
+## Recap: Why UCCL-EP?
+
+In our [previous blog post](https://uccl-project.github.io/posts/uccl-ep/), we introduced UCCL-EP and the key challenge it addresses: state-of-the-art EP communication systems like DeepEP achieve high performance through &lt;strong&gt;GPU-initiated token-level RDMA&lt;/strong&gt;, but are tightly coupled to the NVIDIA GPU + NVIDIA NIC ecosystem (via IBGDA). This tight coupling prevents running on public clouds like AWS (which use EFA NICs), on AMD GPUs, or on alternative NIC vendors like Broadcom.
+
+UCCL-EP solves this with a clean separation of concerns:
+
+- **GPUs** retain fine-grained token-level communication initiation for maximal overlap with computation.
+- **CPUs** handle the control-intensive networking aspects — queue management, flow control, ordering enforcement — through a lightweight, multi-threaded proxy.
+
+This architecture reduces the porting effort from O(m x n) (left figure, for m GPU vendors and n NIC vendors) down to O(m) (right figure), as the CPU proxy can use the `libibverbs` API that all RDMA NICs support. UCCL-EP provides **drop-in support for vLLM and SGLang**, making it easy to adopt without modifying inference engine code.
+
+&lt;div style=&quot;display: flex; justify-content: center; gap: 40px; flex-wrap: wrap;&quot;&gt;
+  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/uep_intro_ibgda.png&quot; alt=&quot;IBGDA-style: O(m x n) porting effort&quot; width=&quot;400&quot;/&gt;
+  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/uep_intro_ucclep.png&quot; alt=&quot;UCCL-EP: O(m) porting effort&quot; width=&quot;400&quot;/&gt;
+&lt;/div&gt;
+&lt;p align=&quot;center&quot;&gt;&lt;em&gt;Left: IBGDA-style GPU-initiated communication requires O(m x n) porting effort across GPU and NIC vendors. Right: UCCL-EP reduces this to O(m) by using the CPU as a portable intermediary via libibverbs.&lt;/em&gt;&lt;/p&gt;
+
+UCCL-EP architecture is shown in the figure below. GPUs delegate token-routing commands to multi-threaded CPU proxies via lock-free FIFO channels. CPU proxies issue GPUDirect RDMA on behalf of GPUs, while managing ordering, flow control, and completion handling. 
+
+&lt;p align=&quot;center&quot;&gt;
+  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/uep_architecture.png&quot; alt=&quot;UCCL-EP Architecture&quot; width=&quot;600&quot;/&gt;
+  &lt;em&gt;UCCL-EP architecture.&lt;/em&gt;
+&lt;/p&gt;
+
+We discuss two key techniques in UCCL-EP:
+
+**CPU Proxy with Lock-Free FIFO Channels.** UCCL-EP uses a 128-bit `TransferCmd` descriptor that GPU threads enqueue into shared, lock-free FIFO channels. CPU proxy threads dequeue these commands and issue the corresponding RDMA operations. The FIFO design caches the tail index on GPU memory, minimizing PCIe traversals. Each GPU uses multiple FIFO channels, each mapped to a dedicated RDMA Queue Pair (QP), enabling over **50 million RDMA operations per second** per GPU. The additional latency is small (&lt; 4us per operation) compared to the typical latency of dispatch/combine operations.
+
+**Immediate-Data-Based Ordering for Heterogeneous NICs.** Different NICs provide different delivery guarantees. For example, AWS EFA uses the Scalable Reliable Datagram (SRD) protocol with multi-pathing, which does not guarantee in-order delivery within a single QP. UCCL-EP embeds per-channel sequence numbers into RDMA immediate data, allowing the receiver-side CPU proxy to reorder out-of-sequence control messages before committing them to GPU memory. This approach also enables **software-level atomics** — piggybacking completion notifications on regular RDMA writes — which is both more portable (no hardware atomic support required) and more efficient (one RDMA operation instead of two for write + atomic).
+
+### CPU Proxy Throughput Is Not the Bottleneck
+
+We measure the FIFO channel latency and compare it against the end-to-end RDMA latency on EFA and Broadcom NICs. The FIFO channel sustains over **8 million operations per second** across 8 GPUs, with average latency of **~3 us** and P99 under **8 us** — an order of magnitude lower than the RDMA network latency (which ranges from 20–50+ us on EFA). This confirms that the CPU-GPU channel is not the bottleneck, and the additional proxy latency is amortized across the much larger network transfer time.
+
+---
+
+## Evaluation Testbeds
+
+We have since evaluated UCCL-EP on a diverse set of platforms spanning NVIDIA and AMD GPUs with EFA, InfiniBand, and Broadcom NICs. 
+
+| Name | Servers | GPU | NIC | CPU | Cloud |
+|:----:|:-------:|:---:|:---:|:---:|:-----:|
+| NV_EFAv3 | 4 | NVIDIA H200 x8 | AWS EFAv3 200G x16 | 192 cores | AWS (p5en) |
+| NV_EFAv4 | 4 | NVIDIA B200 x8 | AWS EFAv4 400G x8 | 192 cores | AWS (p6-b200) |
+| NV_IB | 4 | NVIDIA H100 x8 | ConnectX-7 400G x8 | 128 cores | Nebius |
+| NV_GH200 | 2 | NVIDIA GH200 x1 | ConnectX-7 200G x1 | 72 cores | Lambda |
+| AMD_CX7 | 4-16 | AMD MI300X x8 | ConnectX-7 400G x8 | 128 cores | OCI |
+| AMD_BRC | 4 | AMD MI300X x8 | Broadcom Thor-2 400G x8 | 128 cores | Vultr |
+| AMD_AINIC | 4 | AMD MI355X x8 | Pollara AI NIC IB x8 | 128 cores | AMD |
+
+**Baselines:** NCCL/RCCL, DeepEP (NVIDIA-only), Perplexity Kernels ([PPLX](https://github.com/perplexityai/pplx-garden)), and CPU-assisted IBGDA. UCCL-EP uses 4 CPU proxy threads per GPU.
+
+---
+
+## Microbenchmark Results
+
+### On AWS EFA (NVIDIA GPUs)
+
+#### H200 + EFA (p5en)
+
+On p5en instances (8x H200, 16x 200 Gb/s EFA), we measure EP32 dispatch and combine latency while varying the number of tokens. UCCL-EP uses the minimum of high-throughput (HT) and low-latency (LL) mode latency, while PPLX operates in a single mode.
+
+At small batch sizes (128 tokens), PPLX achieves lower latency because UCCL-EP (extending DeepEP) issues messages at 7 KB token granularity, whereas PPLX packs tokens into larger messages. However, as the token count increases, **UCCL-EP quickly overtakes PPLX** — delivering **2.3x lower dispatch latency** and **1.1–1.5x lower combine latency** for medium and large batches.
+
+&lt;div style=&quot;display: flex; justify-content: center; gap: 40px; flex-wrap: wrap;&quot;&gt;
+  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/p5en_dispatch_latency_vs_tokens_pplx_uccl.jpg&quot; alt=&quot;p5en dispatch latency vs tokens&quot; width=&quot;400&quot;/&gt;
+  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/p5en_combine_latency_vs_tokens_pplx_uccl.jpg&quot; alt=&quot;p5en combine latency vs tokens&quot; width=&quot;400&quot;/&gt;
+&lt;/div&gt;
+&lt;p align=&quot;center&quot;&gt;&lt;em&gt;EP32 dispatch (left) and combine (right) latency vs. number of tokens on p5en (H200 + EFA 400 Gbps).&lt;/em&gt;&lt;/p&gt;
+
+We present more results in the table below. 
+
+&lt;!-- #### B200 + EFA (p6-b200)
+
+On p6-b200 instances (8x B200, 8x 400 Gb/s EFA), we see similar trends with UCCL-EP outperforming PPLX at larger token counts:
+
+&lt;p align=&quot;center&quot;&gt;
+  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/p6_dispatch_ll_ht.png&quot; alt=&quot;p6 dispatch&quot; width=&quot;400&quot;/&gt;
+  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/p6_combine_ll_ht.png&quot; alt=&quot;p6 combine&quot; width=&quot;400&quot;/&gt;
+  &lt;em&gt;EP32 dispatch (left) and combine (right) comparison on p6-b200 (B200 + EFA 400 Gbps).&lt;/em&gt;
+&lt;/p&gt; --&gt;
+
+##### Normal Mode Bandwidth (EFA)
+
+Following the DeepSeek-V3 pretraining configuration (4096 tokens, 7168 hidden, top-4 groups, top-8 experts, FP8 dispatch / BF16 combine):
+
+| Platform | Type | #EP | Dispatch BW &amp; Latency | Combine BW &amp; Latency |
+|:---:|:---:|:---:|:---:|:---:|
+| p5en (H200) | Intranode | 8 | 320 GB/s (NVLink), 500 us | 319 GB/s (NVLink), 973 us |
+| p5en (H200) | Internode | 16 | 50 GB/s (RDMA), 1196 us | 18 GB/s (RDMA), 6379 us |
+| p5en (H200) | Internode | 24 | 53 GB/s (RDMA), 1633 us | 26 GB/s (RDMA), 6365 us |
+| p5en (H200) | Internode | 32 | 54 GB/s (RDMA), 2022 us | 43 GB/s (RDMA), 4899 us |
+| p6 (B200) | Intranode | 8 | 280 GB/s (NVLink), 571 us | 426 GB/s (NVLink), 727 us |
+| p6 (B200) | Internode | 16 | 53 GB/s (RDMA), 1141 us | 60 GB/s (RDMA), 1965 us |
+| p6 (B200) | Internode | 24 | 53 GB/s (RDMA), 1637 us | 59 GB/s (RDMA), 2887 us |
+| p6 (B200) | Internode | 32 | 53 GB/s (RDMA), 2072 us | 57 GB/s (RDMA), 3724 us |
+
+##### Low-Latency Mode (EFA)
+
+Following a DeepSeek-V3 inference setting (128 tokens, 7168 hidden, top-8 experts, FP8 dispatch / BF16 combine):
+
+| Platform | #EP | Dispatch Latency | Dispatch BW | Combine Latency | Combine BW |
+|:---:|:---:|:---:|:---:|:---:|:---:|
+| p5en (H200) | 16 | 226 us | 36 GB/s | 293 us | 48 GB/s |
+| p5en (H200) | 24 | 386 us | 20 GB/s | 580 us | 26 GB/s |
+| p5en (H200) | 32 | 465 us | 16 GB/s | 694 us | 25 GB/s |
+| p6 (B200) | 16 | 228 us | 33 GB/s | 318 us | 46 GB/s |
+| p6 (B200) | 24 | 448 us | 17 GB/s | 566 us | 26 GB/s |
+| p6 (B200) | 32 | 406 us | 19 GB/s | 617 us | 24 GB/s |
+
+---
+
+### On InfiniBand (NVIDIA CX7)
+
+On the Nebius testbed (H100 + CX7 InfiniBand), we compare UCCL-EP against both the original DeepEP and PPLX at EP32.
+
+In **LL mode**, UCCL-EP incurs slightly higher latency than DeepEP and PPLX due to the CPU proxy overhead on small messages. However, in **HT mode**, UCCL-EP achieves latency **within 5% of DeepEP** for dispatch while outperforming PPLX by **2.1x** (dispatch) and **1.6x** (combine). This shows that UCCL-EP preserves DeepEP-level performance on throughput-oriented workloads even without IBGDA.
+
+&lt;div style=&quot;display: flex; justify-content: center; gap: 40px; flex-wrap: wrap;&quot;&gt;
+  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/nebius_dispatch_ll_ht.png&quot; alt=&quot;Nebius dispatch&quot; width=&quot;400&quot;/&gt;
+  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/nebius_combine_ll_ht.png&quot; alt=&quot;Nebius combine&quot; width=&quot;400&quot;/&gt;
+&lt;/div&gt;
+&lt;p align=&quot;center&quot;&gt;&lt;em&gt;EP32 dispatch (left) and combine (right) comparison on H100 + CX7 InfiniBand. UCCL-EP matches DeepEP in HT mode and significantly outperforms PPLX.&lt;/em&gt;&lt;/p&gt;
+
+---
+
+### On AMD GPUs
+
+UCCL-EP enables GPU-initiated token-level EP communication on AMD GPUs. We evaluate on MI300X with both CX7 InfiniBand (OCI) and Broadcom Thor-2 NICs (Vultr).
+
+&lt;div style=&quot;display: flex; justify-content: center; gap: 40px; flex-wrap: wrap;&quot;&gt;
+  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/amd_dispatch_ll_ht.png&quot; alt=&quot;AMD dispatch&quot; width=&quot;400&quot;/&gt;
+  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/amd_combine_ll_ht.png&quot; alt=&quot;AMD combine&quot; width=&quot;400&quot;/&gt;
+&lt;/div&gt;
+&lt;p align=&quot;center&quot;&gt;&lt;em&gt;EP32 dispatch (left) and combine (right) on AMD MI300X with CX7 RoCE and Broadcom Thor-2 NICs.&lt;/em&gt;&lt;/p&gt;
+
+&lt;!-- UCCL-EP achieves similar performance across both NIC vendors, demonstrating true portability. On MI300X + CX7 RoCE, UCCL-EP achieves comparable performance to DeepEP on the NVIDIA-only platform. --&gt;
+
+More results across heterogeneous platforms are shown in the tables below. 
+
+#### Normal Mode Bandwidth (AMD)
+
+| Platform | Type | #EP | FP8 Dispatch BW | BF16 Dispatch BW | Combine BW |
+|:---:|:---:|:---:|:---:|:---:|:---:|
+| MI300X + CX7 RoCE | Intranode | 8 | 260 GB/s (xGMI) | 295 GB/s (xGMI) | 304 GB/s (xGMI) |
+| MI300X + CX7 RoCE | Internode | 16 | 74 GB/s (RDMA) | 82 GB/s (RDMA) | 78 GB/s (RDMA) |
+| MI300X + CX7 RoCE | Internode | 32 | 60 GB/s (RDMA) | 61 GB/s (RDMA) | 60 GB/s (RDMA) |
+| MI300X + CX7 RoCE | Internode | 64 | 52 GB/s (RDMA) | 53 GB/s (RDMA) | 51 GB/s (RDMA) |
+| MI355X + Pollara | Intranode | 8 | 299 GB/s (xGMI) | 336 GB/s (xGMI) | 333 GB/s (xGMI) |
+| MI355X + Pollara | Internode | 16 | 82 GB/s (RDMA) | 82 GB/s (RDMA) | 82 GB/s (RDMA) |
+| MI355X + Pollara | Internode | 32 | 59 GB/s (RDMA) | 58 GB/s (RDMA) | 59 GB/s (RDMA) |
+| MI355X + Pollara | Internode | 64 | 50 GB/s (RDMA) | 49 GB/s (RDMA) | 49 GB/s (RDMA) |
+| MI300X + Broadcom | Internode | 16 | 71 GB/s (RDMA) | 81 GB/s (RDMA) | 45 GB/s (RDMA) |
+| MI300X + Broadcom | Internode | 32 | 49 GB/s (RDMA) | 55 GB/s (RDMA) | 50 GB/s (RDMA) |
+
+#### Low-Latency Mode (AMD MI300X + CX7 RoCE)
+
+| #EP | Dispatch Latency | Dispatch BW | Combine Latency | Combine BW |
+|:---:|:---:|:---:|:---:|:---:|
+| 8 | 65 us | 114 GB/s | 92 us | 157 GB/s |
+| 16 | 136 us | 55 GB/s | 207 us | 70 GB/s |
+| 32 | 224 us | 30 GB/s | 341 us | 42 GB/s |
+
+### Porting to AMD GPUs
+
+UCCL-EP&apos;s CPU proxy architecture makes porting to new GPU vendors straightforward — only the GPU kernels need to change, while the CPU-side NIC code remains identical. Porting to AMD GPUs and AWS EFA NICs took only **3 person-months**.
+
+The key changes for AMD included:
+- Migrating CUDA PTX intrinsics (atomics, memory fences, timers) to ROCm alternatives
+- Switching `WARP_SIZE` from 32 to 64 to match AMD wavefronts
+- Replacing NVIDIA TMA-based data copy with AMD CU-based (compute unit) copy
+- Merging &quot;coordinator&quot; wavefronts into &quot;receiver&quot; wavefronts in the HT kernel, since AMD GPUs support fewer wavefronts but more threads per wavefront
+
+After these GPU-side changes, UCCL-EP immediately ran on AMD platforms with any supported NIC (CX7 RoCE, Broadcom Thor-2, Pollara AI NIC) — no per-NIC work was needed.
+
+---
+
+## Application-Level Results
+
+
+### Megatron-LM Training on AMD (MI300X + Broadcom)
+
+We evaluate end-to-end Megatron-LM training of DeepSeek-V3 (downscaled to 32 layers and 379B parameters) on 16 MI300X nodes using the AMD Primus/Megatron-LM framework.
+
+&lt;div style=&quot;display: flex; justify-content: center; gap: 40px; flex-wrap: wrap;&quot;&gt;
+  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/amd_megatron_deepseekv3_tflops.png&quot; alt=&quot;Megatron-LM TFLOPS&quot; width=&quot;400&quot;/&gt;
+  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/amd_megatron_deepseekv3_tokens.png&quot; alt=&quot;Megatron-LM tokens/s&quot; width=&quot;400&quot;/&gt;
+&lt;/div&gt;
+&lt;p align=&quot;center&quot;&gt;&lt;em&gt;Megatron-LM training throughput (TFLOPS and tokens/s) on 16-node AMD MI300X + Broadcom Thor-2.&lt;/em&gt;&lt;/p&gt;
+
+Across all configurations, UCCL-EP matches or exceeds the TFLOPS by **7–36%** and throughput by **7–45%** compared to RCCL. These results show that UCCL-EP provides significant performance benefits for MoE training on AMD hardware.
+
+---
+
+### SGLang Inference on AWS (NVIDIA + EFA)
+
+We evaluate UCCL-EP in SGLang v0.5.3 on a prefill-heavy workload on p5en instances. We compare against NCCL, as DeepEP cannot run on EFA and PPLX had not been integrated into open-source inference engines at the time of evaluation.
+
+&lt;div style=&quot;display: flex; justify-content: center; gap: 40px; flex-wrap: wrap;&quot;&gt;
+  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/sglang_deepseek_r1_throughput.png&quot; alt=&quot;SGLang DeepSeek R1 throughput&quot; width=&quot;400&quot;/&gt;
+  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/sglang_qwen3_throughput.png&quot; alt=&quot;SGLang Qwen3 throughput&quot; width=&quot;400&quot;/&gt;
+&lt;/div&gt;
+&lt;p align=&quot;center&quot;&gt;&lt;em&gt;SGLang throughput comparison using UCCL-EP vs. NCCL on p5en. Left: DeepSeek R1 (671B). Right: Qwen3 (235B).&lt;/em&gt;&lt;/p&gt;
+
+**DeepSeek R1 (671B):**
+- EP=16: UCCL-EP reaches **46K tok/s** input throughput, about 5% higher than NCCL.
+- EP=32: UCCL-EP improves to **74K tok/s**, a **1.6x** speedup over its own EP=16 run.
+
+**Qwen3 (235B):**
+- EP=32: UCCL-EP reaches **62K tok/s** vs. 44K tok/s for NCCL — about **40% higher** throughput.
+
+UCCL-EP enables larger EP configurations (EP=32) where NCCL either significantly underperforms or cannot run. CPU utilization increases modestly from an average 8% to 22%.
+
+---
+
+## Towards More Efficient Low-latency kernels
+
+UCCL-EP&apos;s low-latency (LL) kernel, extending DeepEP, currently issues one 7 KB token per RDMA message. On EFA NICs, this is suboptimal because the current EFA firmware cannot process small tokens at a high enough rate (AWS has confirmed they are working on a firmware fix). PPLX, by contrast, packs tokens into larger messages, giving it an advantage at small batch sizes.
+
+A natural optimization is to pack tokens in a **best-effort manner** before sending. On the latest UCCL-EP, we have implemented per-expert batching of tokens for low-latency mode. On p5en (EP32, 128 tokens), batching improves BF16 dispatch from 299 us to **268 us** (10.4% improvement) and FP8 dispatch from 217 us to **178 us** (18.0% improvement). After batching, UCCL-EP outperforms PPLX by **51%** on BF16 dispatch and **50%** on FP8 dispatch.
+
+We evaluate these LL improvements on p5en while comparing against PPLX on both FP8 and BF16 dispatch paths (see the fair-comparison figure below).
+
+&lt;p align=&quot;center&quot;&gt;
+  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/p5en_dispatch_bf16_fp8_uccl_vs_pplx.png&quot; alt=&quot;p5en dispatch BF16 to FP8 UCCL vs PPLX fair measurement&quot; width=&quot;400&quot;/&gt;
+  &lt;em&gt;P5en comparison with PPLX for BF16 and FP8 dispatch paths.&lt;/em&gt;
+&lt;/p&gt;
+
+
+&lt;small&gt;
+
+**A Note on Fair Comparison with PPLX Kernels:** PPLX uses a different measurement methodology than our original DeepEP-inherited setup. To ensure fairness, we evaluate the results above using a script that aligns with the PPLX measurement methodology. One caveat is that PPLX does not support in-kernel BF16-&gt;FP8 conversion. For fairness, the FP8 results we report include BF16-&gt;FP8 casting time before entering the PPLX kernel (**266.90 us**). The PPLX dispatch time excluding external BF16-&gt;FP8 pre-cast time is **232.30 us**.
+
+&lt;/small&gt;
+
+---
+
+## Enabling Flow Control
+
+A key advantage of UCCL-EP&apos;s CPU proxy architecture is the ability to implement **flow control** — which otherwise is difficult with IBGDA, where GPU threads typically blindly issue one-sided RDMA operations without awareness of NIC queue pressure or completion.
+
+We observe that the number of outstanding RDMA requests can have a significant impact on various NICs, particularly affecting **tail latency**. This becomes increasingly critical as the number of destinations increases, where a single straggler can slow down the entire dispatch or combine operation.
+
+We illustrate this on **Broadcom Thor-2** (EP32, normal mode) by sweeping communication configurations, such as various NVLink chunk sizes and RDMA chunk sizes. **Without flow control, non-optimal configurations catastrophically degrade** — bandwidth can collapse from ~49 GB/s to as low as **4.4 GB/s**, and notify latency can explode from hundreds of microseconds to **over 70 ms**. With flow control (e.g., 1.5 MB inflight limit), performance is **stable across all configurations**.
+
+UCCL-EP&apos;s CPU proxy supports request tracking and pacing:
+- If outstanding requests grow too high, the proxy **temporarily buffers messages** at the sender to avoid incast at the receiver.
+- The proxy can **shard outgoing requests across multiple NICs and QPs** to avoid congestion and adapt to NIC-specific characteristics.
+
+This is particularly important for **Broadcom Thor-2** and **AMD Pollara AI** NICs. We provide the environment variables `UCCL_IB_MAX_INFLIGHT_BYTES` and `UCCL_IB_MAX_INFLIGHT_NORMAL` to configure flow control. Without it, these NICs can encounter CQE error 12 (Transport Retry Counter Exceeded) under high load.
+
+---
+
+## Acknowledgements
+
+This research is supported by gifts from Accenture, AMD, Anyscale, AWS, Broadcom, Cisco, Google, IBM, Intel, Intesa Sanpaolo, Lambda, Lightspeed, Mibura, Microsoft, NVIDIA, Samsung SDS, and SAP.</content:encoded></item><item><title>Previewing UCCL-EP: Flexible and Efficient Expert Parallelism for Cloud and Beyond</title><link>https://uccl-project.github.io/posts/uccl-ep/</link><guid isPermaLink="true">https://uccl-project.github.io/posts/uccl-ep/</guid><description>GPU-driven communication (e.g., DeepEP) is the key to efficient and large-scale EP, but it cannot run on heterogeneous platforms in the public cloud due to tight coupling between GPU and NIC.</description><pubDate>Mon, 27 Oct 2025 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;
 &lt;strong&gt;By: &lt;a href=&quot;https://maoziming.github.io/&quot;&gt;Ziming Mao&lt;/a&gt; (UC Berkeley), &lt;a href=&quot;https://yangzhou1997.github.io/&quot;&gt;Yang Zhou&lt;/a&gt; (UC Davis), &lt;a href=&quot;github.com/CalebZ9909&quot; class=&quot;no-github-icon&quot;&gt;Yihan Zhang&lt;/a&gt; (UC Davis), &lt;a href=&quot;https://github.com/HermesCui&quot; class=&quot;no-github-icon&quot;&gt;Chihan Cui&lt;/a&gt; (UW-Madison), &lt;a href=&quot;https://zhongjiechen.github.io/&quot; class=&quot;no-github-icon&quot;&gt;Zhongjie Chen&lt;/a&gt; (Tsinghua), &lt;a href=&quot;https://xuzhiying9510.github.io/&quot;&gt;Zhiying Xu&lt;/a&gt; (AWS), and other UCCL-EP contributors
 &lt;br&gt;
 Date: Oct 27, 2025
@@ -198,67 +469,4 @@ We also perform another interesting benchmark that does KV transfer between two 
 
 ## Last words on UCCL P2P
 
-UCCL P2P is rapidly evolving, and we would love to hear your feedback and contributions. Our next goal is to extend our send/recv collective to more types of collectives without burning any GPU SM resources, to accelerate distributed video generation and understanding scenarios. So talk to us and checkout our GitHub repository (https://github.com/uccl-project/uccl) if you are interested in how UCCL P2P can help accelerate these emerging scenarios. Stay tuned!</content:encoded></item><item><title>How to Debug NCCL Performance Issues for ML Workloads?</title><link>https://uccl-project.github.io/posts/debug-nccl/</link><guid isPermaLink="true">https://uccl-project.github.io/posts/debug-nccl/</guid><description>NCCL is notoriously hard to debug. In this post, we will go through our journey of debugging NCCL performance issues and how UCCL can help this process.</description><pubDate>Mon, 30 Jun 2025 00:00:00 GMT</pubDate><content:encoded>**By: UCCL Team -- June 30, 2025**
-
-NCCL is the cornerstone in modern distributed machine learning workloads, connecting dozens to thousands of GPUs for synchronous collective communication. Any small performance problem happening in any GPU or any NIC would cause the overall communication slowdown, increasing the job completion time. 
-
-Running NCCL performantly in public cloud GPUs is challenging, mainly because of two reasons: 1) NCCL has so many environmental variables (up to 78 if you check [NCCL‘s doc](https://docs.nvidia.com/deeplearning/nccl/user-guide/docs/env.html#system-configuration))---there are even some variables hidden inside the NCCL code not exposed out, and 2) networking layers such as RDMA can sometimes cause performance issues, while we users have very little control. 
-
-## A NCCL Debugging Experience 
-
-A few weeks ago, we got access to six HGX VMs from a major public cloud provider. Each of the VMs has 8 H100 GPUs and 8 400Gbps Nvidia CX-7 NICs; these VMs are across two racks in a multi-tier RoCE network. We set up NCCL v2.23.4 and run all-reduce from NCCL-tests (9d26b84) across these six VMs. However, we got surprisingly low performance in our first attempt. It is far lower than what others have measured of 360GB/s bus bandwidth (busbw) [^1]. Our experience told us it is more likely to be the inter-node networking issues, especially as the intra-node NVLink gives good results when running collective within a single node. 
-
-We decided to only look at the inter-node networking issues by setting two environmental variables of NCCL: `NCCL_P2P_DISABLE=1, NCCL_SHM_DISABLE=1`. These two environment variables will enforce the NCCL collectives to only use the inter-node network, but not any intra-node networks like NVLink or local host shared memory. After disabling intra-node networks, we find that all-reduce is only able to achieve half of the NIC bandwidth, which is around 23GB/s (the NIC has 50GB/s bandwidth). 
-
-We then guess it might be that the NIC has two ports, while NCCL only uses one port? Following this guess, we try to increase the number of RDMA QPs so that the two ports can be fully utilized. We set the environmental variable `NCCL_IB_QPS_PER_CONNECTION` to 4. You can also use another hidden variable `NCCL_NCHANNELS_PER_NET_PEER` that should give a similar effect. With this setting, now NCCL is able to go beyond 25GB/s, but still far behind theoritical 50GB/s. 
-
-So what happens? Our next guess is that NCCL would require a larger number of SMs to catch up with the fast network. This number can be tuned by setting the number of NCCL channels: `NCCL_MAX_NCHANNELS=8, NCCL_MIN_NCHANNELS=8`. With this setting, we thought we should be able to reach 50GB/s; unfortunately, NCCL performance saturates at around 39GB/s. Furthermore, we find that NCCL busbw gets severe drops at large message sizes like 128MB. 
-
-What could be the possible cause of this low performance and bus bandwidth (busbw) drop at large messages? We finally guess it could be the RoCE network congestion in a typical datacenter networking topology Fattree [^2]. When multiple network flows come out of a rack switch to another rack switch, these flows may map to the same upper switch port and cause network congestion. Recall that each of the two flows could have up to 400Gbps traffic rate in ML workload, while a single switch port only has 400Gbps. If so, how are we gonna resolve this? Especially, we do not have any control over the NIC and switch settings in the public cloud.
-
-&lt;p align=&quot;center&quot;&gt;
-  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/nccl-debug/ecmp_collision.png&quot; alt=&quot;ECMP hash collision&quot; width=&quot;600&quot;/&gt;
-  &lt;em&gt;Figure 1: Network congestion could happen as each RDMA flow only goes through a single and fixed network path in RoCE, and two flows could collide on the same switch port.&lt;/em&gt;
-&lt;/p&gt;
-
-The final solution is that we leverage UCCL by simply setting another environmental variable `NCCL_NET_PLUGIN=libnccl-net-uccl.so`. The high-level idea here is that UCCL will leverage hundreds of network paths in a congestion-aware way to avoid the network congestion issues, therefore reaching the NIC bandwidth limit of 50GB/s. Another good thing about UCCL is that it does this in a transparent way, without modifying any piece of application code or even NCCL code. 
-
-Finally, with UCCL, we are able to avoid the NCCL performance drop at large messages and further improve its maximum throughput. 
-
-&lt;p align=&quot;center&quot;&gt;
-  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/nccl-debug/nccl_vs_uccl.png&quot; alt=&quot;NCCL vs UCCL&quot; width=&quot;600&quot;/&gt;
-  &lt;em&gt;Figure 2: All-reduce performance across six machines, each with 8 H100 GPUs and 8 400G Nvidia NICs across two racks. Note that this measurement only uses 8 GPU SMs for NCCL/UCCL to leave enough SMs for ML applications; the measurement has NVLS off because of the GPU VM’s configuration issues on nv-fabricmanager.&lt;/em&gt;
-&lt;/p&gt;
-
-### The Ultimate List
-
-Based on UCCL team&apos;s experience, here we summarize a list of highly relevant NCCL parameters that are worthy of tuning when hitting NCCL performance issues. Note that the list also includes some parameters we have not had time to cover.  
-* Looking at the networking performance: `NCCL_P2P_DISABLE=1, NCCL_SHM_DISABLE=1`
-* Number of QPs: `NCCL_IB_QPS_PER_CONNECTION, NCCL_NCHANNELS_PER_NET_PEER`.
-* Number of channels: `NCCL_MAX_NCHANNELS, NCCL_MIN_NCHANNELS`
-* Transport buffer and chunk sizes: `NCCL_P2P_NET_CHUNKSIZE=524288, NCCL_BUFFSIZE=8388608`
-  * These are extremely useful for AWS GPU VMs that use AWS EFA RDMA NICs
-* PCIe relaxed ordering: `NCCL_IB_PCI_RELAXED_ORDERING`
-  * This could be useful when using GPU VMs rather baremetal machine
-* Using the UCCL plugin: `NCCL_NET_PLUGIN=libnccl-net-uccl.so`
-
-
-## Another Debugging Experience on AMD GPUs
-
-Last week, we got access to a production cluster with AMD MI300X GPU + Broadcom 400G NICs, **without** any root privileges. We observe a similar performance drop for RCCL (AMD’s collective communication library) at large messages. We tried the UCCL plugin, and it effectively brought performance back. 
-
-&lt;p align=&quot;center&quot;&gt;
-  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/nccl-debug/rccl_vs_uccl.png&quot; alt=&quot;RCCL vs NCCL&quot; width=&quot;600&quot;/&gt;
-  &lt;em&gt;Figure 3: All-to-all performance across two machines, each with 4 AMD MI300X GPUs and 4 400G Broadcom NICs.&lt;/em&gt;
-&lt;/p&gt;
-
-## Summary
-
-Debugging NCCL/RCCL performance is challenging, not only due to complex and hidden configurations, but also because of uncontrollable networking behaviors in public cloud deployments. Our UCCL team is here to help. We provide free consulting on performance-related NCCL/RCCL issues and the UCCL plugin to help you get rid of any network congestion issues. 
-
-UCCL is fully open-source at https://github.com/uccl-project/uccl, with many developers and maintainers from UC Berkeley Sky Computing Lab, the lab that once created Spark, Ray, and vLLM. We enthusiastically invite open-source developers to join and contribute to the UCCL project. 
-
----
-
-[^1]: https://semianalysis.com/2024/12/22/mi300x-vs-h100-vs-h200-benchmark-part-1-training/#multi-node-rcclnccl-collectives-and-scale-out-network-benchmarks. 
-[^2]: Al-Fares, Mohammad, Alexander Loukissas, and Amin Vahdat. &quot;A scalable, commodity data center network architecture.&quot; ACM SIGCOMM computer communication review 38.4 (2008): 63-74. [Paper link](http://ccr.sigcomm.org/online/files/p63-alfares.pdf).</content:encoded></item></channel></rss>
+UCCL P2P is rapidly evolving, and we would love to hear your feedback and contributions. Our next goal is to extend our send/recv collective to more types of collectives without burning any GPU SM resources, to accelerate distributed video generation and understanding scenarios. So talk to us and checkout our GitHub repository (https://github.com/uccl-project/uccl) if you are interested in how UCCL P2P can help accelerate these emerging scenarios. Stay tuned!</content:encoded></item></channel></rss>

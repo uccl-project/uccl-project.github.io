@@ -1,0 +1,508 @@
+<!DOCTYPE html><html lang="en"> <head><!-- Global Metadata --><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/svg+xml" href="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/images/uccl_logo.png"><meta name="generator" content="Astro v5.1.1"><!-- Canonical URL --><link rel="canonical" href="https://uccl-project.github.io/posts/uccl-ep-full/"><!-- Sitemap --><link rel="sitemap" href="/sitemap-index.xml"><!-- Primary Meta Tags --><title>UCCL-EP: Portable Expert-Parallel Communication — Full Results</title><meta name="title" content="UCCL-EP: Portable Expert-Parallel Communication — Full Results"><meta name="description" content="Full evaluation of UCCL-EP across NVIDIA and AMD GPUs, AWS EFA, InfiniBand, and Broadcom NICs — with application-level results on SGLang inference and Megatron-LM training."><!-- Open Graph / Facebook --><meta property="og:type" content="website"><meta property="og:url" content="https://uccl-project.github.io/posts/uccl-ep-full/"><meta property="og:title" content="UCCL-EP: Portable Expert-Parallel Communication — Full Results"><meta property="og:description" content="Full evaluation of UCCL-EP across NVIDIA and AMD GPUs, AWS EFA, InfiniBand, and Broadcom NICs — with application-level results on SGLang inference and Megatron-LM training."><meta property="og:image" content="https://uccl-project.github.io/blog-placeholder-1.avif"><!-- Twitter --><meta property="twitter:card" content="summary_large_image"><meta property="twitter:url" content="https://uccl-project.github.io/posts/uccl-ep-full/"><meta property="twitter:title" content="UCCL-EP: Portable Expert-Parallel Communication — Full Results"><meta property="twitter:description" content="Full evaluation of UCCL-EP across NVIDIA and AMD GPUs, AWS EFA, InfiniBand, and Broadcom NICs — with application-level results on SGLang inference and Megatron-LM training."><meta property="twitter:image" content="https://uccl-project.github.io/blog-placeholder-1.avif"><!-- Preline CSS --><script type="module" src="/_astro/BaseHead.astro_astro_type_script_index_0_lang.BtT675nX.js"></script><!-- Prism syntax highlighting --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-3wzg3yUeG6mXQz0YIZxZOKhHvJ3C0cI85FhF38sZ4N2VNivXzXcX4Jt9I7H5PHeTtNKgHdwNwp0UrEG3iu8IRw==" crossorigin="anonymous" referrerpolicy="no-referrer"><!-- Custom CSS for table borders --><link rel="stylesheet" href="/_astro/_page_.B7lVC5pw.css">
+<style>[data-astro-image]{width:100%;height:auto;-o-object-fit:var(--fit);object-fit:var(--fit);-o-object-position:var(--pos);object-position:var(--pos);aspect-ratio:var(--w) / var(--h)}[data-astro-image=responsive]{max-width:calc(var(--w) * 1px);max-height:calc(var(--h) * 1px)}[data-astro-image=fixed]{width:calc(var(--w) * 1px);height:calc(var(--h) * 1px)}
+</style><script type="module" src="/_astro/page.DTIbhfSr.js"></script>
+<script>!(function(w,p,f,c){if(!window.crossOriginIsolated && !navigator.serviceWorker) return;c=w[p]=Object.assign(w[p]||{},{"lib":"/~partytown/","debug":false});c[f]=(c[f]||[]).concat(["dataLayer.push"])})(window,'partytown','forward');/* Partytown 0.10.2 - MIT builder.io */
+const t={preserveBehavior:!1},e=e=>{if("string"==typeof e)return[e,t];const[n,r=t]=e;return[n,{...t,...r}]},n=Object.freeze((t=>{const e=new Set;let n=[];do{Object.getOwnPropertyNames(n).forEach((t=>{"function"==typeof n[t]&&e.add(t)}))}while((n=Object.getPrototypeOf(n))!==Object.prototype);return Array.from(e)})());!function(t,r,o,i,a,s,c,d,l,p,u=t,f){function h(){f||(f=1,"/"==(c=(s.lib||"/~partytown/")+(s.debug?"debug/":""))[0]&&(l=r.querySelectorAll('script[type="text/partytown"]'),i!=t?i.dispatchEvent(new CustomEvent("pt1",{detail:t})):(d=setTimeout(v,1e4),r.addEventListener("pt0",w),a?y(1):o.serviceWorker?o.serviceWorker.register(c+(s.swPath||"partytown-sw.js"),{scope:c}).then((function(t){t.active?y():t.installing&&t.installing.addEventListener("statechange",(function(t){"activated"==t.target.state&&y()}))}),console.error):v())))}function y(e){p=r.createElement(e?"script":"iframe"),t._pttab=Date.now(),e||(p.style.display="block",p.style.width="0",p.style.height="0",p.style.border="0",p.style.visibility="hidden",p.setAttribute("aria-hidden",!0)),p.src=c+"partytown-"+(e?"atomics.js?v=0.10.2":"sandbox-sw.html?"+t._pttab),r.querySelector(s.sandboxParent||"body").appendChild(p)}function v(n,o){for(w(),i==t&&(s.forward||[]).map((function(n){const[r]=e(n);delete t[r.split(".")[0]]})),n=0;n<l.length;n++)(o=r.createElement("script")).innerHTML=l[n].innerHTML,o.nonce=s.nonce,r.head.appendChild(o);p&&p.parentNode.removeChild(p)}function w(){clearTimeout(d)}s=t.partytown||{},i==t&&(s.forward||[]).map((function(r){const[o,{preserveBehavior:i}]=e(r);u=t,o.split(".").map((function(e,r,o){var a;u=u[o[r]]=r+1<o.length?u[o[r]]||(a=o[r+1],n.includes(a)?[]:{}):(()=>{let e=null;if(i){const{methodOrProperty:n,thisObject:r}=((t,e)=>{let n=t;for(let t=0;t<e.length-1;t+=1)n=n[e[t]];return{thisObject:n,methodOrProperty:e.length>0?n[e[e.length-1]]:void 0}})(t,o);"function"==typeof n&&(e=(...t)=>n.apply(r,...t))}return function(){let n;return e&&(n=e(arguments)),(t._ptf=t._ptf||[]).push(o,arguments),n}})()}))})),"complete"==r.readyState?h():(t.addEventListener("DOMContentLoaded",h),t.addEventListener("load",h))}(window,document,navigator,top,window.crossOriginIsolated);;(e=>{e.addEventListener("astro:before-swap",e=>{let r=document.body.querySelector("iframe[src*='/~partytown/']");if(r)e.newDocument.body.append(r)})})(document);</script></head> <body class="flex flex-col min-h-screen mx-auto max-w-4xl px-4 dark:prose-invert sm:px-6 lg:px-8 dark:bg-neutral-900"> <header class="flex flex-wrap md:justify-start md:flex-nowrap z-50 w-full py-7"> <nav class="relative max-w-7xl w-full flex flex-wrap md:grid md:grid-cols-12 basis-full items-center px-4 mx-auto" aria-label="Global"> <div class="md:col-span-3"> <a class="flex-none flex items-center" href="/" aria-label="UCCL"> <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/images/uccl_logo_side.png" alt="UCCL Logo" class="h-12 w-auto"> </a> </div> <div class="flex items-center gap-x-2 ms-auto py-1 md:ps-6 md:order-3 md:col-span-3"> <button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-xl border border-transparent text-black hover:bg-neutral-100 dark:text-white dark:hover:bg-neutral-700 transition disabled:opacity-50 disabled:pointer-events-none" onclick="window.location.href='/search/'"> <svg width="1em" height="1em" class="icon-base" data-icon="tabler:search">   <symbol id="ai:tabler:search" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10a7 7 0 1 0 14 0a7 7 0 1 0-14 0m18 11l-6-6"/></symbol><use href="#ai:tabler:search"></use>  </svg> </button> <button type="button" class="hs-dark-mode hs-dark-mode-active:hidden inline-flex items-center gap-x-2 py-2 px-3 rounded-full text-sm text-black hover:bg-white/20" data-hs-theme-click-value="dark"> <svg width="1em" height="1em" class="icon-base" data-icon="tabler:sun-filled">   <symbol id="ai:tabler:sun-filled" viewBox="0 0 24 24"><path fill="currentColor" d="M12 19a1 1 0 0 1 .993.883L13 20v1a1 1 0 0 1-1.993.117L11 21v-1a1 1 0 0 1 1-1m6.313-2.09l.094.083l.7.7a1 1 0 0 1-1.32 1.497l-.094-.083l-.7-.7a1 1 0 0 1 1.218-1.567zm-11.306.083a1 1 0 0 1 .083 1.32l-.083.094l-.7.7a1 1 0 0 1-1.497-1.32l.083-.094l.7-.7a1 1 0 0 1 1.414 0M4 11a1 1 0 0 1 .117 1.993L4 13H3a1 1 0 0 1-.117-1.993L3 11zm17 0a1 1 0 0 1 .117 1.993L21 13h-1a1 1 0 0 1-.117-1.993L20 11zM6.213 4.81l.094.083l.7.7a1 1 0 0 1-1.32 1.497l-.094-.083l-.7-.7A1 1 0 0 1 6.11 4.74zm12.894.083a1 1 0 0 1 .083 1.32l-.083.094l-.7.7a1 1 0 0 1-1.497-1.32l.083-.094l.7-.7a1 1 0 0 1 1.414 0M12 2a1 1 0 0 1 .993.883L13 3v1a1 1 0 0 1-1.993.117L11 4V3a1 1 0 0 1 1-1m0 5a5 5 0 1 1-4.995 5.217L7 12l.005-.217A5 5 0 0 1 12 7"/></symbol><use href="#ai:tabler:sun-filled"></use>  </svg> </button> <button type="button" class="hs-dark-mode hs-dark-mode-active:inline-flex hidden items-center gap-x-2 py-2 px-3 rounded-full text-sm text-white hover:bg-white/20" data-hs-theme-click-value="light"> <svg width="1em" height="1em" class="icon-base" data-icon="tabler:moon-filled">   <symbol id="ai:tabler:moon-filled" viewBox="0 0 24 24"><path fill="currentColor" d="M12 1.992a10 10 0 1 0 9.236 13.838c.341-.82-.476-1.644-1.298-1.31a6.5 6.5 0 0 1-6.864-10.787l.077-.08c.551-.63.113-1.653-.758-1.653h-.266l-.068-.006z"/></symbol><use href="#ai:tabler:moon-filled"></use>  </svg> </button> <div class="md:hidden"> <button type="button" class="hs-collapse-toggle size-[38px] flex justify-center items-center text-sm font-semibold rounded-xl text-black hover:bg-neutral-100 disabled:opacity-50 disabled:pointer-events-none dark:text-white dark:hover:bg-neutral-700" data-hs-collapse="#navbar-collapse-with-animation" aria-controls="navbar-collapse-with-animation" aria-label="Toggle navigation"> <svg width="1em" height="1em" class="hs-collapse-open:hidden flex-shrink-0 size-4" data-icon="tabler:menu-2">   <symbol id="ai:tabler:menu-2" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></symbol><use href="#ai:tabler:menu-2"></use>  </svg> <svg width="1em" height="1em" class="hs-collapse-open:block hidden flex-shrink-0 size-4" data-icon="tabler:menu-order">   <symbol id="ai:tabler:menu-order" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 10h16M4 14h16M9 18l3 3l3-3M9 6l3-3l3 3"/></symbol><use href="#ai:tabler:menu-order"></use>  </svg> </button> </div> </div> <div id="navbar-collapse-with-animation" class="hs-collapse hidden overflow-hidden transition-all duration-300 basis-full grow md:block md:w-auto md:basis-auto md:order-2 md:col-span-6"> <div class="flex flex-col gap-y-4 gap-x-0 mt-5 md:flex-row md:justify-center md:items-center md:gap-y-0 md:gap-x-7 md:mt-0"> <a href="/posts/about-us/" class="px-4 py-3 font-medium text-neutral-900 hover:text-neutral-600 dark:text-neutral-400 dark:hover:text-neutral-200"> About Us </a><a href="/" class="px-4 py-3 font-medium text-neutral-900 hover:text-neutral-600 dark:text-neutral-400 dark:hover:text-neutral-200"> Blog Posts </a><a href="/tags/" class="px-4 py-3 font-medium text-neutral-900 hover:text-neutral-600 dark:text-neutral-400 dark:hover:text-neutral-200"> Sort by Tags </a> </div> </div> </nav> </header> <main class="flex-grow">  <main> <article class="prose mx-auto dark:prose-invert"> <div class="prose-h1 text-center"> <h1>UCCL-EP: Portable Expert-Parallel Communication — Full Results</h1> </div> <div> <picture> <source srcset="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep-full/uccl-ep-full.png 392w, https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep-full/uccl-ep-full.png 700w, https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep-full/uccl-ep-full.png 980w, https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep-full/uccl-ep-full.png 1960w" type="image/avif" sizes="(max-width: 360px) 392px, 
+           (max-width: 720px) 700px, 
+           (max-width: 1600px) 980px, 
+           1960px">  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep-full/uccl-ep-full.png" srcset="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep-full/uccl-ep-full.png 392w, https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep-full/uccl-ep-full.png 700w, https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep-full/uccl-ep-full.png 980w, https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep-full/uccl-ep-full.png 1960w" alt="UCCL-EP" sizes="(max-width: 360px) 392px, 
+           (max-width: 720px) 700px, 
+           (max-width: 1600px) 980px, 
+           1960px" width="1024" height="1024" loading="lazy" decoding="async" class="mx-auto w-full max-w-full rounded-lg"> </picture> </div> <div> <p>
+<strong>By: <a href="https://maoziming.github.io/">Ziming Mao</a> (UC Berkeley), <a href="https://laochanlam.com/">ChonLam Lao</a> (Harvard), <a href="https://yangzhou1997.github.io/">Yang Zhou</a> (UC Davis), <a href="github.com/CalebZ9909" class="no-github-icon">Yihan Zhang</a> (UC Davis), <a href="https://github.com/HermesCui" class="no-github-icon">Chihan Cui</a> (UW-Madison), <a href="https://zhongjiechen.github.io/" class="no-github-icon">Zhongjie Chen</a> (Tsinghua), <a href="https://xuzhiying9510.github.io/">Zhiying Xu</a> (AWS), and other UCCL-EP contributors
+<br>
+Date: Dec 20, 2025
+</strong>
+</p>
+<div class="tldr">
+<p>
+We present <strong>UCCL-EP</strong>, a portable expert-parallel communication library that achieves DeepEP-level performance across heterogeneous GPU and NIC hardware. UCCL-EP outperforms the best existing EP solution by up to <strong>2.3x</strong> for dispatch and combine on AWS EFA. On the NVIDIA-only InfiniBand platform, UCCL-EP achieves performance within 5% of the original DeepEP. For end-to-end applications, UCCL-EP speeds up SGLang inference throughput by up to <strong>40%</strong> over NCCL and improves Megatron-LM training throughput by up to <strong>45%</strong> over RCCL on AMD GPUs.
+</p>
+<p>
+Paper: <a href="https://arxiv.org/pdf/2512.19849">arxiv.org/pdf/2512.19849</a> | Code: <a href="https://github.com/uccl-project/uccl/tree/main/ep">uccl-project/uccl/ep</a>
+</p>
+</div>
+<h2 id="recap-why-uccl-ep"><a class="heading-anchor" href="#recap-why-uccl-ep">Recap: Why UCCL-EP?</a></h2>
+<p>In our <a href="https://uccl-project.github.io/posts/uccl-ep/">previous blog post</a>, we introduced UCCL-EP and the key challenge it addresses: state-of-the-art EP communication systems like DeepEP achieve high performance through <strong>GPU-initiated token-level RDMA</strong>, but are tightly coupled to the NVIDIA GPU + NVIDIA NIC ecosystem (via IBGDA). This tight coupling prevents running on public clouds like AWS (which use EFA NICs), on AMD GPUs, or on alternative NIC vendors like Broadcom.</p>
+<p>UCCL-EP solves this with a clean separation of concerns:</p>
+<ul>
+<li><strong>GPUs</strong> retain fine-grained token-level communication initiation for maximal overlap with computation.</li>
+<li><strong>CPUs</strong> handle the control-intensive networking aspects — queue management, flow control, ordering enforcement — through a lightweight, multi-threaded proxy.</li>
+</ul>
+<p>This architecture reduces the porting effort from O(m x n) (left figure, for m GPU vendors and n NIC vendors) down to O(m) (right figure), as the CPU proxy can use the <code>libibverbs</code> API that all RDMA NICs support. UCCL-EP provides <strong>drop-in support for vLLM and SGLang</strong>, making it easy to adopt without modifying inference engine code.</p>
+<div style="display: flex; justify-content: center; gap: 40px; flex-wrap: wrap;">
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/uep_intro_ibgda.png" alt="IBGDA-style: O(m x n) porting effort" width="400">
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/uep_intro_ucclep.png" alt="UCCL-EP: O(m) porting effort" width="400">
+</div>
+<p align="center"><em>Left: IBGDA-style GPU-initiated communication requires O(m x n) porting effort across GPU and NIC vendors. Right: UCCL-EP reduces this to O(m) by using the CPU as a portable intermediary via libibverbs.</em></p>
+<p>UCCL-EP architecture is shown in the figure below. GPUs delegate token-routing commands to multi-threaded CPU proxies via lock-free FIFO channels. CPU proxies issue GPUDirect RDMA on behalf of GPUs, while managing ordering, flow control, and completion handling.</p>
+<p align="center">
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/uep_architecture.png" alt="UCCL-EP Architecture" width="600">
+  <em>UCCL-EP architecture.</em>
+</p>
+<p>We discuss two key techniques in UCCL-EP:</p>
+<p><strong>CPU Proxy with Lock-Free FIFO Channels.</strong> UCCL-EP uses a 128-bit <code>TransferCmd</code> descriptor that GPU threads enqueue into shared, lock-free FIFO channels. CPU proxy threads dequeue these commands and issue the corresponding RDMA operations. The FIFO design caches the tail index on GPU memory, minimizing PCIe traversals. Each GPU uses multiple FIFO channels, each mapped to a dedicated RDMA Queue Pair (QP), enabling over <strong>50 million RDMA operations per second</strong> per GPU. The additional latency is small (&#x3C; 4us per operation) compared to the typical latency of dispatch/combine operations.</p>
+<p><strong>Immediate-Data-Based Ordering for Heterogeneous NICs.</strong> Different NICs provide different delivery guarantees. For example, AWS EFA uses the Scalable Reliable Datagram (SRD) protocol with multi-pathing, which does not guarantee in-order delivery within a single QP. UCCL-EP embeds per-channel sequence numbers into RDMA immediate data, allowing the receiver-side CPU proxy to reorder out-of-sequence control messages before committing them to GPU memory. This approach also enables <strong>software-level atomics</strong> — piggybacking completion notifications on regular RDMA writes — which is both more portable (no hardware atomic support required) and more efficient (one RDMA operation instead of two for write + atomic).</p>
+<h3 id="cpu-proxy-throughput-is-not-the-bottleneck"><a class="heading-anchor" href="#cpu-proxy-throughput-is-not-the-bottleneck">CPU Proxy Throughput Is Not the Bottleneck</a></h3>
+<p>We measure the FIFO channel latency and compare it against the end-to-end RDMA latency on EFA and Broadcom NICs. The FIFO channel sustains over <strong>8 million operations per second</strong> across 8 GPUs, with average latency of <strong>~3 us</strong> and P99 under <strong>8 us</strong> — an order of magnitude lower than the RDMA network latency (which ranges from 20–50+ us on EFA). This confirms that the CPU-GPU channel is not the bottleneck, and the additional proxy latency is amortized across the much larger network transfer time.</p>
+<hr>
+<h2 id="evaluation-testbeds"><a class="heading-anchor" href="#evaluation-testbeds">Evaluation Testbeds</a></h2>
+<p>We have since evaluated UCCL-EP on a diverse set of platforms spanning NVIDIA and AMD GPUs with EFA, InfiniBand, and Broadcom NICs.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th align="center">Name</th><th align="center">Servers</th><th align="center">GPU</th><th align="center">NIC</th><th align="center">CPU</th><th align="center">Cloud</th></tr></thead><tbody><tr><td align="center">NV_EFAv3</td><td align="center">4</td><td align="center">NVIDIA H200 x8</td><td align="center">AWS EFAv3 200G x16</td><td align="center">192 cores</td><td align="center">AWS (p5en)</td></tr><tr><td align="center">NV_EFAv4</td><td align="center">4</td><td align="center">NVIDIA B200 x8</td><td align="center">AWS EFAv4 400G x8</td><td align="center">192 cores</td><td align="center">AWS (p6-b200)</td></tr><tr><td align="center">NV_IB</td><td align="center">4</td><td align="center">NVIDIA H100 x8</td><td align="center">ConnectX-7 400G x8</td><td align="center">128 cores</td><td align="center">Nebius</td></tr><tr><td align="center">NV_GH200</td><td align="center">2</td><td align="center">NVIDIA GH200 x1</td><td align="center">ConnectX-7 200G x1</td><td align="center">72 cores</td><td align="center">Lambda</td></tr><tr><td align="center">AMD_CX7</td><td align="center">4-16</td><td align="center">AMD MI300X x8</td><td align="center">ConnectX-7 400G x8</td><td align="center">128 cores</td><td align="center">OCI</td></tr><tr><td align="center">AMD_BRC</td><td align="center">4</td><td align="center">AMD MI300X x8</td><td align="center">Broadcom Thor-2 400G x8</td><td align="center">128 cores</td><td align="center">Vultr</td></tr><tr><td align="center">AMD_AINIC</td><td align="center">4</td><td align="center">AMD MI355X x8</td><td align="center">Pollara AI NIC IB x8</td><td align="center">128 cores</td><td align="center">AMD</td></tr></tbody></table>
+<p><strong>Baselines:</strong> NCCL/RCCL, DeepEP (NVIDIA-only), Perplexity Kernels (<a href="https://github.com/perplexityai/pplx-garden">PPLX</a>), and CPU-assisted IBGDA. UCCL-EP uses 4 CPU proxy threads per GPU.</p>
+<hr>
+<h2 id="microbenchmark-results"><a class="heading-anchor" href="#microbenchmark-results">Microbenchmark Results</a></h2>
+<h3 id="on-aws-efa-nvidia-gpus"><a class="heading-anchor" href="#on-aws-efa-nvidia-gpus">On AWS EFA (NVIDIA GPUs)</a></h3>
+<h4 id="h200--efa-p5en"><a class="heading-anchor" href="#h200--efa-p5en">H200 + EFA (p5en)</a></h4>
+<p>On p5en instances (8x H200, 16x 200 Gb/s EFA), we measure EP32 dispatch and combine latency while varying the number of tokens. UCCL-EP uses the minimum of high-throughput (HT) and low-latency (LL) mode latency, while PPLX operates in a single mode.</p>
+<p>At small batch sizes (128 tokens), PPLX achieves lower latency because UCCL-EP (extending DeepEP) issues messages at 7 KB token granularity, whereas PPLX packs tokens into larger messages. However, as the token count increases, <strong>UCCL-EP quickly overtakes PPLX</strong> — delivering <strong>2.3x lower dispatch latency</strong> and <strong>1.1–1.5x lower combine latency</strong> for medium and large batches.</p>
+<div style="display: flex; justify-content: center; gap: 40px; flex-wrap: wrap;">
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/p5en_dispatch_latency_vs_tokens_pplx_uccl.jpg" alt="p5en dispatch latency vs tokens" width="400">
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/p5en_combine_latency_vs_tokens_pplx_uccl.jpg" alt="p5en combine latency vs tokens" width="400">
+</div>
+<p align="center"><em>EP32 dispatch (left) and combine (right) latency vs. number of tokens on p5en (H200 + EFA 400 Gbps).</em></p>
+<p>We present more results in the table below.</p>
+<!-- #### B200 + EFA (p6-b200)
+
+On p6-b200 instances (8x B200, 8x 400 Gb/s EFA), we see similar trends with UCCL-EP outperforming PPLX at larger token counts:
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/p6_dispatch_ll_ht.png" alt="p6 dispatch" width="400"/>
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/p6_combine_ll_ht.png" alt="p6 combine" width="400"/>
+  <em>EP32 dispatch (left) and combine (right) comparison on p6-b200 (B200 + EFA 400 Gbps).</em>
+</p> -->
+<h5 id="normal-mode-bandwidth-efa"><a class="heading-anchor" href="#normal-mode-bandwidth-efa">Normal Mode Bandwidth (EFA)</a></h5>
+<p>Following the DeepSeek-V3 pretraining configuration (4096 tokens, 7168 hidden, top-4 groups, top-8 experts, FP8 dispatch / BF16 combine):</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th align="center">Platform</th><th align="center">Type</th><th align="center">#EP</th><th align="center">Dispatch BW &#x26; Latency</th><th align="center">Combine BW &#x26; Latency</th></tr></thead><tbody><tr><td align="center">p5en (H200)</td><td align="center">Intranode</td><td align="center">8</td><td align="center">320 GB/s (NVLink), 500 us</td><td align="center">319 GB/s (NVLink), 973 us</td></tr><tr><td align="center">p5en (H200)</td><td align="center">Internode</td><td align="center">16</td><td align="center">50 GB/s (RDMA), 1196 us</td><td align="center">18 GB/s (RDMA), 6379 us</td></tr><tr><td align="center">p5en (H200)</td><td align="center">Internode</td><td align="center">24</td><td align="center">53 GB/s (RDMA), 1633 us</td><td align="center">26 GB/s (RDMA), 6365 us</td></tr><tr><td align="center">p5en (H200)</td><td align="center">Internode</td><td align="center">32</td><td align="center">54 GB/s (RDMA), 2022 us</td><td align="center">43 GB/s (RDMA), 4899 us</td></tr><tr><td align="center">p6 (B200)</td><td align="center">Intranode</td><td align="center">8</td><td align="center">280 GB/s (NVLink), 571 us</td><td align="center">426 GB/s (NVLink), 727 us</td></tr><tr><td align="center">p6 (B200)</td><td align="center">Internode</td><td align="center">16</td><td align="center">53 GB/s (RDMA), 1141 us</td><td align="center">60 GB/s (RDMA), 1965 us</td></tr><tr><td align="center">p6 (B200)</td><td align="center">Internode</td><td align="center">24</td><td align="center">53 GB/s (RDMA), 1637 us</td><td align="center">59 GB/s (RDMA), 2887 us</td></tr><tr><td align="center">p6 (B200)</td><td align="center">Internode</td><td align="center">32</td><td align="center">53 GB/s (RDMA), 2072 us</td><td align="center">57 GB/s (RDMA), 3724 us</td></tr></tbody></table>
+<h5 id="low-latency-mode-efa"><a class="heading-anchor" href="#low-latency-mode-efa">Low-Latency Mode (EFA)</a></h5>
+<p>Following a DeepSeek-V3 inference setting (128 tokens, 7168 hidden, top-8 experts, FP8 dispatch / BF16 combine):</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th align="center">Platform</th><th align="center">#EP</th><th align="center">Dispatch Latency</th><th align="center">Dispatch BW</th><th align="center">Combine Latency</th><th align="center">Combine BW</th></tr></thead><tbody><tr><td align="center">p5en (H200)</td><td align="center">16</td><td align="center">226 us</td><td align="center">36 GB/s</td><td align="center">293 us</td><td align="center">48 GB/s</td></tr><tr><td align="center">p5en (H200)</td><td align="center">24</td><td align="center">386 us</td><td align="center">20 GB/s</td><td align="center">580 us</td><td align="center">26 GB/s</td></tr><tr><td align="center">p5en (H200)</td><td align="center">32</td><td align="center">465 us</td><td align="center">16 GB/s</td><td align="center">694 us</td><td align="center">25 GB/s</td></tr><tr><td align="center">p6 (B200)</td><td align="center">16</td><td align="center">228 us</td><td align="center">33 GB/s</td><td align="center">318 us</td><td align="center">46 GB/s</td></tr><tr><td align="center">p6 (B200)</td><td align="center">24</td><td align="center">448 us</td><td align="center">17 GB/s</td><td align="center">566 us</td><td align="center">26 GB/s</td></tr><tr><td align="center">p6 (B200)</td><td align="center">32</td><td align="center">406 us</td><td align="center">19 GB/s</td><td align="center">617 us</td><td align="center">24 GB/s</td></tr></tbody></table>
+<hr>
+<h3 id="on-infiniband-nvidia-cx7"><a class="heading-anchor" href="#on-infiniband-nvidia-cx7">On InfiniBand (NVIDIA CX7)</a></h3>
+<p>On the Nebius testbed (H100 + CX7 InfiniBand), we compare UCCL-EP against both the original DeepEP and PPLX at EP32.</p>
+<p>In <strong>LL mode</strong>, UCCL-EP incurs slightly higher latency than DeepEP and PPLX due to the CPU proxy overhead on small messages. However, in <strong>HT mode</strong>, UCCL-EP achieves latency <strong>within 5% of DeepEP</strong> for dispatch while outperforming PPLX by <strong>2.1x</strong> (dispatch) and <strong>1.6x</strong> (combine). This shows that UCCL-EP preserves DeepEP-level performance on throughput-oriented workloads even without IBGDA.</p>
+<div style="display: flex; justify-content: center; gap: 40px; flex-wrap: wrap;">
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/nebius_dispatch_ll_ht.png" alt="Nebius dispatch" width="400">
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/nebius_combine_ll_ht.png" alt="Nebius combine" width="400">
+</div>
+<p align="center"><em>EP32 dispatch (left) and combine (right) comparison on H100 + CX7 InfiniBand. UCCL-EP matches DeepEP in HT mode and significantly outperforms PPLX.</em></p>
+<hr>
+<h3 id="on-amd-gpus"><a class="heading-anchor" href="#on-amd-gpus">On AMD GPUs</a></h3>
+<p>UCCL-EP enables GPU-initiated token-level EP communication on AMD GPUs. We evaluate on MI300X with both CX7 InfiniBand (OCI) and Broadcom Thor-2 NICs (Vultr).</p>
+<div style="display: flex; justify-content: center; gap: 40px; flex-wrap: wrap;">
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/amd_dispatch_ll_ht.png" alt="AMD dispatch" width="400">
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/amd_combine_ll_ht.png" alt="AMD combine" width="400">
+</div>
+<p align="center"><em>EP32 dispatch (left) and combine (right) on AMD MI300X with CX7 RoCE and Broadcom Thor-2 NICs.</em></p>
+<!-- UCCL-EP achieves similar performance across both NIC vendors, demonstrating true portability. On MI300X + CX7 RoCE, UCCL-EP achieves comparable performance to DeepEP on the NVIDIA-only platform. -->
+<p>More results across heterogeneous platforms are shown in the tables below.</p>
+<h4 id="normal-mode-bandwidth-amd"><a class="heading-anchor" href="#normal-mode-bandwidth-amd">Normal Mode Bandwidth (AMD)</a></h4>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th align="center">Platform</th><th align="center">Type</th><th align="center">#EP</th><th align="center">FP8 Dispatch BW</th><th align="center">BF16 Dispatch BW</th><th align="center">Combine BW</th></tr></thead><tbody><tr><td align="center">MI300X + CX7 RoCE</td><td align="center">Intranode</td><td align="center">8</td><td align="center">260 GB/s (xGMI)</td><td align="center">295 GB/s (xGMI)</td><td align="center">304 GB/s (xGMI)</td></tr><tr><td align="center">MI300X + CX7 RoCE</td><td align="center">Internode</td><td align="center">16</td><td align="center">74 GB/s (RDMA)</td><td align="center">82 GB/s (RDMA)</td><td align="center">78 GB/s (RDMA)</td></tr><tr><td align="center">MI300X + CX7 RoCE</td><td align="center">Internode</td><td align="center">32</td><td align="center">60 GB/s (RDMA)</td><td align="center">61 GB/s (RDMA)</td><td align="center">60 GB/s (RDMA)</td></tr><tr><td align="center">MI300X + CX7 RoCE</td><td align="center">Internode</td><td align="center">64</td><td align="center">52 GB/s (RDMA)</td><td align="center">53 GB/s (RDMA)</td><td align="center">51 GB/s (RDMA)</td></tr><tr><td align="center">MI355X + Pollara</td><td align="center">Intranode</td><td align="center">8</td><td align="center">299 GB/s (xGMI)</td><td align="center">336 GB/s (xGMI)</td><td align="center">333 GB/s (xGMI)</td></tr><tr><td align="center">MI355X + Pollara</td><td align="center">Internode</td><td align="center">16</td><td align="center">82 GB/s (RDMA)</td><td align="center">82 GB/s (RDMA)</td><td align="center">82 GB/s (RDMA)</td></tr><tr><td align="center">MI355X + Pollara</td><td align="center">Internode</td><td align="center">32</td><td align="center">59 GB/s (RDMA)</td><td align="center">58 GB/s (RDMA)</td><td align="center">59 GB/s (RDMA)</td></tr><tr><td align="center">MI355X + Pollara</td><td align="center">Internode</td><td align="center">64</td><td align="center">50 GB/s (RDMA)</td><td align="center">49 GB/s (RDMA)</td><td align="center">49 GB/s (RDMA)</td></tr><tr><td align="center">MI300X + Broadcom</td><td align="center">Internode</td><td align="center">16</td><td align="center">71 GB/s (RDMA)</td><td align="center">81 GB/s (RDMA)</td><td align="center">45 GB/s (RDMA)</td></tr><tr><td align="center">MI300X + Broadcom</td><td align="center">Internode</td><td align="center">32</td><td align="center">49 GB/s (RDMA)</td><td align="center">55 GB/s (RDMA)</td><td align="center">50 GB/s (RDMA)</td></tr></tbody></table>
+<h4 id="low-latency-mode-amd-mi300x--cx7-roce"><a class="heading-anchor" href="#low-latency-mode-amd-mi300x--cx7-roce">Low-Latency Mode (AMD MI300X + CX7 RoCE)</a></h4>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th align="center">#EP</th><th align="center">Dispatch Latency</th><th align="center">Dispatch BW</th><th align="center">Combine Latency</th><th align="center">Combine BW</th></tr></thead><tbody><tr><td align="center">8</td><td align="center">65 us</td><td align="center">114 GB/s</td><td align="center">92 us</td><td align="center">157 GB/s</td></tr><tr><td align="center">16</td><td align="center">136 us</td><td align="center">55 GB/s</td><td align="center">207 us</td><td align="center">70 GB/s</td></tr><tr><td align="center">32</td><td align="center">224 us</td><td align="center">30 GB/s</td><td align="center">341 us</td><td align="center">42 GB/s</td></tr></tbody></table>
+<h3 id="porting-to-amd-gpus"><a class="heading-anchor" href="#porting-to-amd-gpus">Porting to AMD GPUs</a></h3>
+<p>UCCL-EP’s CPU proxy architecture makes porting to new GPU vendors straightforward — only the GPU kernels need to change, while the CPU-side NIC code remains identical. Porting to AMD GPUs and AWS EFA NICs took only <strong>3 person-months</strong>.</p>
+<p>The key changes for AMD included:</p>
+<ul>
+<li>Migrating CUDA PTX intrinsics (atomics, memory fences, timers) to ROCm alternatives</li>
+<li>Switching <code>WARP_SIZE</code> from 32 to 64 to match AMD wavefronts</li>
+<li>Replacing NVIDIA TMA-based data copy with AMD CU-based (compute unit) copy</li>
+<li>Merging “coordinator” wavefronts into “receiver” wavefronts in the HT kernel, since AMD GPUs support fewer wavefronts but more threads per wavefront</li>
+</ul>
+<p>After these GPU-side changes, UCCL-EP immediately ran on AMD platforms with any supported NIC (CX7 RoCE, Broadcom Thor-2, Pollara AI NIC) — no per-NIC work was needed.</p>
+<hr>
+<h2 id="application-level-results"><a class="heading-anchor" href="#application-level-results">Application-Level Results</a></h2>
+<h3 id="megatron-lm-training-on-amd-mi300x--broadcom"><a class="heading-anchor" href="#megatron-lm-training-on-amd-mi300x--broadcom">Megatron-LM Training on AMD (MI300X + Broadcom)</a></h3>
+<p>We evaluate end-to-end Megatron-LM training of DeepSeek-V3 (downscaled to 32 layers and 379B parameters) on 16 MI300X nodes using the AMD Primus/Megatron-LM framework.</p>
+<div style="display: flex; justify-content: center; gap: 40px; flex-wrap: wrap;">
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/amd_megatron_deepseekv3_tflops.png" alt="Megatron-LM TFLOPS" width="400">
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/amd_megatron_deepseekv3_tokens.png" alt="Megatron-LM tokens/s" width="400">
+</div>
+<p align="center"><em>Megatron-LM training throughput (TFLOPS and tokens/s) on 16-node AMD MI300X + Broadcom Thor-2.</em></p>
+<p>Across all configurations, UCCL-EP matches or exceeds the TFLOPS by <strong>7–36%</strong> and throughput by <strong>7–45%</strong> compared to RCCL. These results show that UCCL-EP provides significant performance benefits for MoE training on AMD hardware.</p>
+<hr>
+<h3 id="sglang-inference-on-aws-nvidia--efa"><a class="heading-anchor" href="#sglang-inference-on-aws-nvidia--efa">SGLang Inference on AWS (NVIDIA + EFA)</a></h3>
+<p>We evaluate UCCL-EP in SGLang v0.5.3 on a prefill-heavy workload on p5en instances. We compare against NCCL, as DeepEP cannot run on EFA and PPLX had not been integrated into open-source inference engines at the time of evaluation.</p>
+<div style="display: flex; justify-content: center; gap: 40px; flex-wrap: wrap;">
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/sglang_deepseek_r1_throughput.png" alt="SGLang DeepSeek R1 throughput" width="400">
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/sglang_qwen3_throughput.png" alt="SGLang Qwen3 throughput" width="400">
+</div>
+<p align="center"><em>SGLang throughput comparison using UCCL-EP vs. NCCL on p5en. Left: DeepSeek R1 (671B). Right: Qwen3 (235B).</em></p>
+<p><strong>DeepSeek R1 (671B):</strong></p>
+<ul>
+<li>EP=16: UCCL-EP reaches <strong>46K tok/s</strong> input throughput, about 5% higher than NCCL.</li>
+<li>EP=32: UCCL-EP improves to <strong>74K tok/s</strong>, a <strong>1.6x</strong> speedup over its own EP=16 run.</li>
+</ul>
+<p><strong>Qwen3 (235B):</strong></p>
+<ul>
+<li>EP=32: UCCL-EP reaches <strong>62K tok/s</strong> vs. 44K tok/s for NCCL — about <strong>40% higher</strong> throughput.</li>
+</ul>
+<p>UCCL-EP enables larger EP configurations (EP=32) where NCCL either significantly underperforms or cannot run. CPU utilization increases modestly from an average 8% to 22%.</p>
+<hr>
+<h2 id="towards-more-efficient-low-latency-kernels"><a class="heading-anchor" href="#towards-more-efficient-low-latency-kernels">Towards More Efficient Low-latency kernels</a></h2>
+<p>UCCL-EP’s low-latency (LL) kernel, extending DeepEP, currently issues one 7 KB token per RDMA message. On EFA NICs, this is suboptimal because the current EFA firmware cannot process small tokens at a high enough rate (AWS has confirmed they are working on a firmware fix). PPLX, by contrast, packs tokens into larger messages, giving it an advantage at small batch sizes.</p>
+<p>A natural optimization is to pack tokens in a <strong>best-effort manner</strong> before sending. On the latest UCCL-EP, we have implemented per-expert batching of tokens for low-latency mode. On p5en (EP32, 128 tokens), batching improves BF16 dispatch from 299 us to <strong>268 us</strong> (10.4% improvement) and FP8 dispatch from 217 us to <strong>178 us</strong> (18.0% improvement). After batching, UCCL-EP outperforms PPLX by <strong>51%</strong> on BF16 dispatch and <strong>50%</strong> on FP8 dispatch.</p>
+<p>We evaluate these LL improvements on p5en while comparing against PPLX on both FP8 and BF16 dispatch paths (see the fair-comparison figure below).</p>
+<p align="center">
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/p5en_dispatch_bf16_fp8_uccl_vs_pplx.png" alt="p5en dispatch BF16 to FP8 UCCL vs PPLX fair measurement" width="400">
+  <em>P5en comparison with PPLX for BF16 and FP8 dispatch paths.</em>
+</p>
+<small>
+<p><strong>A Note on Fair Comparison with PPLX Kernels:</strong> PPLX uses a different measurement methodology than our original DeepEP-inherited setup. To ensure fairness, we evaluate the results above using a script that aligns with the PPLX measurement methodology. One caveat is that PPLX does not support in-kernel BF16->FP8 conversion. For fairness, the FP8 results we report include BF16->FP8 casting time before entering the PPLX kernel (<strong>266.90 us</strong>). The PPLX dispatch time excluding external BF16->FP8 pre-cast time is <strong>232.30 us</strong>.</p>
+</small>
+<hr>
+<h2 id="enabling-flow-control"><a class="heading-anchor" href="#enabling-flow-control">Enabling Flow Control</a></h2>
+<p>A key advantage of UCCL-EP’s CPU proxy architecture is the ability to implement <strong>flow control</strong> — which otherwise is difficult with IBGDA, where GPU threads typically blindly issue one-sided RDMA operations without awareness of NIC queue pressure or completion.</p>
+<p>We observe that the number of outstanding RDMA requests can have a significant impact on various NICs, particularly affecting <strong>tail latency</strong>. This becomes increasingly critical as the number of destinations increases, where a single straggler can slow down the entire dispatch or combine operation.</p>
+<p>We illustrate this on <strong>Broadcom Thor-2</strong> (EP32, normal mode) by sweeping communication configurations, such as various NVLink chunk sizes and RDMA chunk sizes. <strong>Without flow control, non-optimal configurations catastrophically degrade</strong> — bandwidth can collapse from ~49 GB/s to as low as <strong>4.4 GB/s</strong>, and notify latency can explode from hundreds of microseconds to <strong>over 70 ms</strong>. With flow control (e.g., 1.5 MB inflight limit), performance is <strong>stable across all configurations</strong>.</p>
+<p>UCCL-EP’s CPU proxy supports request tracking and pacing:</p>
+<ul>
+<li>If outstanding requests grow too high, the proxy <strong>temporarily buffers messages</strong> at the sender to avoid incast at the receiver.</li>
+<li>The proxy can <strong>shard outgoing requests across multiple NICs and QPs</strong> to avoid congestion and adapt to NIC-specific characteristics.</li>
+</ul>
+<p>This is particularly important for <strong>Broadcom Thor-2</strong> and <strong>AMD Pollara AI</strong> NICs. We provide the environment variables <code>UCCL_IB_MAX_INFLIGHT_BYTES</code> and <code>UCCL_IB_MAX_INFLIGHT_NORMAL</code> to configure flow control. Without it, these NICs can encounter CQE error 12 (Transport Retry Counter Exceeded) under high load.</p>
+<hr>
+<h2 id="acknowledgements"><a class="heading-anchor" href="#acknowledgements">Acknowledgements</a></h2>
+<p>This research is supported by gifts from Accenture, AMD, Anyscale, AWS, Broadcom, Cisco, Google, IBM, Intel, Intesa Sanpaolo, Lambda, Lightspeed, Mibura, Microsoft, NVIDIA, Samsung SDS, and SAP.</p> </div> <div class="prose-a:no-underline"> <span class="mb-2 mr-2 inline-block rounded-full bg-neutral-200 px-3 py-1 text-sm hover:bg-neutral-500 dark:bg-neutral-600"> <a href="/tags/MoE/1/">MoE</a> </span><span class="mb-2 mr-2 inline-block rounded-full bg-neutral-200 px-3 py-1 text-sm hover:bg-neutral-500 dark:bg-neutral-600"> <a href="/tags/DeepEP/1/">DeepEP</a> </span><span class="mb-2 mr-2 inline-block rounded-full bg-neutral-200 px-3 py-1 text-sm hover:bg-neutral-500 dark:bg-neutral-600"> <a href="/tags/RDMA/1/">RDMA</a> </span><span class="mb-2 mr-2 inline-block rounded-full bg-neutral-200 px-3 py-1 text-sm hover:bg-neutral-500 dark:bg-neutral-600"> <a href="/tags/Expert Parallelism/1/">Expert Parallelism</a> </span><span class="mb-2 mr-2 inline-block rounded-full bg-neutral-200 px-3 py-1 text-sm hover:bg-neutral-500 dark:bg-neutral-600"> <a href="/tags/AMD/1/">AMD</a> </span><span class="mb-2 mr-2 inline-block rounded-full bg-neutral-200 px-3 py-1 text-sm hover:bg-neutral-500 dark:bg-neutral-600"> <a href="/tags/EFA/1/">EFA</a> </span> </div> <div class="flex justify-between mt-4"> <small>Publish on <span>2026-03-28</span></small> </div> </article> <div class="mt-4"> <div class="grid grid-cols-1 gap-4 md:grid-cols-3"> <div class="relative mb-4 overflow-hidden rounded-xl bg-white transition-transform duration-500 hover:-translate-y-1 hover:scale-105 dark:bg-neutral-900"> <a href="/posts/uccl-ep/"> <picture> <source srcset="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep/uccl-ep.png 392w, https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep/uccl-ep.png 700w, https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep/uccl-ep.png 980w, https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep/uccl-ep.png 1960w" type="image/avif" sizes="(max-width: 360px) 392px, 
+           (max-width: 720px) 700px, 
+           (max-width: 1600px) 980px, 
+           1960px">  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep/uccl-ep.png" srcset="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep/uccl-ep.png 392w, https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep/uccl-ep.png 700w, https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep/uccl-ep.png 980w, https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep/uccl-ep.png 1960w" alt="UCCL-EP" sizes="(max-width: 360px) 392px, 
+           (max-width: 720px) 700px, 
+           (max-width: 1600px) 980px, 
+           1960px" width="1024" height="1024" loading="lazy" decoding="async" class="mx-auto w-full max-w-full rounded-lg"> </picture> <div class="absolute bottom-0 end-0 start-0 bg-gradient-to-t p-4 md:p-5"> <div class="mt-16 flex items-center gap-4 text-xs text-white"> <span>MoE DeepEP IBGDA RDMA</span> <span>2025-10-27</span> </div> <h2 class="mt-2 text-lg font-bold text-white">Previewing UCCL-EP: Flexible and Efficient Expert Parallelism for Cloud and Beyond</h2> </div> </a> </div><div class="relative mb-4 overflow-hidden rounded-xl bg-white transition-transform duration-500 hover:-translate-y-1 hover:scale-105 dark:bg-neutral-900"> <a href="/posts/kv-transfer-engine/"> <picture> <source srcset="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/kv-transfer-engine/kv-transfer-engine.png 392w, https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/kv-transfer-engine/kv-transfer-engine.png 700w, https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/kv-transfer-engine/kv-transfer-engine.png 980w, https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/kv-transfer-engine/kv-transfer-engine.png 1960w" type="image/avif" sizes="(max-width: 360px) 392px, 
+           (max-width: 720px) 700px, 
+           (max-width: 1600px) 980px, 
+           1960px">  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/kv-transfer-engine/kv-transfer-engine.png" srcset="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/kv-transfer-engine/kv-transfer-engine.png 392w, https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/kv-transfer-engine/kv-transfer-engine.png 700w, https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/kv-transfer-engine/kv-transfer-engine.png 980w, https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/kv-transfer-engine/kv-transfer-engine.png 1960w" alt="KV transfer engine" sizes="(max-width: 360px) 392px, 
+           (max-width: 720px) 700px, 
+           (max-width: 1600px) 980px, 
+           1960px" width="1024" height="1024" loading="lazy" decoding="async" class="mx-auto w-full max-w-full rounded-lg"> </picture> <div class="absolute bottom-0 end-0 start-0 bg-gradient-to-t p-4 md:p-5"> <div class="mt-16 flex items-center gap-4 text-xs text-white"> <span>NIXL NCCL RCCL Mooncake RDMA</span> <span>2025-08-13</span> </div> <h2 class="mt-2 text-lg font-bold text-white">Everything You Want to Know about KV Cache Transfer Engine</h2> </div> </a> </div><div class="relative mb-4 overflow-hidden rounded-xl bg-white transition-transform duration-500 hover:-translate-y-1 hover:scale-105 dark:bg-neutral-900"> <a href="/posts/debug-nccl/"> <picture> <source srcset="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/nccl-debug/uccl-debug.png 392w, https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/nccl-debug/uccl-debug.png 700w, https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/nccl-debug/uccl-debug.png 980w, https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/nccl-debug/uccl-debug.png 1960w" type="image/avif" sizes="(max-width: 360px) 392px, 
+           (max-width: 720px) 700px, 
+           (max-width: 1600px) 980px, 
+           1960px">  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/nccl-debug/uccl-debug.png" srcset="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/nccl-debug/uccl-debug.png 392w, https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/nccl-debug/uccl-debug.png 700w, https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/nccl-debug/uccl-debug.png 980w, https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/nccl-debug/uccl-debug.png 1960w" alt="About" sizes="(max-width: 360px) 392px, 
+           (max-width: 720px) 700px, 
+           (max-width: 1600px) 980px, 
+           1960px" width="1024" height="1024" loading="lazy" decoding="async" class="mx-auto w-full max-w-full rounded-lg"> </picture> <div class="absolute bottom-0 end-0 start-0 bg-gradient-to-t p-4 md:p-5"> <div class="mt-16 flex items-center gap-4 text-xs text-white"> <span>NCCL RCCL RDMA</span> <span>2025-06-30</span> </div> <h2 class="mt-2 text-lg font-bold text-white">How to Debug NCCL Performance Issues for ML Workloads?</h2> </div> </a> </div> </div> </div> </main>  </main> <footer class="mt-auto w-full max-w-[85rem] py-10 mx-auto" data-astro-cid-sz7xmlte> <nav class="mx-auto w-full max-w-[85rem] px-4" aria-label="Footer" data-astro-cid-sz7xmlte> <div class="footer-wrapper" style="display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 2rem;" data-astro-cid-sz7xmlte> <!-- Left: Brand --> <div class="footer-left" style="text-align: left; justify-self: start;" data-astro-cid-sz7xmlte> <a class="flex-none text-sm text-neutral-500 hover:text-neutral-800 dark:text-neutral-500 dark:hover:text-neutral-200" href="/" aria-label="Brand" data-astro-cid-sz7xmlte>UCCL &copy; 2026</a> </div> <!-- Center: Footer Links --> <div class="footer-center" style="text-align: center; justify-self: center;" data-astro-cid-sz7xmlte> <div class="flex flex-row gap-5 items-center flex-wrap justify-center" data-astro-cid-sz7xmlte> <a href="https://sky.cs.berkeley.edu/" class="inline-flex gap-x-2 text-sm text-neutral-500 hover:text-neutral-800 dark:text-neutral-500 dark:hover:text-neutral-200" data-astro-cid-sz7xmlte="true"> UC Berkeley Sky Lab </a><a href="https://github.com/artsy-lab" class="inline-flex gap-x-2 text-sm text-neutral-500 hover:text-neutral-800 dark:text-neutral-500 dark:hover:text-neutral-200" data-astro-cid-sz7xmlte="true"> UC Davis ArtSy Lab </a> </div> </div> <!-- Right: Social Links --> <div class="footer-right" style="text-align: right; justify-self: end;" data-astro-cid-sz7xmlte> <button type="button" class="relative inline-flex h-12 w-12 items-center gap-x-2 bg-white px-4 py-3 text-neutral-500 hover:text-neutral-800 disabled:pointer-events-none disabled:opacity-50  dark:text-neutral-500 dark:hover:text-neutral-200 dark:bg-neutral-900 dark:hover:bg-neutral-900" data-astro-cid-sz7xmlte> <a href="https://github.com/uccl-project" class="absolute inset-0 z-10" aria-label="GitHub" data-astro-cid-sz7xmlte></a> <svg width="1em" height="1em" class="icon-base" data-astro-cid-sz7xmlte="true" data-icon="tabler:brand-github">   <symbol id="ai:tabler:brand-github" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2c2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2a4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3 0 0 0-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 9.5c0 4.6 2.7 5.7 5.5 6c-.6.6-.6 1.2-.5 2V21"/></symbol><use href="#ai:tabler:brand-github"></use>  </svg> </button> </div> </div> </nav> </footer> </body></html>
