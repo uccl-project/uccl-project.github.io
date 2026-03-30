@@ -186,7 +186,7 @@ More results across heterogeneous platforms are shown in the tables below.
 
 ### Porting to AMD GPUs
 
-UCCL-EP's CPU proxy architecture makes porting to new GPU vendors straightforward — only the GPU kernels need to change, while the CPU-side NIC code remains identical. Porting to AMD GPUs and AWS EFA NICs took only **3 person-months**.
+UCCL-EP's CPU proxy architecture makes porting to new GPU vendors straightforward — only the GPU kernels need to change, while the CPU-side networking code remains identical. Porting to AMD GPUs and AWS EFA NICs took only **3 person-months**.
 
 The key changes for AMD included:
 - Migrating CUDA PTX intrinsics (atomics, memory fences, timers) to ROCm alternatives
@@ -203,7 +203,7 @@ After these GPU-side changes, UCCL-EP immediately ran on AMD platforms with any 
 
 ### Megatron-LM Training on AMD (MI300X + Broadcom)
 
-We evaluate end-to-end Megatron-LM training of DeepSeek-V3 (downscaled to 32 layers and 379B parameters) on 16 MI300X nodes using the AMD Primus/Megatron-LM framework.
+We evaluate end-to-end Megatron-LM training of DeepSeek-V3 on 16 MI300X nodes (128 GPUs) using the AMD Primus/Megatron-LM framework.
 
 <div class="not-prose my-6 grid w-full grid-cols-2 items-start justify-items-center gap-5 [&_img]:!my-0 [&_img]:h-auto [&_img]:max-w-[400px] [&_img]:min-w-0 [&_img]:w-full">
   <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/amd_megatron_deepseekv3_tflops.png" alt="Megatron-LM TFLOPS" width="400"/>
@@ -211,7 +211,7 @@ We evaluate end-to-end Megatron-LM training of DeepSeek-V3 (downscaled to 32 lay
 </div>
 <p align="center"><em>Megatron-LM training throughput (TFLOPS and tokens/s) on 16-node AMD MI300X + Broadcom Thor-2.</em></p>
 
-Across all configurations, UCCL-EP matches or exceeds the TFLOPS by **7–36%** and throughput by **7–45%** compared to RCCL. These results show that UCCL-EP provides significant performance benefits for MoE training on AMD hardware.
+Across all configurations, UCCL-EP matches or exceeds the TFLOPS by **7–36%** and throughput by **7–45%** compared to RCCL. These results show that UCCL-EP provides significant performance benefits for MoE training.
 
 ---
 
@@ -240,7 +240,7 @@ UCCL-EP enables larger EP configurations (EP=32) where NCCL either significantly
 
 UCCL-EP's low-latency (LL) kernel, extending DeepEP, currently issues one 7 KB token per RDMA message. On EFA NICs, this is suboptimal because the current EFA firmware cannot process small tokens at a high enough rate (AWS has confirmed they are working on a firmware fix). PPLX, by contrast, packs tokens into larger messages, giving it an advantage at small batch sizes.
 
-A natural optimization is to pack tokens in a **best-effort manner** before sending. On the latest UCCL-EP, we have implemented per-expert batching of tokens for low-latency mode. On p5en (EP32, 128 tokens), batching improves BF16 dispatch from 299 us to **268 us** (10.4% improvement) and FP8 dispatch from 217 us to **178 us** (18.0% improvement). After batching, UCCL-EP outperforms PPLX by **51%** on BF16 dispatch and **50%** on FP8 dispatch.
+A natural optimization is to pack tokens in a **best-effort manner** before sending. On the latest UCCL-EP, we have implemented per-expert batching of tokens for low-latency mode. On p5en (EP32, 128 tokens), batching improves BF16 dispatch from 299 us to 268 us (**10.4%** improvement) and FP8 dispatch from 217 us to 178 us (**18.0%** improvement). 
 
 We evaluate these LL improvements on p5en while comparing against PPLX on both FP8 and BF16 dispatch paths (see the fair-comparison figure below).
 
