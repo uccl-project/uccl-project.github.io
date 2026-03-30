@@ -42,7 +42,7 @@ UCCL-EP solves this with a clean separation of concerns:
 - **GPUs** retain fine-grained token-level communication initiation for maximal overlap with computation.
 - **CPUs** handle the control-intensive networking aspects — queue management, flow control, ordering enforcement — through a lightweight, multi-threaded proxy.
 
-This architecture reduces the porting effort from O(m x n) (left figure, for m GPU vendors and n NIC vendors) down to O(m) (right figure), as the CPU proxy can use the `libibverbs` API that all RDMA NICs support.
+This architecture reduces the porting effort from O(m x n) (left figure, for m GPU vendors and n NIC vendors) down to O(m) (right figure), as the CPU proxy can use the `libibverbs` API that all RDMA NICs support. UCCL-EP provides **drop-in support for vLLM and SGLang**, making it easy to adopt without modifying inference engine code.
 
 <div style="display: flex; justify-content: center; gap: 40px; flex-wrap: wrap;">
   <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/uep_intro_ibgda.png" alt="IBGDA-style: O(m x n) porting effort" width="400"/>
