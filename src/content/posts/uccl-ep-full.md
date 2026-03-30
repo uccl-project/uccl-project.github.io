@@ -63,6 +63,10 @@ We discuss two key techniques in UCCL-EP:
 
 **Immediate-Data-Based Ordering for Heterogeneous NICs.** Different NICs provide different delivery guarantees. For example, AWS EFA uses the Scalable Reliable Datagram (SRD) protocol with multi-pathing, which does not guarantee in-order delivery within a single QP. UCCL-EP embeds per-channel sequence numbers into RDMA immediate data, allowing the receiver-side CPU proxy to reorder out-of-sequence control messages before committing them to GPU memory. This approach also enables **software-level atomics** — piggybacking completion notifications on regular RDMA writes — which is both more portable (no hardware atomic support required) and more efficient (one RDMA operation instead of two for write + atomic).
 
+### CPU Proxy Throughput Is Not the Bottleneck
+
+We measure the FIFO channel latency and compare it against the end-to-end RDMA latency on EFA and Broadcom NICs. The FIFO channel sustains over **8 million operations per second** across 8 GPUs, with average latency of **~3 us** and P99 under **8 us** — an order of magnitude lower than the RDMA network latency (which ranges from 20–550+ us on EFA). This confirms that the CPU-GPU channel is not the bottleneck, and the additional proxy latency is amortized across the much larger network transfer time.
+
 ---
 
 ## Evaluation Testbeds
@@ -192,6 +196,18 @@ More results across heterogeneous platforms are shown in the tables below.
 | 16 | 136 us | 55 GB/s | 207 us | 70 GB/s |
 | 32 | 224 us | 30 GB/s | 341 us | 42 GB/s |
 
+### Porting to AMD GPUs
+
+UCCL-EP's CPU proxy architecture makes porting to new GPU vendors straightforward — only the GPU kernels need to change, while the CPU-side NIC code remains identical. Porting to AMD GPUs and AWS EFA NICs took only **3 person-months**.
+
+The key changes for AMD included:
+- Migrating CUDA PTX intrinsics (atomics, memory fences, timers) to ROCm alternatives
+- Switching `WARP_SIZE` from 32 to 64 to match AMD wavefronts
+- Replacing NVIDIA TMA-based data copy with AMD CU-based (compute unit) copy
+- Merging "coordinator" wavefronts into "receiver" wavefronts in the HT kernel, since AMD GPUs support fewer wavefronts but more threads per wavefront
+
+After these GPU-side changes, UCCL-EP immediately ran on AMD platforms with any supported NIC (CX7 RoCE, Broadcom Thor-2, Pollara AI NIC) — no per-NIC work was needed.
+
 ---
 
 ## Application-Level Results
@@ -236,7 +252,7 @@ UCCL-EP enables larger EP configurations (EP=32) where NCCL either significantly
 
 UCCL-EP's low-latency (LL) kernel, extending DeepEP, currently issues one 7 KB token per RDMA message. On EFA NICs, this is suboptimal because the current EFA firmware cannot process small tokens at a high enough rate (AWS has confirmed they are working on a firmware fix). PPLX, by contrast, packs tokens into larger messages, giving it an advantage at small batch sizes.
 
-A natural optimization is to pack tokens in a **best-effort manner** before sending — combining the per-token flexibility of DeepEP with the batched efficiency of PPLX. We consider this optimization orthogonal to UCCL-EP's core contribution in portable EP communication architecture. On the latest UCCL-EP, we have implemented per-expert batching of tokens for low-latency mode, leading to <strong>10%</strong> speedup on EFA for small messages.
+A natural optimization is to pack tokens in a **best-effort manner** before sending. On the latest UCCL-EP, we have implemented per-expert batching of tokens for low-latency mode. On p5en (EP32, 128 tokens), batching improves BF16 dispatch from 299 us to **268 us** (10.4% improvement) and FP8 dispatch from 217 us to **178 us** (18.0% improvement). After batching, UCCL-EP outperforms PPLX by **51%** on BF16 dispatch and **50%** on FP8 dispatch.
 
 We evaluate these LL improvements on p5en while comparing against PPLX on both FP8 and BF16 dispatch paths (see the fair-comparison figure below).
 
