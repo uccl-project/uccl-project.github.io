@@ -65,7 +65,7 @@ We discuss two key techniques in UCCL-EP:
 
 ### CPU Proxy Throughput Is Not the Bottleneck
 
-We measure the FIFO channel latency and compare it against the end-to-end RDMA latency on EFA and Broadcom NICs. The FIFO channel sustains over **8 million operations per second** across 8 GPUs, with average latency of **~3 us** and P99 under **8 us** — an order of magnitude lower than the RDMA network latency (which ranges from 20–550+ us on EFA). This confirms that the CPU-GPU channel is not the bottleneck, and the additional proxy latency is amortized across the much larger network transfer time.
+We measure the FIFO channel latency and compare it against the end-to-end RDMA latency on EFA and Broadcom NICs. The FIFO channel sustains over **8 million operations per second** across 8 GPUs, with average latency of **~3 us** and P99 under **8 us** — an order of magnitude lower than the RDMA network latency (which ranges from 20–50+ us on EFA). This confirms that the CPU-GPU channel is not the bottleneck, and the additional proxy latency is amortized across the much larger network transfer time.
 
 ---
 
