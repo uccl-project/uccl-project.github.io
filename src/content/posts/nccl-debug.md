@@ -53,6 +53,7 @@ Based on UCCL team's experience, here we summarize a list of highly relevant NCC
 * Number of channels: `NCCL_MAX_NCHANNELS, NCCL_MIN_NCHANNELS`
 * Transport buffer and chunk sizes: `NCCL_P2P_NET_CHUNKSIZE=524288, NCCL_BUFFSIZE=8388608`
   * These are extremely useful for AWS GPU VMs that use AWS EFA RDMA NICs
+  * Per issue [#3](https://github.com/uccl-project/uccl-project.github.io/issues/3), these env variables have been set by latest aws-ofi-nccl plugin by default.
 * PCIe relaxed ordering: `NCCL_IB_PCI_RELAXED_ORDERING`
   * This could be useful when using GPU VMs rather baremetal machine
 * Using the UCCL plugin: `NCCL_NET_PLUGIN=libnccl-net-uccl.so`
