@@ -36,6 +36,7 @@ const t={preserveBehavior:!1},e=e=>{if("string"==typeof e)return[e,t];const[n,r=
 <li>Transport buffer and chunk sizes: <code>NCCL_P2P_NET_CHUNKSIZE=524288, NCCL_BUFFSIZE=8388608</code>
 <ul>
 <li>These are extremely useful for AWS GPU VMs that use AWS EFA RDMA NICs</li>
+<li>Per issue <a href="https://github.com/uccl-project/uccl-project.github.io/issues/3">#3</a>, these env variables have been set by latest aws-ofi-nccl plugin by default.</li>
 </ul>
 </li>
 <li>PCIe relaxed ordering: <code>NCCL_IB_PCI_RELAXED_ORDERING</code>
