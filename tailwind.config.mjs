@@ -182,6 +182,25 @@ export default {
               position: "relative",
               scrollMarginTop: "5rem",
             },
+            // Side-by-side figures (overrides prose img block margins / width)
+            ".figure-pair": {
+              display: "grid",
+              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+              gap: "1.25rem",
+              alignItems: "start",
+              justifyItems: "center",
+              marginTop: "1.5em",
+              marginBottom: "0.75em",
+            },
+            // minmax(0,1fr) + minWidth 0 lets columns shrink below 400px intrinsic img width
+            ".figure-pair img": {
+              marginTop: "0",
+              marginBottom: "0",
+              minWidth: "0",
+              width: "100%",
+              maxWidth: "400px",
+              height: "auto",
+            },
           },
         },
         dark: {
@@ -319,6 +338,23 @@ export default {
             "h1, h2, h3, h4, h5, h6": {
               position: "relative",
               scrollMarginTop: "5rem",
+            },
+            ".figure-pair": {
+              display: "grid",
+              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+              gap: "1.25rem",
+              alignItems: "start",
+              justifyItems: "center",
+              marginTop: "1.5em",
+              marginBottom: "0.75em",
+            },
+            ".figure-pair img": {
+              marginTop: "0",
+              marginBottom: "0",
+              minWidth: "0",
+              width: "100%",
+              maxWidth: "400px",
+              height: "auto",
             },
           },
         },
