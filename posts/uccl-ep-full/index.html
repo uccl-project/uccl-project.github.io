@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"> <head><!-- Global Metadata --><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/svg+xml" href="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/images/uccl_logo.png"><meta name="generator" content="Astro v5.1.1"><!-- Canonical URL --><link rel="canonical" href="https://uccl-project.github.io/posts/uccl-ep-full/"><!-- Sitemap --><link rel="sitemap" href="/sitemap-index.xml"><!-- Primary Meta Tags --><title>UCCL-EP: Portable Expert-Parallel Communication — Full Results</title><meta name="title" content="UCCL-EP: Portable Expert-Parallel Communication — Full Results"><meta name="description" content="Full evaluation of UCCL-EP across NVIDIA and AMD GPUs, AWS EFA, InfiniBand, and Broadcom NICs — with application-level results on SGLang inference and Megatron-LM training."><!-- Open Graph / Facebook --><meta property="og:type" content="website"><meta property="og:url" content="https://uccl-project.github.io/posts/uccl-ep-full/"><meta property="og:title" content="UCCL-EP: Portable Expert-Parallel Communication — Full Results"><meta property="og:description" content="Full evaluation of UCCL-EP across NVIDIA and AMD GPUs, AWS EFA, InfiniBand, and Broadcom NICs — with application-level results on SGLang inference and Megatron-LM training."><meta property="og:image" content="https://uccl-project.github.io/blog-placeholder-1.avif"><!-- Twitter --><meta property="twitter:card" content="summary_large_image"><meta property="twitter:url" content="https://uccl-project.github.io/posts/uccl-ep-full/"><meta property="twitter:title" content="UCCL-EP: Portable Expert-Parallel Communication — Full Results"><meta property="twitter:description" content="Full evaluation of UCCL-EP across NVIDIA and AMD GPUs, AWS EFA, InfiniBand, and Broadcom NICs — with application-level results on SGLang inference and Megatron-LM training."><meta property="twitter:image" content="https://uccl-project.github.io/blog-placeholder-1.avif"><!-- Preline CSS --><script type="module" src="/_astro/BaseHead.astro_astro_type_script_index_0_lang.BtT675nX.js"></script><!-- Prism syntax highlighting --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-3wzg3yUeG6mXQz0YIZxZOKhHvJ3C0cI85FhF38sZ4N2VNivXzXcX4Jt9I7H5PHeTtNKgHdwNwp0UrEG3iu8IRw==" crossorigin="anonymous" referrerpolicy="no-referrer"><!-- Custom CSS for table borders --><link rel="stylesheet" href="/_astro/_page_.C7HhP8rD.css">
+<!DOCTYPE html><html lang="en"> <head><!-- Global Metadata --><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/svg+xml" href="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/images/uccl_logo.png"><meta name="generator" content="Astro v5.1.1"><!-- Canonical URL --><link rel="canonical" href="https://uccl-project.github.io/posts/uccl-ep-full/"><!-- Sitemap --><link rel="sitemap" href="/sitemap-index.xml"><!-- Primary Meta Tags --><title>UCCL-EP: Portable Expert-Parallel Communication — Full Results</title><meta name="title" content="UCCL-EP: Portable Expert-Parallel Communication — Full Results"><meta name="description" content="Full evaluation of UCCL-EP across NVIDIA and AMD GPUs, AWS EFA, InfiniBand, and Broadcom NICs — with application-level results on SGLang inference and Megatron-LM training."><!-- Open Graph / Facebook --><meta property="og:type" content="website"><meta property="og:url" content="https://uccl-project.github.io/posts/uccl-ep-full/"><meta property="og:title" content="UCCL-EP: Portable Expert-Parallel Communication — Full Results"><meta property="og:description" content="Full evaluation of UCCL-EP across NVIDIA and AMD GPUs, AWS EFA, InfiniBand, and Broadcom NICs — with application-level results on SGLang inference and Megatron-LM training."><meta property="og:image" content="https://uccl-project.github.io/blog-placeholder-1.avif"><!-- Twitter --><meta property="twitter:card" content="summary_large_image"><meta property="twitter:url" content="https://uccl-project.github.io/posts/uccl-ep-full/"><meta property="twitter:title" content="UCCL-EP: Portable Expert-Parallel Communication — Full Results"><meta property="twitter:description" content="Full evaluation of UCCL-EP across NVIDIA and AMD GPUs, AWS EFA, InfiniBand, and Broadcom NICs — with application-level results on SGLang inference and Megatron-LM training."><meta property="twitter:image" content="https://uccl-project.github.io/blog-placeholder-1.avif"><!-- Preline CSS --><script type="module" src="/_astro/BaseHead.astro_astro_type_script_index_0_lang.BtT675nX.js"></script><!-- Prism syntax highlighting --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-3wzg3yUeG6mXQz0YIZxZOKhHvJ3C0cI85FhF38sZ4N2VNivXzXcX4Jt9I7H5PHeTtNKgHdwNwp0UrEG3iu8IRw==" crossorigin="anonymous" referrerpolicy="no-referrer"><!-- Custom CSS for table borders --><link rel="stylesheet" href="/_astro/_page_.B3Mx1AwC.css">
 <style>[data-astro-image]{width:100%;height:auto;-o-object-fit:var(--fit);object-fit:var(--fit);-o-object-position:var(--pos);object-position:var(--pos);aspect-ratio:var(--w) / var(--h)}[data-astro-image=responsive]{max-width:calc(var(--w) * 1px);max-height:calc(var(--h) * 1px)}[data-astro-image=fixed]{width:calc(var(--w) * 1px);height:calc(var(--h) * 1px)}
 </style><script type="module" src="/_astro/page.DTIbhfSr.js"></script>
 <script>!(function(w,p,f,c){if(!window.crossOriginIsolated && !navigator.serviceWorker) return;c=w[p]=Object.assign(w[p]||{},{"lib":"/~partytown/","debug":false});c[f]=(c[f]||[]).concat(["dataLayer.push"])})(window,'partytown','forward');/* Partytown 0.10.2 - MIT builder.io */
@@ -11,15 +11,15 @@ const t={preserveBehavior:!1},e=e=>{if("string"==typeof e)return[e,t];const[n,r=
            1960px" width="2712" height="2134" loading="lazy" decoding="async" class="mx-auto w-full max-w-full rounded-lg"> </picture> </div> <div> <p>
 <strong>By: <a href="https://maoziming.github.io/">Ziming Mao</a> (UC Berkeley), <a href="https://laochanlam.com/">ChonLam Lao</a> (Harvard), <a href="https://yangzhou1997.github.io/">Yang Zhou</a> (UC Davis), <a href="github.com/CalebZ9909" class="no-github-icon">Yihan Zhang</a> (UC Davis), <a href="https://github.com/HermesCui" class="no-github-icon">Chihan Cui</a> (UW-Madison), <a href="https://zhongjiechen.github.io/" class="no-github-icon">Zhongjie Chen</a> (Tsinghua), <a href="https://xuzhiying9510.github.io/">Zhiying Xu</a> (AWS), and other UCCL-EP contributors
 <br>
-Date: Dec 20, 2025
+Date: Mar 28, 2026
 </strong>
 </p>
 <div class="tldr">
 <p>
-We present <strong>UCCL-EP</strong>, a portable expert-parallel communication library that achieves state-of-the-art performance across <strong>heterogeneous GPU and NIC hardware</strong>. UCCL-EP outperforms the best existing EP solution by up to <strong>2.3x</strong> for dispatch and combine on AWS EFA. For end-to-end applications, UCCL-EP improves Megatron-LM training throughput by up to <strong>45%</strong> over RCCL on 128 AMD GPUs andspeeds up SGLang inference throughput by up to <strong>40%</strong> over NCCL over 32 H200 GPUs.
+We present <strong>UCCL-EP</strong>, a portable expert-parallel communication library that achieves state-of-the-art performance across <strong>heterogeneous GPU and NIC hardware</strong>. UCCL-EP outperforms the best existing EP solution by up to <strong>2.3x</strong> for dispatch and combine on AWS EFA. For end-to-end applications, UCCL-EP improves Megatron-LM training throughput by up to <strong>45%</strong> over RCCL on 128 AMD GPUs, speeds up SGLang inference throughput by up to <strong>40%</strong> over NCCL over 32 H200 GPUs, and reduces vLLM inference TPOT by up to <strong>25%</strong> over NCCL. UCCL-EP is a drop-in replacement for DeepEP applications. 
 </p>
 <p>
-Paper: <a href="https://arxiv.org/pdf/2512.19849">arxiv.org/pdf/2512.19849</a> | Code: <a href="https://github.com/uccl-project/uccl/tree/main/ep">uccl-project/uccl/ep</a>
+Paper: <a href="https://arxiv.org/pdf/2512.19849">arxiv.org/pdf/2512.19849</a> (OSDI'26) | Code: <a href="https://github.com/uccl-project/uccl/tree/main/ep">uccl-project/uccl/ep</a> (Apache-2.0)
 </p>
 </div>
 <h2 id="recap-why-uccl-ep"><a class="heading-anchor" href="#recap-why-uccl-ep">Recap: Why UCCL-EP?</a></h2>
@@ -30,9 +30,9 @@ Paper: <a href="https://arxiv.org/pdf/2512.19849">arxiv.org/pdf/2512.19849</a> |
 <li><strong>CPUs</strong> handle the control-intensive networking aspects — queue management, flow control, ordering enforcement — through a lightweight, multi-threaded proxy.</li>
 </ul>
 <p>This architecture reduces the porting effort from O(m x n) (left figure, for m GPU vendors and n NIC vendors) down to O(m) (right figure), as the CPU proxy can use the <code>libibverbs</code> API that most RDMA NICs support. In fact, UCCL-EP provides <strong>drop-in support for vLLM, SGLang, and Megatron-LM</strong>, making it easy to adopt without modifying application or framework code.</p>
-<div class="not-prose my-6 grid w-full grid-cols-2 items-start justify-items-center gap-5 [&#x26;_img]:!my-0 [&#x26;_img]:h-auto [&#x26;_img]:max-w-[400px] [&#x26;_img]:min-w-0 [&#x26;_img]:w-full">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/uep_intro_ibgda.png" alt="IBGDA-style: O(m x n) porting effort" width="400">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/uep_intro_ucclep.png" alt="UCCL-EP: O(m) porting effort" width="400">
+<div class="not-prose my-6 grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-start [&#x26;>img:first-child]:col-start-2 [&#x26;>img:last-child]:col-start-4 [&#x26;>img]:!my-0 [&#x26;>img]:h-auto [&#x26;>img]:max-w-[300px] [&#x26;>img]:min-w-0 [&#x26;>img]:w-full">
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/uep_intro_ibgda.png" alt="IBGDA-style: O(m x n) porting effort" width="300">
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/uep_intro_ucclep.png" alt="UCCL-EP: O(m) porting effort" width="300">
 </div>
 <p align="center"><em>Left: IBGDA-style GPU-initiated communication requires O(m x n) porting effort across GPU and NIC vendors. Right: UCCL-EP reduces this to O(m) by using the CPU as a portable intermediary via libibverbs.</em></p>
 <p>UCCL-EP architecture is shown in the figure below. GPUs delegate token-routing commands to multi-threaded CPU proxies via lock-free FIFO channels. CPU proxies issue GPUDirect RDMA on behalf of GPUs, while managing ordering, flow control, and completion handling.</p>
@@ -124,18 +124,18 @@ Paper: <a href="https://arxiv.org/pdf/2512.19849">arxiv.org/pdf/2512.19849</a> |
 <h2 id="application-results"><a class="heading-anchor" href="#application-results">Application Results</a></h2>
 <h3 id="megatron-lm-training-on-amd-mi300x--broadcom"><a class="heading-anchor" href="#megatron-lm-training-on-amd-mi300x--broadcom">Megatron-LM Training on AMD (MI300X + Broadcom)</a></h3>
 <p>We evaluate end-to-end Megatron-LM training of DeepSeek-V3 on 16 MI300X nodes (128 GPUs) using the AMD Primus/Megatron-LM framework.</p>
-<div class="not-prose my-6 grid w-full grid-cols-2 items-start justify-items-center gap-5 [&#x26;_img]:!my-0 [&#x26;_img]:h-auto [&#x26;_img]:max-w-[400px] [&#x26;_img]:min-w-0 [&#x26;_img]:w-full">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/amd_megatron_deepseekv3_tflops.png" alt="Megatron-LM TFLOPS" width="400">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/amd_megatron_deepseekv3_tokens.png" alt="Megatron-LM tokens/s" width="400">
+<div class="not-prose my-6 grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-start [&#x26;>img:first-child]:col-start-2 [&#x26;>img:last-child]:col-start-4 [&#x26;>img]:!my-0 [&#x26;>img]:h-auto [&#x26;>img]:max-w-[300px] [&#x26;>img]:min-w-0 [&#x26;>img]:w-full">
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/amd_megatron_deepseekv3_tflops.png" alt="Megatron-LM TFLOPS" width="300">
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/amd_megatron_deepseekv3_tokens.png" alt="Megatron-LM tokens/s" width="300">
 </div>
 <p align="center"><em>Megatron-LM training throughput (TFLOPS and tokens/s) on 16-node AMD MI300X + Broadcom Thor-2.</em></p>
 <p>Across all configurations, UCCL-EP matches or exceeds the TFLOPS by <strong>7–36%</strong> and throughput by <strong>7–45%</strong> compared to RCCL. These results show that UCCL-EP provides significant performance benefits for MoE training.</p>
 <hr>
 <h3 id="sglang-inference-on-aws-nvidia--efa"><a class="heading-anchor" href="#sglang-inference-on-aws-nvidia--efa">SGLang Inference on AWS (NVIDIA + EFA)</a></h3>
 <p>We evaluate UCCL-EP in SGLang v0.5.3 on a prefill-heavy workload on p5en instances. We compare against NCCL, as DeepEP cannot run on EFA and PPLX had not been integrated into open-source inference engines at the time of evaluation.</p>
-<div class="not-prose my-6 grid w-full grid-cols-2 items-start justify-items-center gap-5 [&#x26;_img]:!my-0 [&#x26;_img]:h-auto [&#x26;_img]:max-w-[400px] [&#x26;_img]:min-w-0 [&#x26;_img]:w-full">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/sglang_deepseek_r1_throughput.png" alt="SGLang DeepSeek R1 throughput" width="400">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/sglang_qwen3_throughput.png" alt="SGLang Qwen3 throughput" width="400">
+<div class="not-prose my-6 grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-start [&#x26;>img:first-child]:col-start-2 [&#x26;>img:last-child]:col-start-4 [&#x26;>img]:!my-0 [&#x26;>img]:h-auto [&#x26;>img]:max-w-[300px] [&#x26;>img]:min-w-0 [&#x26;>img]:w-full">
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/sglang_deepseek_r1_throughput.png" alt="SGLang DeepSeek R1 throughput" width="300">
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/sglang_qwen3_throughput.png" alt="SGLang Qwen3 throughput" width="300">
 </div>
 <p align="center"><em>SGLang throughput comparison using UCCL-EP vs. NCCL on p5en. Left: DeepSeek R1 (671B). Right: Qwen3 (235B).</em></p>
 <p><strong>DeepSeek R1 (671B):</strong></p>
@@ -149,14 +149,51 @@ Paper: <a href="https://arxiv.org/pdf/2512.19849">arxiv.org/pdf/2512.19849</a> |
 </ul>
 <p>UCCL-EP enables larger EP configurations (EP=32) where NCCL either significantly underperforms or cannot run. CPU utilization increases modestly from an average 8% to 22%.</p>
 <hr>
+<h3 id="vllm-inference-on-aws-nvidia-h200--efa"><a class="heading-anchor" href="#vllm-inference-on-aws-nvidia-h200--efa">vLLM Inference on AWS (NVIDIA H200 + EFA)</a></h3>
+<p>We evaluate UCCL-EP on vLLM v0.16.0 with 1k input and 256 output tokens for <code>deepseek-ai/DeepSeek-V3-0324</code> on two p5en instances (EP16).</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Mode</th><th>Req Throughput (req/s)</th><th>Output Tok Throughput (tok/s)</th><th>Mean TTFT (ms)</th><th>P99 TTFT (ms)</th><th>Mean TPOT (ms)</th><th>P99 TPOT (ms)</th></tr></thead><tbody><tr><td>Allgather + ReduceScatter</td><td>8.92</td><td>2282.44</td><td>303.19</td><td>659.66</td><td>81.41</td><td>94.21</td></tr><tr><td>UCCL-EP - Low Latency</td><td>9.24</td><td>2365.44</td><td>271.31</td><td>688.79</td><td>61.02</td><td>77.52</td></tr></tbody></table>
+<p>UCCL-EP achieves slightly higher throughput, compariable TTFT, and up to 25% lower TPOT than the NCCL solution. Checkout this <a href="https://github.com/uccl-project/uccl/tree/main/ep/bench/vllm">tutorial</a> to reproduce.</p>
+<hr>
 <h2 id="microbenchmark-results"><a class="heading-anchor" href="#microbenchmark-results">Microbenchmark Results</a></h2>
 <h3 id="on-aws-efa-nvidia-gpus"><a class="heading-anchor" href="#on-aws-efa-nvidia-gpus">On AWS EFA (NVIDIA GPUs)</a></h3>
 <h4 id="h200--efa-p5en"><a class="heading-anchor" href="#h200--efa-p5en">H200 + EFA (p5en)</a></h4>
 <p>On p5en instances (8x H200, 16x 200 Gb/s EFA), we measure EP32 dispatch and combine latency while varying the number of tokens. UCCL-EP uses the minimum of high-throughput (HT) and low-latency (LL) mode latency, while PPLX operates in a single mode.</p>
 <p>At small batch sizes (128 tokens), PPLX achieves lower latency because UCCL-EP (extending DeepEP) issues messages at 7 KB token granularity, whereas PPLX packs tokens into larger messages. However, as the token count increases, <strong>UCCL-EP quickly overtakes PPLX</strong> — delivering <strong>2.3x lower dispatch latency</strong> and <strong>1.1–1.5x lower combine latency</strong> for medium and large batches.</p>
-<div class="not-prose my-6 grid w-full grid-cols-2 items-start justify-items-center gap-5 [&#x26;_img]:!my-0 [&#x26;_img]:h-auto [&#x26;_img]:max-w-[400px] [&#x26;_img]:min-w-0 [&#x26;_img]:w-full">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/p5en_dispatch_latency_vs_tokens_pplx_uccl.jpg" alt="p5en dispatch latency vs tokens" width="400">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/p5en_combine_latency_vs_tokens_pplx_uccl.jpg" alt="p5en combine latency vs tokens" width="400">
+<div class="not-prose my-6 grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-start [&#x26;>img:first-child]:col-start-2 [&#x26;>img:last-child]:col-start-4 [&#x26;>img]:!my-0 [&#x26;>img]:h-auto [&#x26;>img]:max-w-[300px] [&#x26;>img]:min-w-0 [&#x26;>img]:w-full">
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/p5en_dispatch_latency_vs_tokens_pplx_uccl.jpg" alt="p5en dispatch latency vs tokens" width="300">
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/p5en_combine_latency_vs_tokens_pplx_uccl.jpg" alt="p5en combine latency vs tokens" width="300">
 </div>
 <p align="center"><em>EP32 dispatch (left) and combine (right) latency vs. number of tokens on p5en (H200 + EFA 400 Gbps).</em></p>
 <p>We present more results in the table below.</p>
@@ -165,8 +202,8 @@ Paper: <a href="https://arxiv.org/pdf/2512.19849">arxiv.org/pdf/2512.19849</a> |
 On p6-b200 instances (8x B200, 8x 400 Gb/s EFA), we see similar trends with UCCL-EP outperforming PPLX at larger token counts:
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/p6_dispatch_ll_ht.png" alt="p6 dispatch" width="400"/>
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/p6_combine_ll_ht.png" alt="p6 combine" width="400"/>
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/p6_dispatch_ll_ht.png" alt="p6 dispatch" width="300"/>
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/p6_combine_ll_ht.png" alt="p6 combine" width="300"/>
   <em>EP32 dispatch (left) and combine (right) comparison on p6-b200 (B200 + EFA 400 Gbps).</em>
 </p> -->
 <h5 id="normal-mode-bandwidth-efa"><a class="heading-anchor" href="#normal-mode-bandwidth-efa">Normal Mode Bandwidth (EFA)</a></h5>
@@ -306,10 +343,10 @@ On p6-b200 instances (8x B200, 8x 400 Gb/s EFA), we see similar trends with UCCL
 <table><thead><tr><th align="center">Platform</th><th align="center">#EP</th><th align="center">Dispatch Latency</th><th align="center">Dispatch BW</th><th align="center">Combine Latency</th><th align="center">Combine BW</th></tr></thead><tbody><tr><td align="center">p5en (H200)</td><td align="center">16</td><td align="center">226 us</td><td align="center">36 GB/s</td><td align="center">293 us</td><td align="center">48 GB/s</td></tr><tr><td align="center">p5en (H200)</td><td align="center">24</td><td align="center">386 us</td><td align="center">20 GB/s</td><td align="center">580 us</td><td align="center">26 GB/s</td></tr><tr><td align="center">p5en (H200)</td><td align="center">32</td><td align="center">465 us</td><td align="center">16 GB/s</td><td align="center">694 us</td><td align="center">25 GB/s</td></tr><tr><td align="center">p6 (B200)</td><td align="center">16</td><td align="center">228 us</td><td align="center">33 GB/s</td><td align="center">318 us</td><td align="center">46 GB/s</td></tr><tr><td align="center">p6 (B200)</td><td align="center">24</td><td align="center">448 us</td><td align="center">17 GB/s</td><td align="center">566 us</td><td align="center">26 GB/s</td></tr><tr><td align="center">p6 (B200)</td><td align="center">32</td><td align="center">406 us</td><td align="center">19 GB/s</td><td align="center">617 us</td><td align="center">24 GB/s</td></tr></tbody></table>
 <hr>
 <h3 id="on-amd-gpus"><a class="heading-anchor" href="#on-amd-gpus">On AMD GPUs</a></h3>
-<p>UCCL-EP enables GPU-initiated token-level EP communication on AMD GPUs. We evaluate on MI300X with both CX7 InfiniBand (OCI) and Broadcom Thor-2 NICs (Vultr).</p>
-<div class="not-prose my-6 grid w-full grid-cols-2 items-start justify-items-center gap-5 [&#x26;_img]:!my-0 [&#x26;_img]:h-auto [&#x26;_img]:max-w-[400px] [&#x26;_img]:min-w-0 [&#x26;_img]:w-full">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/amd_dispatch_ll_ht.png" alt="AMD dispatch" width="400">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/amd_combine_ll_ht.png" alt="AMD combine" width="400">
+<p>UCCL-EP enables GPU-initiated token-level EP communication on AMD GPUs. We evaluate on MI300X with both CX7 RoCE (OCI) and Broadcom Thor-2 NICs (Vultr).</p>
+<div class="not-prose my-6 grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-start [&#x26;>img:first-child]:col-start-2 [&#x26;>img:last-child]:col-start-4 [&#x26;>img]:!my-0 [&#x26;>img]:h-auto [&#x26;>img]:max-w-[300px] [&#x26;>img]:min-w-0 [&#x26;>img]:w-full">
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/amd_dispatch_ll_ht.png" alt="AMD dispatch" width="300">
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/amd_combine_ll_ht.png" alt="AMD combine" width="300">
 </div>
 <p align="center"><em>EP32 dispatch (left) and combine (right) on AMD MI300X with CX7 RoCE and Broadcom Thor-2 NICs.</em></p>
 <!-- UCCL-EP achieves similar performance across both NIC vendors, demonstrating true portability. On MI300X + CX7 RoCE, UCCL-EP achieves comparable performance to DeepEP on the NVIDIA-only platform. -->
@@ -455,12 +492,12 @@ On p6-b200 instances (8x B200, 8x 400 Gb/s EFA), we see similar trends with UCCL
 </ul>
 <p>After these GPU-side changes, UCCL-EP immediately ran on AMD platforms with any supported NIC (CX7 RoCE, Broadcom Thor-2, Pollara AI NIC) — no per-NIC work was needed.</p>
 <hr>
-<h2 id="towards-more-efficient-low-latency-kernels"><a class="heading-anchor" href="#towards-more-efficient-low-latency-kernels">Towards More Efficient Low-latency kernels</a></h2>
+<h2 id="towards-more-efficient-low-latency-kernels"><a class="heading-anchor" href="#towards-more-efficient-low-latency-kernels">Towards More Efficient Low-Latency Kernels</a></h2>
 <p>UCCL-EP’s low-latency (LL) kernel, extending DeepEP, currently issues one 7 KB token per RDMA message. On EFA NICs, this is suboptimal because the current EFA firmware cannot process small tokens at a high enough rate (AWS has confirmed they are working on a firmware fix). PPLX, by contrast, packs tokens into larger messages, giving it an advantage at small batch sizes.</p>
 <p>A natural optimization is to pack tokens in a <strong>best-effort manner</strong> before sending. On the latest UCCL-EP, we have implemented per-expert batching of tokens for low-latency mode. On p5en (EP32, 128 tokens), batching improves BF16 dispatch from 299 us to 268 us (<strong>10.4%</strong> improvement) and FP8 dispatch from 217 us to 178 us (<strong>18.0%</strong> improvement).</p>
 <p>We evaluate these LL improvements on p5en while comparing against PPLX on both FP8 and BF16 dispatch paths (see the fair-comparison figure below).</p>
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/p5en_dispatch_bf16_fp8_uccl_vs_pplx.png" alt="p5en dispatch BF16 to FP8 UCCL vs PPLX fair measurement" width="400">
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/p5en_dispatch_bf16_fp8_uccl_vs_pplx.png" alt="p5en dispatch BF16 to FP8 UCCL vs PPLX fair measurement" width="300">
   <em>P5en comparison with PPLX for BF16 and FP8 dispatch paths.</em>
 </p>
 <small>
