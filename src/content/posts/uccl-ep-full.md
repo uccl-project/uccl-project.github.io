@@ -26,7 +26,7 @@ Date: Mar 28, 2026
 
 <div class="tldr">
 <p>
-We present <strong>UCCL-EP</strong>, a portable expert-parallel communication library that achieves state-of-the-art performance across <strong>heterogeneous GPU and NIC hardware</strong>. UCCL-EP outperforms the best existing EP solution by up to <strong>2.3x</strong> for dispatch and combine on AWS EFA. For end-to-end applications, UCCL-EP improves Megatron-LM training throughput by up to <strong>45%</strong> over RCCL on 128 AMD GPUs, speeds up SGLang inference throughput by up to <strong>40%</strong> over NCCL over 32 H200 GPUs, and reduces vLLM inference latency by up to <strong>25%</strong> over NCCL. UCCL-EP is a drop-in replacement for DeepEP applications. 
+We present <strong>UCCL-EP</strong>, a portable expert-parallel communication library that achieves state-of-the-art performance across <strong>heterogeneous GPU and NIC hardware</strong>. UCCL-EP outperforms the best existing EP solution by up to <strong>2.3x</strong> for dispatch and combine on AWS EFA. For end-to-end applications, UCCL-EP improves Megatron-LM training throughput by up to <strong>45%</strong> over RCCL on 128 AMD GPUs, speeds up SGLang inference throughput by up to <strong>40%</strong> over NCCL over 32 H200 GPUs, and reduces vLLM inference TPOT by up to <strong>25%</strong> over NCCL. UCCL-EP is a drop-in replacement for DeepEP applications. 
 </p>
 <p>
 Paper: <a href="https://arxiv.org/pdf/2512.19849">arxiv.org/pdf/2512.19849</a> (OSDI'26) | Code: <a href="https://github.com/uccl-project/uccl/tree/main/ep">uccl-project/uccl/ep</a> (Apache-2.0)
