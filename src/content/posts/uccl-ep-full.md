@@ -45,15 +45,15 @@ UCCL-EP solves this with a clean separation of concerns:
 This architecture reduces the porting effort from O(m x n) (left figure, for m GPU vendors and n NIC vendors) down to O(m) (right figure), as the CPU proxy can use the `libibverbs` API that most RDMA NICs support. In fact, UCCL-EP provides **drop-in support for vLLM, SGLang, and Megatron-LM**, making it easy to adopt without modifying application or framework code.
 
 <div class="not-prose my-6 grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-start [&>img:first-child]:col-start-2 [&>img:last-child]:col-start-4 [&>img]:!my-0 [&>img]:h-auto [&>img]:max-w-[300px] [&>img]:min-w-0 [&>img]:w-full">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/uep_intro_ibgda.png" alt="IBGDA-style: O(m x n) porting effort" width="300"/>
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/uep_intro_ucclep.png" alt="UCCL-EP: O(m) porting effort" width="300"/>
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep-full/uep_intro_ibgda.png" alt="IBGDA-style: O(m x n) porting effort" width="300"/>
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep-full/uep_intro_ucclep.png" alt="UCCL-EP: O(m) porting effort" width="300"/>
 </div>
 <p align="center"><em>Left: IBGDA-style GPU-initiated communication requires O(m x n) porting effort across GPU and NIC vendors. Right: UCCL-EP reduces this to O(m) by using the CPU as a portable intermediary via libibverbs.</em></p>
 
 UCCL-EP architecture is shown in the figure below. GPUs delegate token-routing commands to multi-threaded CPU proxies via lock-free FIFO channels. CPU proxies issue GPUDirect RDMA on behalf of GPUs, while managing ordering, flow control, and completion handling. 
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/uep_architecture.png" alt="UCCL-EP Architecture" width="600"/>
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep-full/uep_architecture.png" alt="UCCL-EP Architecture" width="600"/>
   <em>UCCL-EP architecture.</em>
 </p>
 
@@ -96,8 +96,8 @@ Please reach out to us if you would like to improve and evaluate EP communicatio
 We evaluate end-to-end Megatron-LM training of DeepSeek-V3 on 16 MI300X nodes (128 GPUs) using the AMD Primus/Megatron-LM framework.
 
 <div class="not-prose my-6 grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-start [&>img:first-child]:col-start-2 [&>img:last-child]:col-start-4 [&>img]:!my-0 [&>img]:h-auto [&>img]:max-w-[300px] [&>img]:min-w-0 [&>img]:w-full">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/amd_megatron_deepseekv3_tflops.png" alt="Megatron-LM TFLOPS" width="300"/>
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/amd_megatron_deepseekv3_tokens.png" alt="Megatron-LM tokens/s" width="300"/>
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep-full/amd_megatron_deepseekv3_tflops.png" alt="Megatron-LM TFLOPS" width="300"/>
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep-full/amd_megatron_deepseekv3_tokens.png" alt="Megatron-LM tokens/s" width="300"/>
 </div>
 <p align="center"><em>Megatron-LM training throughput (TFLOPS and tokens/s) on 16-node AMD MI300X + Broadcom Thor-2.</em></p>
 
@@ -110,8 +110,8 @@ Across all configurations, UCCL-EP matches or exceeds the TFLOPS by **7–36%** 
 We evaluate UCCL-EP in SGLang v0.5.3 on a prefill-heavy workload on p5en instances. We compare against NCCL, as DeepEP cannot run on EFA and PPLX had not been integrated into open-source inference engines at the time of evaluation.
 
 <div class="not-prose my-6 grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-start [&>img:first-child]:col-start-2 [&>img:last-child]:col-start-4 [&>img]:!my-0 [&>img]:h-auto [&>img]:max-w-[300px] [&>img]:min-w-0 [&>img]:w-full">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/sglang_deepseek_r1_throughput.png" alt="SGLang DeepSeek R1 throughput" width="300"/>
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/sglang_qwen3_throughput.png" alt="SGLang Qwen3 throughput" width="300"/>
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep-full/sglang_deepseek_r1_throughput.png" alt="SGLang DeepSeek R1 throughput" width="300"/>
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep-full/sglang_qwen3_throughput.png" alt="SGLang Qwen3 throughput" width="300"/>
 </div>
 <p align="center"><em>SGLang throughput comparison using UCCL-EP vs. NCCL on p5en. Left: DeepSeek R1 (671B). Right: Qwen3 (235B).</em></p>
 
@@ -150,8 +150,8 @@ On p5en instances (8x H200, 16x 200 Gb/s EFA), we measure EP32 dispatch and comb
 At small batch sizes (128 tokens), PPLX achieves lower latency because UCCL-EP (extending DeepEP) issues messages at 7 KB token granularity, whereas PPLX packs tokens into larger messages. However, as the token count increases, **UCCL-EP quickly overtakes PPLX** — delivering **2.3x lower dispatch latency** and **1.1–1.5x lower combine latency** for medium and large batches.
 
 <div class="not-prose my-6 grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-start [&>img:first-child]:col-start-2 [&>img:last-child]:col-start-4 [&>img]:!my-0 [&>img]:h-auto [&>img]:max-w-[300px] [&>img]:min-w-0 [&>img]:w-full">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/p5en_dispatch_latency_vs_tokens_pplx_uccl.jpg" alt="p5en dispatch latency vs tokens" width="300"/>
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/p5en_combine_latency_vs_tokens_pplx_uccl.jpg" alt="p5en combine latency vs tokens" width="300"/>
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep-full/p5en_dispatch_latency_vs_tokens_pplx_uccl.jpg" alt="p5en dispatch latency vs tokens" width="300"/>
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep-full/p5en_combine_latency_vs_tokens_pplx_uccl.jpg" alt="p5en combine latency vs tokens" width="300"/>
 </div>
 <p align="center"><em>EP32 dispatch (left) and combine (right) latency vs. number of tokens on p5en (H200 + EFA 400 Gbps).</em></p>
 
@@ -162,8 +162,8 @@ We present more results in the table below.
 On p6-b200 instances (8x B200, 8x 400 Gb/s EFA), we see similar trends with UCCL-EP outperforming PPLX at larger token counts:
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/p6_dispatch_ll_ht.png" alt="p6 dispatch" width="300"/>
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/p6_combine_ll_ht.png" alt="p6 combine" width="300"/>
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep-full/p6_dispatch_ll_ht.png" alt="p6 dispatch" width="300"/>
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep-full/p6_combine_ll_ht.png" alt="p6 combine" width="300"/>
   <em>EP32 dispatch (left) and combine (right) comparison on p6-b200 (B200 + EFA 400 Gbps).</em>
 </p> -->
 
@@ -202,8 +202,8 @@ Following a DeepSeek-V3 inference setting (128 tokens, 7168 hidden, top-8 expert
 UCCL-EP enables GPU-initiated token-level EP communication on AMD GPUs. We evaluate on MI300X with both CX7 RoCE (OCI) and Broadcom Thor-2 NICs (Vultr).
 
 <div class="not-prose my-6 grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-start [&>img:first-child]:col-start-2 [&>img:last-child]:col-start-4 [&>img]:!my-0 [&>img]:h-auto [&>img]:max-w-[300px] [&>img]:min-w-0 [&>img]:w-full">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/amd_dispatch_ll_ht.png" alt="AMD dispatch" width="300"/>
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/amd_combine_ll_ht.png" alt="AMD combine" width="300"/>
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep-full/amd_dispatch_ll_ht.png" alt="AMD dispatch" width="300"/>
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep-full/amd_combine_ll_ht.png" alt="AMD combine" width="300"/>
 </div>
 <p align="center"><em>EP32 dispatch (left) and combine (right) on AMD MI300X with CX7 RoCE and Broadcom Thor-2 NICs.</em></p>
 
@@ -257,7 +257,7 @@ A natural optimization is to pack tokens in a **best-effort manner** before send
 We evaluate these LL improvements on p5en while comparing against PPLX on both FP8 and BF16 dispatch paths (see the fair-comparison figure below).
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/uccl-ep-full-blogpost/assets/uccl-ep-full/p5en_dispatch_bf16_fp8_uccl_vs_pplx.png" alt="p5en dispatch BF16 to FP8 UCCL vs PPLX fair measurement" width="300"/>
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep-full/p5en_dispatch_bf16_fp8_uccl_vs_pplx.png" alt="p5en dispatch BF16 to FP8 UCCL vs PPLX fair measurement" width="300"/>
   <em>P5en comparison with PPLX for BF16 and FP8 dispatch paths.</em>
 </p>
 
