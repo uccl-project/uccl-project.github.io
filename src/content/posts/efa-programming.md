@@ -245,20 +245,25 @@ To guarantee **write-then-atomic ordering** despite EFA's out-of-order delivery,
 The receiver-side CPU proxy implements a simple reordering protocol:
 
 ```python
-cqe = poll_cq()
-imm = read_imm_data(cqe)
+def handle_completion(cqe):
+    imm = read_imm_data(cqe)
+    seq = get_seq(imm)
 
-if is_empty(cqe):  
-    # empty write-with-imm => emulated atomic
-    if all previous data writes (with lower seq) have been received:
-        commit the atomic to GPU-visible memory
-    else:
-        add to pending_atomics queue
-else:             
-    # non-empty write-with-imm => real data write
-    record write as completed
-    check if any pending atomics can now fire
-    (i.e., all data writes with seq < pending_atomic.seq have arrived)
+    if is_empty(cqe): # Empty write-with-imm => emulated atomic
+        if all_writes_received_up_to(seq):
+            commit_atomic_to_gpu_memory(imm)
+        else:
+            pending_atomics.append(imm)
+    else: # Non-empty write-with-imm => real data write
+        mark_write_received(seq)
+        try_fire_pending_atomics()
+
+def try_fire_pending_atomics():
+    """Check if any pending atomics can now commit."""
+    for pending in pending_atomics:
+        if all_writes_received_up_to(pending.seq):
+            commit_atomic_to_gpu_memory(pending)
+            pending_atomics.remove(pending)
 ```
 
 This is essentially the same idea as TCP reordering---attach a sequence number to every operation and let the receiver reassemble the correct order. The reordering window is bounded by the maximum number of in-flight operations per channel, so the bookkeeping is lightweight.
