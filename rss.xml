@@ -231,11 +231,16 @@ After these GPU-side changes, UCCL-EP immediately ran on AMD platforms with any 
 
 ## Towards More Efficient Low-Latency Kernels
 
-UCCL-EP&apos;s low-latency (LL) kernel, extending DeepEP, currently issues one 7 KB token per RDMA message. On EFA NICs, this is suboptimal because the current EFA firmware cannot process small tokens at a high enough rate (AWS has confirmed they are working on a firmware fix). PPLX, by contrast, packs tokens into larger messages, giving it an advantage at small batch sizes.
+UCCL-EP&apos;s low-latency (LL) kernel, extending DeepEP, currently issues one 7 KB token per RDMA message. On EFA NICs, this is suboptimal because the current EFA firmware cannot process small tokens at a high enough rate (AWS has confirmed they are working on a firmware fix). PPLX, by contrast, packs tokens into larger messages.
 
 A natural optimization is to pack tokens in a **best-effort manner** before sending. On the latest UCCL-EP, we have implemented per-expert batching of tokens for low-latency mode. On p5en (EP32, 128 tokens), batching improves BF16 dispatch from 299 us to 268 us (**10.4%** improvement) and FP8 dispatch from 217 us to 178 us (**18.0%** improvement). 
 
-We evaluate these LL improvements on p5en while comparing against PPLX on both FP8 and BF16 dispatch paths (see the fair-comparison figure below).
+We evaluate these LL improvements on p5en while comparing against PPLX on both FP8 and BF16 dispatch paths.
+
+**BF16 vs. FP8 Dispatch:**
+Similar to the DeepEP benchmark script, the input to the kernel is in BF16.
+* BF16 dispatch means the kernel transfers token in BF16 without casting BF16 to FP8.
+* FP8 dispatch means the kernel transfers token in FP8, either by casting BF16 to FP8 before kernel entry or using in-kernel BF16-&gt;FP8 conversion.
 
 &lt;p align=&quot;center&quot;&gt;
   &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep-full/p5en_dispatch_bf16_fp8_uccl_vs_pplx.png&quot; alt=&quot;p5en dispatch BF16 to FP8 UCCL vs PPLX fair measurement&quot; width=&quot;300&quot;/&gt;
@@ -245,7 +250,7 @@ We evaluate these LL improvements on p5en while comparing against PPLX on both F
 
 &lt;small&gt;
 
-**A Note on Fair Comparison with PPLX Kernels:** PPLX uses a different measurement methodology than our original DeepEP-inherited setup. To ensure fairness, we evaluate the results above using a script that aligns with the PPLX measurement methodology. One caveat is that PPLX does not support in-kernel BF16-&gt;FP8 conversion. For fairness, the FP8 results we report include BF16-&gt;FP8 casting time before entering the PPLX kernel (266.90 us). The PPLX dispatch time excluding external BF16-&gt;FP8 pre-cast time is 232.30 us.
+**A Note on Comparison with PPLX Kernels:** PPLX uses a different measurement methodology than our original DeepEP-inherited setup. One key difference is that unlike DeepEP and UCCL-EP, PPLX does not support in-kernel BF16-&gt;FP8 conversion. For a fair comparison, the FP8 results we report include BF16-&gt;FP8 casting time before entering the PPLX kernel (266.90 us). The PPLX dispatch time excluding external BF16-&gt;FP8 pre-cast time is 232.30 us, still higher than UCCL-EP (with batching)&apos;s. For BF16 dispatch, we evaluate at the same setup where both UCCL-EP and PPLX kernels transfer token in BF16 with no casting. We also evaluate the results above using a script that aligns with the PPLX measurement methodology (e.g. warmup, timing measurements, etc.). 
 
 &lt;/small&gt;
 
