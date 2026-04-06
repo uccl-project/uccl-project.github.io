@@ -130,7 +130,6 @@ Paper: <a href="https://arxiv.org/pdf/2512.19849">arxiv.org/pdf/2512.19849</a> (
 </div>
 <p align="center"><em>Megatron-LM training throughput (TFLOPS and tokens/s) on 16-node AMD MI300X + Broadcom Thor-2.</em></p>
 <p>Across all configurations, UCCL-EP matches or exceeds the TFLOPS by <strong>7–36%</strong> and throughput by <strong>7–45%</strong> compared to RCCL. These results show that UCCL-EP provides significant performance benefits for MoE training.</p>
-<hr>
 <h3 id="sglang-inference-on-aws-nvidia--efa"><a class="heading-anchor" href="#sglang-inference-on-aws-nvidia--efa">SGLang Inference on AWS (NVIDIA + EFA)</a></h3>
 <p>We evaluate UCCL-EP in SGLang v0.5.3 on a prefill-heavy workload on p5en instances. We compare against NCCL, as DeepEP cannot run on EFA and PPLX had not been integrated into open-source inference engines at the time of evaluation.</p>
 <div class="not-prose my-6 grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-start [&#x26;>img:first-child]:col-start-2 [&#x26;>img:last-child]:col-start-4 [&#x26;>img]:!my-0 [&#x26;>img]:h-auto [&#x26;>img]:max-w-[300px] [&#x26;>img]:min-w-0 [&#x26;>img]:w-full">
@@ -148,7 +147,6 @@ Paper: <a href="https://arxiv.org/pdf/2512.19849">arxiv.org/pdf/2512.19849</a> (
 <li>EP=32: UCCL-EP reaches <strong>62K tok/s</strong> vs. 44K tok/s for NCCL — about <strong>40% higher</strong> throughput.</li>
 </ul>
 <p>UCCL-EP enables larger EP configurations (EP=32) where NCCL either significantly underperforms or cannot run. CPU utilization increases modestly from an average 8% to 22%.</p>
-<hr>
 <h3 id="vllm-inference-on-aws-nvidia-h200--efa"><a class="heading-anchor" href="#vllm-inference-on-aws-nvidia-h200--efa">vLLM Inference on AWS (NVIDIA H200 + EFA)</a></h3>
 <p>We evaluate UCCL-EP on vLLM v0.16.0 with 1k input and 256 output tokens for <code>deepseek-ai/DeepSeek-V3-0324</code> on two p5en instances (EP16).</p>
 
@@ -187,8 +185,7 @@ Paper: <a href="https://arxiv.org/pdf/2512.19849">arxiv.org/pdf/2512.19849</a> (
 <p>UCCL-EP achieves slightly higher throughput, compariable TTFT, and up to 25% lower TPOT than the NCCL solution. Checkout this <a href="https://github.com/uccl-project/uccl/tree/main/ep/bench/vllm">tutorial</a> to reproduce.</p>
 <hr>
 <h2 id="microbenchmark-results"><a class="heading-anchor" href="#microbenchmark-results">Microbenchmark Results</a></h2>
-<h3 id="on-aws-efa-nvidia-gpus"><a class="heading-anchor" href="#on-aws-efa-nvidia-gpus">On AWS EFA (NVIDIA GPUs)</a></h3>
-<h4 id="h200--efa-p5en"><a class="heading-anchor" href="#h200--efa-p5en">H200 + EFA (p5en)</a></h4>
+<h3 id="on-nvidia-gpus-and-aws-efa"><a class="heading-anchor" href="#on-nvidia-gpus-and-aws-efa">On NVIDIA GPUs and AWS EFA</a></h3>
 <p>On p5en instances (8x H200, 16x 200 Gb/s EFA), we measure EP32 dispatch and combine latency while varying the number of tokens. UCCL-EP uses the minimum of high-throughput (HT) and low-latency (LL) mode latency, while PPLX operates in a single mode.</p>
 <p>At small batch sizes (128 tokens), PPLX achieves lower latency because UCCL-EP (extending DeepEP) issues messages at 7 KB token granularity, whereas PPLX packs tokens into larger messages. However, as the token count increases, <strong>UCCL-EP quickly overtakes PPLX</strong> — delivering <strong>2.3x lower dispatch latency</strong> and <strong>1.1–1.5x lower combine latency</strong> for medium and large batches.</p>
 <div class="not-prose my-6 grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-start [&#x26;>img:first-child]:col-start-2 [&#x26;>img:last-child]:col-start-4 [&#x26;>img]:!my-0 [&#x26;>img]:h-auto [&#x26;>img]:max-w-[300px] [&#x26;>img]:min-w-0 [&#x26;>img]:w-full">
@@ -341,7 +338,6 @@ On p6-b200 instances (8x B200, 8x 400 Gb/s EFA), we see similar trends with UCCL
 
 
 <table><thead><tr><th align="center">Platform</th><th align="center">#EP</th><th align="center">Dispatch Latency</th><th align="center">Dispatch BW</th><th align="center">Combine Latency</th><th align="center">Combine BW</th></tr></thead><tbody><tr><td align="center">p5en (H200)</td><td align="center">16</td><td align="center">226 us</td><td align="center">36 GB/s</td><td align="center">293 us</td><td align="center">48 GB/s</td></tr><tr><td align="center">p5en (H200)</td><td align="center">24</td><td align="center">386 us</td><td align="center">20 GB/s</td><td align="center">580 us</td><td align="center">26 GB/s</td></tr><tr><td align="center">p5en (H200)</td><td align="center">32</td><td align="center">465 us</td><td align="center">16 GB/s</td><td align="center">694 us</td><td align="center">25 GB/s</td></tr><tr><td align="center">p6 (B200)</td><td align="center">16</td><td align="center">228 us</td><td align="center">33 GB/s</td><td align="center">318 us</td><td align="center">46 GB/s</td></tr><tr><td align="center">p6 (B200)</td><td align="center">24</td><td align="center">448 us</td><td align="center">17 GB/s</td><td align="center">566 us</td><td align="center">26 GB/s</td></tr><tr><td align="center">p6 (B200)</td><td align="center">32</td><td align="center">406 us</td><td align="center">19 GB/s</td><td align="center">617 us</td><td align="center">24 GB/s</td></tr></tbody></table>
-<hr>
 <h3 id="on-amd-gpus"><a class="heading-anchor" href="#on-amd-gpus">On AMD GPUs</a></h3>
 <p>UCCL-EP enables GPU-initiated token-level EP communication on AMD GPUs. We evaluate on MI300X with both CX7 RoCE (OCI) and Broadcom Thor-2 NICs (Vultr).</p>
 <div class="not-prose my-6 grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-start [&#x26;>img:first-child]:col-start-2 [&#x26;>img:last-child]:col-start-4 [&#x26;>img]:!my-0 [&#x26;>img]:h-auto [&#x26;>img]:max-w-[300px] [&#x26;>img]:min-w-0 [&#x26;>img]:w-full">
