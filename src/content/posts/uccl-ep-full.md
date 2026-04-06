@@ -255,7 +255,7 @@ UCCL-EP's low-latency (LL) kernel, extending DeepEP, currently issues one 7 KB t
 A natural optimization is to pack tokens in a **best-effort manner** before sending. On the latest UCCL-EP, we have implemented per-expert batching of tokens for low-latency mode. On p5en (EP32, 128 tokens), batching improves BF16 dispatch from 299 us to 268 us (**10.4%** improvement) and FP8 dispatch from 217 us to 178 us (**18.0%** improvement).  We evaluate these LL improvements on p5en while comparing against PPLX on both FP8 and BF16 dispatch paths.
 
 **BF16 vs. FP8 Dispatch:**
-Similar to the DeepEP benchmark script, the input to the kernel is in BF16.
+Similar to the DeepEP benchmark script, the input to the low-latency kernel is in BF16.
 * BF16 dispatch means the kernel transfers token in BF16 without casting BF16 to FP8.
 * FP8 dispatch means the kernel transfers token in FP8, either by casting BF16 to FP8 before kernel entry or using in-kernel BF16->FP8 conversion.
 
