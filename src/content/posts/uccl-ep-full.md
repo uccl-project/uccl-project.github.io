@@ -1,7 +1,7 @@
 ---
 title: "UCCL-EP: Portable Expert-Parallel Communication — Full Results"
 slug: uccl-ep-full
-description: "Full evaluation of UCCL-EP across NVIDIA and AMD GPUs, AWS EFA, InfiniBand, and Broadcom NICs — with application-level results on SGLang inference and Megatron-LM training."
+description: "Full evaluation of UCCL-EP across NVIDIA and AMD GPUs, AWS EFA, InfiniBand, and Broadcom NICs — with application-level results on SGLang, vLLM inference and Megatron-LM training."
 category:
   - One
 tags:
@@ -20,7 +20,7 @@ author: UCCL Team
 <p>
 <strong>By: <a href="https://maoziming.github.io/">Ziming Mao</a> (UC Berkeley), <a href="https://laochanlam.com/">ChonLam Lao</a> (Harvard), <a href="https://yangzhou1997.github.io/">Yang Zhou</a> (UC Davis), <a href="github.com/CalebZ9909" class="no-github-icon">Yihan Zhang</a> (UC Davis), <a href="https://github.com/HermesCui" class="no-github-icon">Chihan Cui</a> (UW-Madison), <a href="https://zhongjiechen.github.io/" class="no-github-icon">Zhongjie Chen</a> (Tsinghua), <a href="https://xuzhiying9510.github.io/">Zhiying Xu</a> (AWS), and other UCCL-EP contributors
 <br>
-Date: Mar 28, 2026
+Date: April 6th, 2026
 </strong>
 </p>
 
