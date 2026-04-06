@@ -103,8 +103,6 @@ We evaluate end-to-end Megatron-LM training of DeepSeek-V3 on 16 MI300X nodes (1
 
 Across all configurations, UCCL-EP matches or exceeds the TFLOPS by **7–36%** and throughput by **7–45%** compared to RCCL. These results show that UCCL-EP provides significant performance benefits for MoE training.
 
----
-
 ### SGLang Inference on AWS (NVIDIA + EFA)
 
 We evaluate UCCL-EP in SGLang v0.5.3 on a prefill-heavy workload on p5en instances. We compare against NCCL, as DeepEP cannot run on EFA and PPLX had not been integrated into open-source inference engines at the time of evaluation.
@@ -124,8 +122,6 @@ We evaluate UCCL-EP in SGLang v0.5.3 on a prefill-heavy workload on p5en instanc
 
 UCCL-EP enables larger EP configurations (EP=32) where NCCL either significantly underperforms or cannot run. CPU utilization increases modestly from an average 8% to 22%.
 
----
-
 ### vLLM Inference on AWS (NVIDIA H200 + EFA)
 
 We evaluate UCCL-EP on vLLM v0.16.0 with 1k input and 256 output tokens for `deepseek-ai/DeepSeek-V3-0324` on two p5en instances (EP16). 
@@ -141,9 +137,7 @@ UCCL-EP achieves slightly higher throughput, compariable TTFT, and up to 25% low
 
 ## Microbenchmark Results
 
-### On AWS EFA (NVIDIA GPUs)
-
-#### H200 + EFA (p5en)
+### On NVIDIA GPUs and AWS EFA
 
 On p5en instances (8x H200, 16x 200 Gb/s EFA), we measure EP32 dispatch and combine latency while varying the number of tokens. UCCL-EP uses the minimum of high-throughput (HT) and low-latency (LL) mode latency, while PPLX operates in a single mode.
 
@@ -194,8 +188,6 @@ Following a DeepSeek-V3 inference setting (128 tokens, 7168 hidden, top-8 expert
 | p6 (B200) | 16 | 228 us | 33 GB/s | 318 us | 46 GB/s |
 | p6 (B200) | 24 | 448 us | 17 GB/s | 566 us | 26 GB/s |
 | p6 (B200) | 32 | 406 us | 19 GB/s | 617 us | 24 GB/s |
-
----
 
 ### On AMD GPUs
 
