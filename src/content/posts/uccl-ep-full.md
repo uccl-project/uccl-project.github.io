@@ -267,7 +267,7 @@ Similar to the DeepEP benchmark script, the input to the kernel is in BF16.
 
 <small>
 
-**A Note on Comparison with PPLX Kernels:** PPLX uses a different measurement methodology than our original DeepEP-inherited setup. One key difference is that unlike DeepEP and UCCL-EP, PPLX does not support in-kernel BF16->FP8 conversion. For a fair comparison, the FP8 results we report include BF16->FP8 casting time before entering the PPLX kernel (266.90 us). The PPLX dispatch time excluding external BF16->FP8 pre-cast time is 232.30 us, still higher than UCCL-EP (with batching)'s. For BF16 dispatch, we evaluate at the same setup where both UCCL-EP and PPLX kernels transfer token in BF16 with no casting. We also evaluate the results above using a script that aligns with the PPLX measurement methodology (e.g. warmup, timing measurements, etc.). 
+**A Note on Comparison with PPLX Kernels:** PPLX uses a different measurement methodology than our original DeepEP-inherited setup. One key difference is that unlike DeepEP and UCCL-EP, PPLX does not support in-kernel BF16->FP8 conversion. For a fair comparison, the FP8 results we report include BF16->FP8 casting time before entering the PPLX kernel (266.90 us). The PPLX dispatch time excluding external BF16->FP8 pre-cast time is 232.30 us, still higher than UCCL-EP's. For BF16 dispatch, we evaluate at the same setup where both UCCL-EP and PPLX kernels transfer token in BF16 with no casting. We also evaluate the align with the PPLX measurement methodology (e.g. warmup, timing measurements, etc.). 
 
 </small>
 
