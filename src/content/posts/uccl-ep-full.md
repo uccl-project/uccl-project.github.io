@@ -261,7 +261,7 @@ Similar to the DeepEP benchmark script, the input to the low-latency kernel is i
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep-full/p5en_dispatch_bf16_fp8_uccl_vs_pplx.png" alt="p5en dispatch BF16 to FP8 UCCL vs PPLX fair measurement" width="300"/>
-  <em>P5en comparison with PPLX for BF16 and FP8 dispatch paths.</em>
+  <em>2-node P5en comparison with PPLX for BF16 and FP8 dispatch.</em>
 </p>
 
 
