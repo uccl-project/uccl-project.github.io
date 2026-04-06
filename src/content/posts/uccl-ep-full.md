@@ -252,9 +252,7 @@ After these GPU-side changes, UCCL-EP immediately ran on AMD platforms with any 
 
 UCCL-EP's low-latency (LL) kernel, extending DeepEP, currently issues one 7 KB token per RDMA message. On EFA NICs, this is suboptimal because the current EFA firmware cannot process small tokens at a high enough rate (AWS has confirmed they are working on a firmware fix). PPLX, by contrast, packs tokens into larger messages.
 
-A natural optimization is to pack tokens in a **best-effort manner** before sending. On the latest UCCL-EP, we have implemented per-expert batching of tokens for low-latency mode. On p5en (EP32, 128 tokens), batching improves BF16 dispatch from 299 us to 268 us (**10.4%** improvement) and FP8 dispatch from 217 us to 178 us (**18.0%** improvement). 
-
-We evaluate these LL improvements on p5en while comparing against PPLX on both FP8 and BF16 dispatch paths.
+A natural optimization is to pack tokens in a **best-effort manner** before sending. On the latest UCCL-EP, we have implemented per-expert batching of tokens for low-latency mode. On p5en (EP32, 128 tokens), batching improves BF16 dispatch from 299 us to 268 us (**10.4%** improvement) and FP8 dispatch from 217 us to 178 us (**18.0%** improvement).  We evaluate these LL improvements on p5en while comparing against PPLX on both FP8 and BF16 dispatch paths.
 
 **BF16 vs. FP8 Dispatch:**
 Similar to the DeepEP benchmark script, the input to the kernel is in BF16.
