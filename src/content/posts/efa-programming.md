@@ -7,7 +7,7 @@ category:
 tags:
   - RDMA
   - EFA
-pubDate: 2026-04-05
+pubDate: 2026-04-13
 cover: https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/efa-programming/efa-programming.png
 coverAlt: UCCL-EP
 author: UCCL Team
@@ -16,7 +16,7 @@ author: UCCL Team
 <p>
 <strong>By: <a href="https://yangzhou1997.github.io/">Yang Zhou</a> (UC Davis), and the UCCL team
 <br>
-Date: April 05, 2026
+Date: April 13, 2026
 </strong>
 </p>
 
