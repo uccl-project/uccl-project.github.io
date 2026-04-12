@@ -14,7 +14,7 @@ author: UCCL Team
 ---
 
 <p>
-<strong>By: <a href="https://yangzhou1997.github.io/">Yang Zhou</a> (UC Davis), and the UCCL team
+<strong>By: <a href="https://yangzhou1997.github.io/">Yang Zhou</a> (UC Davis), <a href="https://xuzhiying9510.github.io/">Zhiying Xu</a> (AWS), and the UCCL team
 <br>
 Date: April 13, 2026
 </strong>
