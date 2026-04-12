@@ -41,7 +41,7 @@ AWS uses customized RDMA NICs called **EFA** (Elastic Fabric Adapter) across the
 </div>
 <p align="center"><em>Left: Traditional single-path transport sends all packets along one fixed route, which is vulnerable to congestion at any single hop. Right: EFA's SRD multi-path transport dynamically sprays packets across multiple paths, balancing load and avoiding hotspots without PFC.</em></p>
 
-However, AWS EFA has different behaviors from conventional RDMA NICs like NVIDIA ConnectX-7 and Broadcom Thor-2, especially when used with GPUs. For a long time, most users did not need to directly program EFA NICs---they simply used NCCL with the [aws-ofi-nccl plugin](https://github.com/aws/aws-ofi-nccl). However, new communication paradigms have recently emerged---GPU-initiated communication (e.g., [DeepEP](https://github.com/deepseek-ai/DeepEP)), point-to-point transfers (e.g., KV cache transfer for PD disaggregation, RL weight sync)---and efficiently supporting them requires tight integration between GPU kernels and RDMA devices. We can no longer rely on one-size-fits-all NCCL collectives.
+However, AWS EFA has different behaviors from conventional RDMA NICs like NVIDIA ConnectX-7 and Broadcom Thor-2, especially when used with GPUs. For a long time, most users did not need to directly program EFA NICs because they simply used NCCL with the [aws-ofi-nccl plugin](https://github.com/aws/aws-ofi-nccl). However, new communication paradigms have recently emerged, such as GPU-initiated communication (e.g., [DeepEP](https://github.com/deepseek-ai/DeepEP)), point-to-point transfers (e.g., KV cache transfer for PD disaggregation, RL weight sync), and efficiently supporting them requires tight integration between GPU kernels and RDMA devices. We can no longer rely on one-size-fits-all NCCL collectives.
 
 The UCCL team has done extensive investigation into AWS EFA NICs and built efficient EP and P2P libraries that support heterogeneous RDMA NICs, including EFA. In this blog, we share our experience with a heavy emphasis on how to use EFA for **advanced non-NCCL use cases**. We cover:
 
@@ -134,7 +134,7 @@ When posting a work request, you attach the AH along with the remote QPN:
 ibv_wr_set_ud_addr(qpx, ah, remote_qpn, QKEY);
 ```
 
-This connectionless model has an important implication: **a single EFA QP can send to multiple remote EFA NICs**. You just create different AHs for different destinations and specify the appropriate one on each WR. This is fundamentally different from RC (Reliable Connection) QPs, where each QP is bound to exactly one remote QP. The connectionless design reduces resource consumption when communicating with many peers---a common scenario in MoE expert-parallel workloads where each GPU talks to all other GPUs.
+This connectionless model has an important implication: **a single EFA QP can send to multiple remote EFA NICs**. You just create different AHs for different destinations and specify the appropriate one on each WR. This is fundamentally different from RC (Reliable Connection) QPs, where each QP is bound to exactly one remote QP. The connectionless design reduces resource consumption when communicating with many peers, which is a common scenario in MoE expert-parallel workloads where each GPU talks to all other GPUs.
 
 Of course, you still need an out-of-band mechanism (e.g., TCP sockets, as shown in our example code) to exchange QPN, GID, rkey, and remote buffer address before you can start RDMA operations.
 
@@ -163,7 +163,7 @@ ibv_wr_complete(qpx);
 
 A few important notes:
 
-- **`ibv_wr_rdma_write_imm`** writes data to a remote buffer *and* delivers a 32-bit immediate value to the receiver's completion queue. The receiver must have posted a receive WR to consume the immediate data---without a posted receive, the sender will hang waiting for the RNR (Receiver Not Ready) retry to succeed.
+- **`ibv_wr_rdma_write_imm`** writes data to a remote buffer *and* delivers a 32-bit immediate value to the receiver's completion queue. The receiver must have posted a receive WR to consume the immediate data. Without a posted receive, the sender will hang waiting for the RNR (Receiver Not Ready) retry to succeed.
 - **`ibv_wr_rdma_write`** (without imm) does a pure one-sided write. The receiver does not see any completion; only the sender gets a write completion.
 - Both operations support **zero-length writes**: you can send just the immediate value without any payload by setting `sge.length = 0`. This is particularly useful for signaling (e.g., notifying the receiver that prior writes have completed).
 
@@ -195,7 +195,7 @@ For GPU communication workloads, we recommend sticking with **RDMA write** and *
 
 ## EFA Ordering and Atomics
 
-This is where EFA programming gets interesting---and challenging. EFA's SRD multi-path transport introduces two constraints that do not exist on traditional single-path RDMA NICs:
+This is where EFA programming gets both interesting and challenging. EFA's SRD multi-path transport introduces two constraints that do not exist on traditional single-path RDMA NICs:
 
 1. **No ordering guarantees** between any two operations from the same QP.
 2. **No native RDMA atomics** (and definitely no atomics over GPU memory).
@@ -269,7 +269,7 @@ def try_fire_pending_atomics():
             pending_atomics.remove(pending)
 ```
 
-This is essentially the same idea as TCP reordering---attach a sequence number to every operation and let the receiver reassemble the correct order. The reordering window is bounded by the maximum number of in-flight operations per channel, so the bookkeeping is lightweight.
+This is essentially the same idea as TCP reordering: attach a sequence number to every operation and let the receiver reassemble the correct order. The reordering window is bounded by the maximum number of in-flight operations per channel, so the bookkeeping is lightweight.
 
 ### Why Not Sender-Side Reordering?
 
