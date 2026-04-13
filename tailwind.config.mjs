@@ -27,9 +27,6 @@ export default {
         "serif",
       ],
       mono: [
-        "system-ui",
-        "-apple-system",
-        "BlinkMacSystemFont",
         "Menlo",
         "Monaco",
         "Consolas",
