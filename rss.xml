@@ -1,4 +1,300 @@
-<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>UCCL</title><description>An amazing team!</description><link>https://uccl-project.github.io/</link><language>en-US</language><item><title>UCCL-EP: Portable Expert-Parallel Communication — Full Results</title><link>https://uccl-project.github.io/posts/uccl-ep-full/</link><guid isPermaLink="true">https://uccl-project.github.io/posts/uccl-ep-full/</guid><description>Full evaluation of UCCL-EP across NVIDIA and AMD GPUs, AWS EFA, InfiniBand, and Broadcom NICs — with application-level results on SGLang, vLLM inference and Megatron-LM training.</description><pubDate>Mon, 06 Apr 2026 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;
+<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>UCCL</title><description>An amazing team!</description><link>https://uccl-project.github.io/</link><language>en-US</language><item><title>A Practitioner Guide to AWS EFA Programming</title><link>https://uccl-project.github.io/posts/efa-programming/</link><guid isPermaLink="true">https://uccl-project.github.io/posts/efa-programming/</guid><description>Programming AWS EFA NICs for efficient GPU communication.</description><pubDate>Mon, 13 Apr 2026 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;
+&lt;strong&gt;By: &lt;a href=&quot;https://yangzhou1997.github.io/&quot;&gt;Yang Zhou&lt;/a&gt; (UC Davis), &lt;a href=&quot;https://xuzhiying9510.github.io/&quot;&gt;Zhiying Xu&lt;/a&gt; (AWS), and the UCCL team
+&lt;br&gt;
+Date: April 13, 2026
+&lt;/strong&gt;
+&lt;/p&gt;
+
+&lt;div class=&quot;tldr&quot;&gt;
+&lt;p&gt;
+We share a practical guide on how to program AWS EFA NICs for GPU communication workloads beyond NCCL.
+We cover the EFA &lt;code&gt;libibverbs&lt;/code&gt; interface, QP creation, address handling, RDMA write operations, and the critical challenges of ordering and atomics on EFA&apos;s multi-path SRD transport.
+We also describe how to address these constraints with software-emulated atomics and receiver-side reordering, as implemented in &lt;strong&gt;UCCL&lt;/strong&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+Code: &lt;a href=&quot;https://github.com/uccl-project/uccl/blob/main/experimental/misc/efa_rdma_write.cc&quot;&gt;uccl-project/uccl/experimental/misc/efa_rdma_write.cc&lt;/a&gt; (Apache-2.0)
+&lt;/p&gt;
+&lt;/div&gt;
+
+## Introduction
+
+AWS uses customized RDMA NICs called **EFA** (Elastic Fabric Adapter) across their GPU instances: Hopper-based p5, p5e, p5en VMs and Blackwell-based p6 VMs. Under the hood, EFA runs a proprietary multi-path transport protocol called **SRD** (Scalable Reliable Datagram), described in the [SRD paper](https://assets.amazon.science/a6/34/41496f64421faafa1cbe301c007c/a-cloud-optimized-transport-protocol-for-elastic-and-scalable-hpc.pdf). SRD supports efficient multi-pathing to avoid single-path network congestion in datacenter networks, without relying on PFC (Priority Flow Control) which is notoriously hard to manage at large scale.
+
+&lt;div class=&quot;not-prose my-6 grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-start [&amp;&gt;img:first-child]:col-start-2 [&amp;&gt;img:last-child]:col-start-4 [&amp;&gt;img]:!my-0 [&amp;&gt;img]:h-auto [&amp;&gt;img]:max-w-[450px] [&amp;&gt;img]:min-w-0 [&amp;&gt;img]:w-full&quot;&gt;
+  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/efa-programming/single_path.png&quot; alt=&quot;Single-path transport&quot; width=&quot;450&quot;/&gt;
+  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/efa-programming/multi_path.png&quot; alt=&quot;Multi-path transport&quot; width=&quot;450&quot;/&gt;
+&lt;/div&gt;
+&lt;p align=&quot;center&quot;&gt;&lt;em&gt;Left: Traditional single-path transport sends all packets along one fixed route, which is vulnerable to congestion at any single hop. Right: EFA&apos;s SRD multi-path transport dynamically sprays packets across multiple paths, balancing load and avoiding hotspots without PFC.&lt;/em&gt;&lt;/p&gt;
+
+However, AWS EFA has different behaviors from conventional RDMA NICs like NVIDIA ConnectX-7 and Broadcom Thor-2, especially when used with GPUs. For a long time, most users did not need to directly program EFA NICs because they simply used NCCL with the [aws-ofi-nccl plugin](https://github.com/aws/aws-ofi-nccl). However, new communication paradigms have recently emerged, such as GPU-initiated communication (e.g., [DeepEP](https://github.com/deepseek-ai/DeepEP)), point-to-point transfers (e.g., KV cache transfer for PD disaggregation, RL weight sync), and efficiently supporting them requires tight integration between GPU kernels and RDMA devices. We can no longer rely on one-size-fits-all NCCL collectives.
+
+The UCCL team has done extensive investigation into AWS EFA NICs and built efficient EP and P2P libraries that support heterogeneous RDMA NICs, including EFA. In this blog, we share our experience with a heavy emphasis on how to use EFA for **advanced non-NCCL use cases**. We cover:
+
+1. **EFA `libibverbs` programming**: QP creation, address handling, write operations
+2. **EFA ordering and atomics emulation**: How to work around EFA&apos;s lack of ordering guarantees and native atomics
+3. **EFA performance characteristics**: Strengths and tradeoffs compared to other RDMA NICs
+
+---
+
+## EFA libibverbs Programming
+
+EFA supports both `libibverbs` and `libfabric`. From our perspective, `libfabric` is essentially a wrapper around `libibverbs`. Most practitioners are more familiar with the `libibverbs` interface, since other RDMA NICs (NVIDIA ConnectX, Broadcom Thor-2) all use it as their primary programming interface. Thus, this blog focuses on the EFA `libibverbs` interface.
+
+The full working example is available at [`efa_rdma_write.cc`](https://github.com/uccl-project/uccl/blob/main/experimental/misc/efa_rdma_write.cc). You can compile and run it across two EFA-enabled instances to test RDMA write operations.
+
+### Creating EFA QPs
+
+Creating an EFA QP differs from standard InfiniBand/RoCE QPs in several important ways. EFA uses the **extended QP creation** API with a vendor-specific EFA attribute struct:
+
+```cpp
+struct ibv_qp_init_attr_ex qp_attr_ex = {0};
+struct efadv_qp_init_attr efa_attr = {0};
+
+qp_attr_ex.comp_mask = IBV_QP_INIT_ATTR_PD | IBV_QP_INIT_ATTR_SEND_OPS_FLAGS;
+qp_attr_ex.send_ops_flags = IBV_QP_EX_WITH_RDMA_WRITE |
+                             IBV_QP_EX_WITH_RDMA_WRITE_WITH_IMM |
+                             IBV_QP_EX_WITH_RDMA_READ;
+
+qp_attr_ex.cap.max_send_wr = 256;
+qp_attr_ex.cap.max_recv_wr = 256;
+qp_attr_ex.cap.max_send_sge = 1;
+qp_attr_ex.cap.max_recv_sge = 1;
+
+qp_attr_ex.pd = rdma_ctl-&gt;pd;
+qp_attr_ex.sq_sig_all = 1;
+qp_attr_ex.send_cq = ibv_cq_ex_to_cq(rdma_ctl-&gt;cq_ex);
+qp_attr_ex.recv_cq = ibv_cq_ex_to_cq(rdma_ctl-&gt;cq_ex);
+qp_attr_ex.qp_type = IBV_QPT_DRIVER;
+
+efa_attr.driver_qp_type = EFADV_QP_DRIVER_TYPE_SRD;
+efa_attr.sl = 8; // low-latency service level
+
+struct ibv_qp* qp = efadv_create_qp_ex(
+    rdma_ctl-&gt;ctx, &amp;qp_attr_ex, &amp;efa_attr, sizeof(struct efadv_qp_init_attr));
+```
+
+A few key differences from standard RDMA QP creation:
+
+- **QP type is `IBV_QPT_DRIVER`**, not `IBV_QPT_RC` or `IBV_QPT_UD`. EFA uses a custom driver-type QP that runs the SRD protocol underneath.
+- **Extended CQ (`ibv_cq_ex`)** is required. EFA mandates `ibv_create_cq_ex` with `wc_flags = IBV_WC_STANDARD_FLAGS`. Using the legacy `ibv_create_cq` will fail.
+- **No RC-style connection setup.** Unlike RC QPs that require exchanging QPN, GID, and LID to transition through INIT → RTR → RTS with remote QP info, EFA QPs transition through these states locally without specifying a remote endpoint:
+
+```cpp
+// INIT - no remote QP info needed
+attr.qp_state = IBV_QPS_INIT;
+attr.pkey_index = 0;
+attr.port_num = PORT_NUM;
+attr.qkey = QKEY;
+ibv_modify_qp(qp, &amp;attr,
+    IBV_QP_STATE | IBV_QP_PKEY_INDEX | IBV_QP_PORT | IBV_QP_QKEY);
+
+// RTR - just state change, no remote info
+attr.qp_state = IBV_QPS_RTR;
+ibv_modify_qp(qp, &amp;attr, IBV_QP_STATE);
+
+// RTS - set RNR retry, no remote info
+attr.qp_state = IBV_QPS_RTS;
+attr.rnr_retry = 3;
+ibv_modify_qp(qp, &amp;attr, IBV_QP_STATE | IBV_QP_SQ_PSN | IBV_QP_RNR_RETRY);
+```
+
+This is a major simplification over RC-based RDMA NICs, where you must exchange QPNs and GIDs out-of-band and set up each QP to point at its remote peer.
+
+### EFA Address Handling
+
+Since EFA QPs are **connectionless** (like UDP), you need to specify the destination for each work request using an **Address Handle (AH)**. This is the mechanism that tells the EFA NIC where to send each packet:
+
+```cpp
+struct ibv_ah_attr ah_attr = {0};
+ah_attr.port_num = PORT_NUM;
+ah_attr.is_global = 1;
+ah_attr.grh.dgid = remote_gid; // destination GID from out-of-band exchange
+
+struct ibv_ah* ah = ibv_create_ah(rdma_ctl-&gt;pd, &amp;ah_attr);
+```
+
+When posting a work request, you attach the AH along with the remote QPN:
+
+```cpp
+ibv_wr_set_ud_addr(qpx, ah, remote_qpn, QKEY);
+```
+
+This connectionless model has an important implication: **a single EFA QP can send to multiple remote EFA NICs**. You just create different AHs for different destinations and specify the appropriate one on each WR. This is fundamentally different from RC (Reliable Connection) QPs, where each QP is bound to exactly one remote QP. The connectionless design reduces resource consumption when communicating with many peers, which is a common scenario in MoE expert-parallel workloads where each GPU talks to all other GPUs.
+
+Of course, you still need an out-of-band mechanism (e.g., TCP sockets, as shown in our example code) to exchange QPN, GID, rkey, and remote buffer address before you can start RDMA operations.
+
+### EFA Write and Write-with-IMM
+
+Since EFAv2 (available on p5 instances and later), EFA supports **RDMA write** and **RDMA write with immediate data** operations. These are the workhorse operations for GPU communication in NCCL and DeepEP. EFA uses the extended verbs APIs to post writes:
+
+```cpp
+auto* qpx = ibv_qp_to_qp_ex(rdma_ctl-&gt;qp);
+ibv_wr_start(qpx);
+
+qpx-&gt;wr_id = 1;
+qpx-&gt;wr_flags = IBV_SEND_SIGNALED;
+
+// RDMA write with immediate data (0x1 as the imm value)
+ibv_wr_rdma_write_imm(qpx, remote_rkey, remote_addr, 0x1);
+
+struct ibv_sge sge = {
+    (uintptr_t)local_buf, MSG_SIZE, local_mr-&gt;lkey
+};
+ibv_wr_set_sge_list(qpx, 1, &amp;sge);
+ibv_wr_set_ud_addr(qpx, ah, remote_qpn, QKEY);
+
+ibv_wr_complete(qpx);
+```
+
+A few important notes:
+
+- **`ibv_wr_rdma_write_imm`** writes data to a remote buffer *and* delivers a 32-bit immediate value to the receiver&apos;s completion queue. The receiver must have posted a receive WR to consume the immediate data. Without a posted receive, the sender will hang waiting for the RNR (Receiver Not Ready) retry to succeed.
+- **`ibv_wr_rdma_write`** (without imm) does a pure one-sided write. The receiver does not see any completion; only the sender gets a write completion.
+- Both operations support **zero-length writes**: you can send just the immediate value without any payload by setting `sge.length = 0`. This is particularly useful for signaling (e.g., notifying the receiver that prior writes have completed).
+
+On the receiver side, polling the CQ for write-with-imm completions works with the standard `ibv_poll_cq`:
+
+```cpp
+struct ibv_wc wc;
+int n = ibv_poll_cq(cq, 1, &amp;wc);
+if (n &gt; 0 &amp;&amp; wc.status == IBV_WC_SUCCESS) {
+    if (wc.opcode == IBV_WC_RECV_RDMA_WITH_IMM) {
+        uint32_t imm = ntohl(wc.imm_data);
+        // process immediate data...
+    }
+}
+```
+
+EFA also supports the extended CQ polling API (`ibv_start_poll` / `ibv_next_poll` / `ibv_end_poll`) if you prefer that interface.
+
+### Other EFA Operations
+
+EFA supports **RDMA read** and **send/recv**, but these operations are less commonly used for GPU communication and have more constraints:
+
+- **RDMA read** works on recent EFA versions but is generally less efficient than write-based communication for GPU workloads where you want the sender to push data.
+- **Send/recv** on some earlier EFA firmware versions only supports messages up to a single MTU size (~8-9 KB). This makes it unsuitable for large data transfers without application-level chunking.
+
+For GPU communication workloads, we recommend sticking with **RDMA write** and **write-with-imm** as the primary operations.
+
+---
+
+## EFA Ordering and Atomics
+
+This is where EFA programming gets both interesting and challenging. EFA&apos;s SRD multi-path transport introduces two constraints that do not exist on traditional single-path RDMA NICs:
+
+1. **No ordering guarantees** between any two operations from the same QP.
+2. **No native RDMA atomics** (and definitely no atomics over GPU memory).
+
+### The Ordering Problem
+
+On a traditional RC RDMA NIC (e.g., ConnectX-7), if node A posts `write1` then `write2` to the same QP, the completions are guaranteed to appear in order on both the sender&apos;s and receiver&apos;s CQs. On EFA, because SRD sprays packets across multiple network paths, **the later write may arrive first**. Specifically:
+
+- **Receiver side:** Node B might see `write2`&apos;s completion arrive before `write1`&apos;s in its CQ.
+- **Sender side:** Node A might see `write2`&apos;s send completion before `write1`&apos;s.
+
+This is a fundamental consequence of multi-path transport: different paths have different latencies, and packets sent later on a shorter path can overtake packets sent earlier on a longer path.
+
+### The Atomics Problem
+
+Many GPU communication patterns rely on **write + atomic** sequences: node A performs `write1`, `write2`, `write3` to transfer data, then issues an **atomic add** to node B&apos;s counter. Node B&apos;s GPU kernel spins on this atomic counter to determine when prior writes have arrived. On NVIDIA NICs, the NIC hardware guarantees that the atomic is delivered *after* all preceding writes, and the atomic operation itself is performed by the NIC on the remote memory.
+
+EFA supports neither native RDMA atomics nor ordering, so how should we do? The answer is we can emulate both in software!
+
+### Software Atomics via Write-with-IMM
+
+The key idea is to emulate atomics using **empty write-with-imm** (zero payload, only the 32-bit immediate value) plus a **CPU proxy thread** on the receiver side. An empty write-with-imm means &quot;this is an atomic operation&quot;; a non-empty write-with-imm means &quot;this is a real data write.&quot; The approach:
+
+1. Allocate a `cudaHostAlloc` buffer (pinned CPU memory accessible by both GPU and CPU) to serve as the **atomic buffer**.
+2. When the sender wants to perform a remote &quot;atomic add&quot;, it issues an **empty write-with-imm** carrying the atomic metadata (offset, value) in the 32-bit immediate.
+3. The receiver-side CPU proxy polls its CQ, sees a zero-length write-with-imm, recognizes it as an atomic, and performs a **CPU atomic** on the shared buffer:
+
+```cpp
+// Receiver-side CPU proxy: upon receiving an empty write-with-imm
+counter-&gt;fetch_add(value, std::memory_order_release);
+```
+
+4. The GPU kernel on the receiver side polls this counter using acquire-semantic loads:
+
+```cpp
+// GPU kernel: spin-wait on the counter in cudaHostAlloc memory
+while (ld_acquire_sys_global(counter_ptr) == 0)
+    ; // spin
+```
+
+Because the atomic buffer is `cudaHostAlloc` memory, CPU writes with `memory_order_release` are visible to the GPU&apos;s acquire loads, providing the necessary CPU-GPU memory ordering.
+
+### Receiver-Side Sequence-Based Reordering
+
+To guarantee **write-then-atomic ordering** despite EFA&apos;s out-of-order delivery, we need to involves some sequencing semantics. 
+This requires two parts: 1) use write-with-imm for any RDMA write, 2) embed a **monotonic sequence number** into the immediate data of every write-with-imm. 
+Now, both data writes and atomic writes carry a sequence number, so the receiver can tell which operations have arrived and which are still in flight. 
+More importantly, the receiver proxy can delay update the atomic counter until all proceeding writes have arrived. 
+
+The receiver-side CPU proxy implements a simple reordering protocol:
+
+```python
+def handle_completion(cqe):
+    imm = read_imm_data(cqe)
+    seq = get_seq(imm)
+
+    if is_empty(cqe): # Empty write-with-imm =&gt; emulated atomic
+        if all_writes_received_up_to(seq):
+            commit_atomic_to_gpu_memory(imm)
+        else:
+            pending_atomics.append(imm)
+    else: # Non-empty write-with-imm =&gt; real data write
+        mark_write_received(seq)
+        try_fire_pending_atomics()
+
+def try_fire_pending_atomics():
+    &quot;&quot;&quot;Check if any pending atomics can now commit.&quot;&quot;&quot;
+    for pending in pending_atomics:
+        if all_writes_received_up_to(pending.seq):
+            commit_atomic_to_gpu_memory(pending)
+            pending_atomics.remove(pending)
+```
+
+This is essentially the same idea as TCP reordering: attach a sequence number to every operation and let the receiver reassemble the correct order. The reordering window is bounded by the maximum number of in-flight operations per channel, so the bookkeeping is lightweight.
+
+### Why Not Sender-Side Reordering?
+
+An alternative approach is **sender-side ordering**: the sender holds the atomic operation until it polls the *send completion* of all preceding writes. However, this adds latency because the sender must wait at least **half an RTT** for the transport-layer ACK of the last write before issuing the atomic. On EFA with 15-25 us RTTs, this is significant.
+
+The receiver-driven approach pipelines the atomic with the writes: the sender fires the atomic immediately after the writes without waiting, and the receiver reorders as needed. This results in measurably lower end-to-end latency:
+
+&lt;p align=&quot;center&quot;&gt;
+  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/efa-programming/sender_vs_receiver_latency.png&quot; alt=&quot;Sender-side vs Receiver-side ordering latency&quot; width=&quot;300&quot;/&gt;
+  &lt;br&gt;
+  &lt;em&gt;Latency comparison between sender-side ordering (hold atomic until all write completions) vs. receiver-side reordering approach.&lt;/em&gt;
+&lt;/p&gt;
+
+---
+
+## EFA Performance Characteristics
+
+Based on our experience with multiple RDMA NIC vendors including NVIDIA, Broadcom, AMD, Intel, we find EFA performance is **excellent for large messages** (dozens of MB and above), on par with NVIDIA ConnectX and Broadcom Thor-2 NICs. In our testing across p5en (EFAv3, 16x 200Gb/s) and p6 (EFAv4, 8x 400Gb/s) instances, EFA NICs are clearly saturating the network bandwidth for large messages with NCCL.
+
+More importantly, EFA is **remarkably reliable**. In our extensive testing, we have never encountered a transport retry counter exceeded error (CQE error 12) on EFA, while we frequently see it on other RDMA vendors under high load. We attribute this directly to EFA&apos;s SRD multi-path transport: by dynamically spreading traffic across many paths, SRD avoids the congestion buildup that plagues single-path transports, especially under incast patterns common in GPU communication workloads. Other vendors rely on a combination of adaptive routing and PFC inside the network fabric, which is fundamentally harder to get right.
+
+### Small-Message Latency
+
+EFA&apos;s multi-path design does sacrifice **small-message latency**. We typically observe **15-25 us RTTs** on EFA, compared to **~10 us** on NVIDIA InfiniBand/RoCE networks. This is because SRD&apos;s multi-path packet spraying introduces extra reordering and reassembly overhead in the NIC firmware, which is amortized over large transfers but visible at small message sizes.
+
+For workloads with many small messages (e.g., fine-grained GPU-initiated communication sending ~7 KB per message), this latency gap means the EFA firmware&apos;s per-message processing rate becomes a bottleneck. To mitigate this issue, UCCL-EP has introduced [per-expert batching](https://github.com/uccl-project/uccl/blob/e65c7866061e74a00e93f13437359c3f1dc14a43/ep/src/internode_ll.cu#L102) to **batch small messages** into larger RDMA writes before sending, which we found improved latency by up to 18% on p5en.
+
+### Tradeoffs Summary
+
+| Aspect | EFA (SRD) | Traditional RDMA (RC) |
+|:---|:---|:---|
+| Large-message throughput | Excellent (on par) | Excellent |
+| Small-message latency | 15-25 us | ~10 us |
+| Reliability under load | Very high (no PFC needed) | Depends on PFC + AR tuning |
+| Native RDMA atomics | No | Yes |
+| In-order delivery | No | Yes (per QP) |
+| Connection model | Connectionless (like UDP) | Connection-oriented |
+| Multi-destination per QP | Yes (via AH) | No (1:1 QP binding) |
+
+The lack of atomics and ordering is a real constraint that hinders many advanced communication libraries (e.g., DeepEP) from running on EFA directly. Fortunately, **UCCL fully addresses these constraints** with the software atomics and receiver-side reordering techniques described above, enabling advanced GPU communication on AWS instances. Check out our [UCCL project](https://github.com/uccl-project/uccl) for more details.</content:encoded></item><item><title>UCCL-EP: Portable Expert-Parallel Communication — Full Results</title><link>https://uccl-project.github.io/posts/uccl-ep-full/</link><guid isPermaLink="true">https://uccl-project.github.io/posts/uccl-ep-full/</guid><description>Full evaluation of UCCL-EP across NVIDIA and AMD GPUs, AWS EFA, InfiniBand, and Broadcom NICs — with application-level results on SGLang, vLLM inference and Megatron-LM training.</description><pubDate>Mon, 06 Apr 2026 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;
 &lt;strong&gt;By: &lt;a href=&quot;https://maoziming.github.io/&quot;&gt;Ziming Mao&lt;/a&gt; (UC Berkeley), &lt;a href=&quot;https://laochanlam.com/&quot;&gt;ChonLam Lao&lt;/a&gt; (Harvard), &lt;a href=&quot;https://yangzhou1997.github.io/&quot;&gt;Yang Zhou&lt;/a&gt; (UC Davis), &lt;a href=&quot;github.com/CalebZ9909&quot; class=&quot;no-github-icon&quot;&gt;Yihan Zhang&lt;/a&gt; (UC Davis), &lt;a href=&quot;https://github.com/HermesCui&quot; class=&quot;no-github-icon&quot;&gt;Chihan Cui&lt;/a&gt; (UW-Madison), &lt;a href=&quot;https://zhongjiechen.github.io/&quot; class=&quot;no-github-icon&quot;&gt;Zhongjie Chen&lt;/a&gt; (Tsinghua), &lt;a href=&quot;https://xuzhiying9510.github.io/&quot;&gt;Zhiying Xu&lt;/a&gt; (AWS), and other UCCL-EP contributors
 &lt;br&gt;
 Date: April 6th, 2026
@@ -405,58 +701,4 @@ UCCL-EP is still in active development, and we expect new results in the coming 
 
 ## Acknowledgements
 
-We thank AWS, Lambda Labs for providing us with the main testbeds. We especially thank Kaichao You, Lequn Chen, Zhen Huang, Zhenyu Gu, Costin Raiciu, Scott Shenker, Ion Stoica for their discussions and feedbacks. This research is supported by gifts from Accenture, AMD, Anyscale, AWS, Broadcom, Cisco, Google, IBM, Intel, Intesa Sanpaolo, Lambda, Lightspeed, Mibura, Microsoft, NVIDIA, Samsung SDS, and SAP.</content:encoded></item><item><title>Everything You Want to Know about KV Cache Transfer Engine</title><link>https://uccl-project.github.io/posts/kv-transfer-engine/</link><guid isPermaLink="true">https://uccl-project.github.io/posts/kv-transfer-engine/</guid><description>There have been many KV cache transfer engines for PD disaggregation, but nearly no benchmarks on their performance. This blog serves for this purpose---benchmarking and analyzing the performance of various KV transfer engines, so you can decide how to choose.</description><pubDate>Wed, 13 Aug 2025 00:00:00 GMT</pubDate><content:encoded>**By: UCCL Team -- Aug 13, 2025**
-
-KV cache transfer is becoming more and more important for modern disaggregated LLM serving with prefill and decode separation. It typically transfers the KV cache generated by the prefill GPU node to the separate decode GPU node via fast RDMA networks. Therefore, the KV cache transferring speed directly impacts the end-to-end request latency. 
-
-There have been quite a few KV cache transfer engines in the open-source world, including [NCCL](https://github.com/NVIDIA/nccl)/[RCCL](https://github.com/ROCm/rccl) (for AMD), [Nvidia NIXL](https://github.com/ai-dynamo/nixl), and [Mooncake TE](https://github.com/kvcache-ai/Mooncake) (Transfer Engine), but nearly no benchmarks on their performance. This blog serves for this purpose—benchmarking and analyzing the performance of various KV transfer engines, so you can decide how to choose. 
-
-We also want to introduce the UCCL KV transfer engine called [UCCL P2P](https://github.com/uccl-project/uccl/tree/main/p2p). As we will show soon, it provides an easy-to-use collective APIs like NCCL/RCCL, but provides much better performance than NCCL/RCCL without burning any SMs for the scenario of peer-to-peer KV cache transfer. So in total, this blog will compare the performance of the following four transfer engines: NCCL/RCCL, NIXL, Mooncake TE, and UCCL P2P.
-
-## Transfer engine designs
-
-**NCCL/RCCL** were mainly used for collective communication, like allreduce in LLM training and inference workloads. NCCL and RCCL have almost the same design and codebase, except that they were built for Nvidia and AMD GPUs, respectively. It provides flexible send/recv P2P transfer APIs that can be used for KV cache transfer. NCCL/RCCL always requires launching a GPU kernel even when doing `send/recv` P2P transfers. Therefore, it will consume some GPU SM resources during the transfer process. These GPU SMs are mainly used for data copy and reduce operations in complex collectives, but should be unnecessary during P2P transfer. 
-
-**NIXL** was created by Nvidia Dynamo distributed LLM inference framework, as its KV transfer solution. It has a modular design with a bunch of transfer backends, including file systems, POSIX sockets, and RDMA networks. It has several RDMA network backends: one is based on a famous communication library from the HPC community, called [UCX](https://github.com/openucx/ucx); another is exactly the Mooncake TE that we will benchmark soon. One thing worth noting is that UCX supports AMD GPUs. NIXL provides vastly different APIs from the NCCL/RCCL, with `read/write` operations between KV cache exporter nodes and importer nodes. A node needs to export some metadata for its KV cache using an out-of-band network, such as a TCP socket or an ETCD service endpoint, so that the other nodes can read from or write to the KV data. It does not consume GPU SM resources, as the KV cache is directly transferred in a GPU-Direct RDMA manner.  
-
-**Mooncake TE** is a component of the serving platform for Kimi from Moonshot AI. It also has different APIs other than NCCL/RCCL, very similar to NIXL style of `read/write`. It leverages GPU-Direct RDMA to directly transfer the KV cache without consuming GPU SM resources. It has a cool feature of automatically detecting the NIC and GPU affinity from PCIe topology, so that applications do not need to specify which NIC to use for each GPU. However, based on our testing, it has not supported AMD GPUs so far. 
-
-**UCCL P2P** is our recently developed KV cache transfer engine that features SM-freeness, a light-weight codebase, and easy-to-use interfaces. It is based on UCCL’s multi-path RDMA transport engine, provides both `read/write` and collective `send/recv` APIs without burning any GPU SMs, and auto-detect GPU-NIC topology. Its collective APIs avoid the need for an explicit out-of-band network for metadata dispersing. You can check our collective APIs [here](https://github.com/uccl-project/uccl/blob/bde34635dfeef86faa43b4bc3ccfcbc92a20aeaf/p2p/collective.py#L473-L491). 
-
-## Benchmarking setup
-
-Our benchmark testbed consists of two AMD GPU nodes, each with 8 MI300X GPUs and 8 Broadcom Thor-2 400Gbps NICs (or 50GB/s). We use the first GPU of each node with its most-affinitive NIC to benchmark P2P transfers. We use a wide range of message sizes, ranging from a few KB to dozens of MB, to reflect the possible KV cache size in practice. We measure the end-to-end latency of each **single** message transfer and calculate its achieved bandwidth. For the Mooncake engine, since it does not support AMD GPUs, we use host DRAM for KV cache transfer. We have double checked that for NIXL and UCCL P2P, using host DRAM won’t change their performance for our targeted single-direction two-GPU transfer scenario. 
-
-For Mooncake, we use its official C++ benchmark [`transfer_engine_bench.cpp`](https://github.com/kvcache-ai/Mooncake/blob/main/mooncake-transfer-engine/example/transfer_engine_bench.cpp); for others, we use their Python APIs to implement simple KV cache transfer [benchmarks](https://github.com/uccl-project/uccl/tree/main/p2p/benchmarks). 
-
-## Benchmarking results
-
-&lt;p align=&quot;center&quot;&gt;
-  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/kv-transfer-engine/p2p-single-direction.png&quot; alt=&quot;P2P single direction&quot; width=&quot;600&quot;/&gt;
-  &lt;em&gt;Figure 1: Throughput comparison of different KV cache transfer engines.&lt;/em&gt;
-&lt;/p&gt;
-
-The above figure shows the benchmarking results with NIXL and UCCL P2P achieving the best performance for almost all message sizes. NCCL/RCCL performs roughly **30-50%** slower than NIXL and UCCL P2P for 256KB and 1MB message sizes typically seen in KV cache transfer scenarios. But NCCL/RCCL’s performance reaches or even surpasses NIXL and UCCL P2P after 10MB. We think this might be because of NCCL/RCCL-internal smart message chunking mechanisms. 
-
-Surprisingly, we find Mooncake TE performs the worst, not able to saturate 50GB/s network link even at 100MB. We failed to find a architecture-level issues for it, but can only attribute it to the potentially buggy implementation. One thing to note is that we find by tuning the number of task submission threads in the Mooncake `transfer_engine_bench.cpp`, it can achieve 50GB/s line rate, but this is in contrast to other engine’s ability of reaching line rate with only one task submission thread. 
-
-&lt;p align=&quot;center&quot;&gt;
-  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/kv-transfer-engine/p2p-dual-direction.png&quot; alt=&quot;P2P dual direction&quot; width=&quot;600&quot;/&gt;
-  &lt;em&gt;Figure 1: Throughput comparison for dual-direction transfers.&lt;/em&gt;
-&lt;/p&gt;
-
-We also perform another interesting benchmark that does KV transfer between two GPUs in dual directions to stress test the engine transfer performance. The results are shown above, where we find that NCCL/RCCL starts to see SM being the transfer bottlenecks. UCCL P2P performs slightly better than NIXL at the 256KB message size. 
-
-## Comparison summary
-
-|             | Throughput | API                      | SM-free | AMD support | Auto-detect topo |
-|-------------|------------|--------------------------|---------|-------------|---------------------|
-| NCCL/RCCL   | Medium     | Collective               | No      | Yes         | Yes                 |
-| NIXL        | High       | Read/Write               | Yes     | Yes         | No                  |
-| Mooncake TE | Low        | Read/Write               | Yes     | No          | Yes                 |
-| UCCL P2P    | High       | Collective +&lt;br&gt;Read/Write | Yes     | Yes         | Yes                 |
-
-
-## Last words on UCCL P2P
-
-UCCL P2P is rapidly evolving, and we would love to hear your feedback and contributions. Our next goal is to extend our send/recv collective to more types of collectives without burning any GPU SM resources, to accelerate distributed video generation and understanding scenarios. So talk to us and checkout our GitHub repository (https://github.com/uccl-project/uccl) if you are interested in how UCCL P2P can help accelerate these emerging scenarios. Stay tuned!</content:encoded></item></channel></rss>
+We thank AWS, Lambda Labs for providing us with the main testbeds. We especially thank Kaichao You, Lequn Chen, Zhen Huang, Zhenyu Gu, Costin Raiciu, Scott Shenker, Ion Stoica for their discussions and feedbacks. This research is supported by gifts from Accenture, AMD, Anyscale, AWS, Broadcom, Cisco, Google, IBM, Intel, Intesa Sanpaolo, Lambda, Lightspeed, Mibura, Microsoft, NVIDIA, Samsung SDS, and SAP.</content:encoded></item></channel></rss>
