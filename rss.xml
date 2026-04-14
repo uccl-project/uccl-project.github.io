@@ -278,9 +278,9 @@ More importantly, EFA is **remarkably reliable**. In our extensive testing, we h
 
 ### Small-Message Latency
 
-EFA&apos;s multi-path design does sacrifice **small-message latency**. We typically observe **15-25 us RTTs** on EFA, compared to **~10 us** on NVIDIA InfiniBand/RoCE networks. This is because SRD&apos;s multi-path packet spraying introduces extra reordering and reassembly overhead in the NIC firmware, which is amortized over large transfers but visible at small message sizes.
+EFA design does sacrifice **small-message latency**. We typically observe **15-25 us RTTs** on EFA, compared to **~10 us** on NVIDIA InfiniBand/RoCE networks. This is likely because of the advanced multi-path processing, whose overhead is amortized over large transfers but visible at small message sizes.
 
-For workloads with many small messages (e.g., fine-grained GPU-initiated communication sending ~7 KB per message), this latency gap means the EFA firmware&apos;s per-message processing rate becomes a bottleneck. To mitigate this issue, UCCL-EP has introduced [per-expert batching](https://github.com/uccl-project/uccl/blob/e65c7866061e74a00e93f13437359c3f1dc14a43/ep/src/internode_ll.cu#L102) to **batch small messages** into larger RDMA writes before sending, which we found improved latency by up to 18% on p5en.
+For workloads with many small messages (e.g., fine-grained GPU-initiated communication sending ~7 KB per message), this latency gap means the EFA&apos;s per-message processing rate becomes a bottleneck. To mitigate this issue, UCCL-EP has introduced [per-expert batching](https://github.com/uccl-project/uccl/blob/e65c7866061e74a00e93f13437359c3f1dc14a43/ep/src/internode_ll.cu#L102) to **batch small messages** into larger RDMA writes before sending, which we found improved latency by up to 18% on p5en.
 
 ### Tradeoffs Summary
 
