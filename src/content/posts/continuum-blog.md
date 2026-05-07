@@ -137,7 +137,7 @@ The critical path is the real enemy. Strategy 1 puts everything on it. Strategy 
 
 ---
 
-## Part 4: What If the Standby Could Be Hot Before It's Needed?
+## Part 4: The Standby That Was Already There
 
 Both strategies above treat the replacement machine as something to be *found* at failure time. But in practice, it was already there all along.
 
