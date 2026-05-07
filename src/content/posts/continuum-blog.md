@@ -71,7 +71,7 @@ The financial stakes are enormous. Training across 16K GPUs with AWS pricing cos
 What makes this especially alarming is how non-linearly the damage scales. A 4.45-minute restart time looks tolerable in isolation — but combine it with the MTTF of a large cluster and you get a collapse in effective throughput that accelerates as you add more GPUs.
 
 <p align="center">
-<img src="/continuum-blog/scale-throughput-loss.png" alt="Impact of downtime on ETTR at different GPU scales" width="75%"/>
+<img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/continuum-blog-post/assets/continuum-blog/scale-throughput-loss.png" alt="Impact of downtime on ETTR at different GPU scales" width="75%"/>
 <br>
 <em>ETTR (Effective Training Time Ratio) as a function of cluster scale. Even a fixed per-interruption downtime causes throughput efficiency to collapse at production scales — Llama 3 (16K GPUs) and Grok 3 (80K+) operate deep in the red zone. Reducing downtime from minutes to seconds shifts the entire curve upward.</em>
 </p>
