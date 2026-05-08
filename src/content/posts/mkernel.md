@@ -40,7 +40,7 @@ The traditional model is **host-driven**: the CPU runs the control path, calls i
 
 The natural answer is **GPU-driven communication**: let the GPU itself trigger fine-grained transfers, fused into the same kernel as the compute. **However, most existing kernel libraries stop at a single node, if not, a single GPU.** 
 
-mKernel is our attempt at the missing piece: a **GPU-driven**, **fused** kernel design that delivers fine-grained compute–communication overlap across both intra-node NVLink and inter-node RDMA, while staying portable across NIC backends (ConnectX-7 today, AWS EFA today, more on the way) without depending on NCCL or NVSHMEM.
+mKernel is our attempt at the missing piece: a **GPU-driven**, **fused** kernel design that delivers fine-grained compute–communication overlap across both **intra-node NVLink** and **inter-node RDMA**, while staying portable across NIC backends (ConnectX-7 today, AWS EFA today, more on the way) without depending on NCCL or NVSHMEM.
 
 ## What mKernel does
 
@@ -49,7 +49,7 @@ mKernel is a small, focused library of persistent CUDA kernels — one per workl
 - **Multi-GPU + multi-node, in one kernel.** Intra-node NVLink and inter-node RDMA both live inside the same persistent kernel. Tiles are produced by compute CTAs and consumed immediately by communication CTAs.
 - **Fine-grained intra-kernel overlap.** Compute and communication overlap at *tile/chunk* granularity, covering both the intra-node and inter-node legs. 
 - **Persistent kernel with SM specialization.** CTAs self-assign roles — `compute`, `intra-comm`, `inter-send`, `inter-reduce` — based on a small role table the host sets up before launch. The split is tunable per shape.
-- **GPU-driven networking, built on `libibverbs`.** mKernel uses GPU-initiated RDMA writes (and write-with-immediate) without depending on NCCL or NVSHMEM. The same on-GPU kernel runs against either ConnectX-7 (`-DINTERNODE_BACKEND_IBVERBS`) or AWS EFA / SRD (`-DINTERNODE_BACKEND_EFA`); only the host-side proxy / session implementation differs. 
+- **GPU-driven networking, built on `libibverbs`.** mKernel uses GPU-initiated RDMA writes (and write-with-immediate) without depending on NCCL or NVSHMEM. We find that writing the communication backend scratch is helpful to maximize performance as well as cater to heterogenous networking hardware. 
 
 ## The five fused kernels
 
