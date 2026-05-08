@@ -35,14 +35,14 @@ Code: <a href="https://github.com/uccl-project/mKernel">github.com/uccl-project/
 <li><strong>CPU-mediated control becomes visible as GPUs get faster.</strong> Per-chip throughput is now multi-PFLOP-scale and intra-rack bandwidth is hundreds of TB/s. At these speeds, even microsecond-scale host orchestration overhead — a cudaLaunchKernel, a CPU-side “all writes done” check, an inter-stream event — shows up directly as pipeline bubbles.</li>
 </ol>
 <p>The natural answer is <strong>GPU-driven communication</strong>: let the GPU itself trigger fine-grained transfers, fused into the same kernel as the compute. <strong>However, most existing kernel libraries stop at a single node, if not, a single GPU.</strong></p>
-<p>mKernel is our attempt at the missing piece: a <strong>GPU-driven</strong>, <strong>fused</strong> kernel design that delivers fine-grained compute–communication overlap across both intra-node NVLink and inter-node RDMA, while staying portable across NIC backends (ConnectX-7 today, AWS EFA today, more on the way) without depending on NCCL or NVSHMEM.</p>
+<p>mKernel is our attempt at the missing piece: a <strong>GPU-driven</strong>, <strong>fused</strong> kernel design that delivers fine-grained compute–communication overlap across both <strong>intra-node NVLink</strong> and <strong>inter-node RDMA</strong>, while staying portable across NIC backends (ConnectX-7 today, AWS EFA today, more on the way) without depending on NCCL or NVSHMEM.</p>
 <h2 id="what-mkernel-does"><a class="heading-anchor" href="#what-mkernel-does">What mKernel does</a></h2>
 <p>mKernel is a small, focused library of persistent CUDA kernels — one per workload — each of which fuses intra-node NVLink communication, inter-node RDMA, and dense compute into a single kernel.</p>
 <ul>
 <li><strong>Multi-GPU + multi-node, in one kernel.</strong> Intra-node NVLink and inter-node RDMA both live inside the same persistent kernel. Tiles are produced by compute CTAs and consumed immediately by communication CTAs.</li>
 <li><strong>Fine-grained intra-kernel overlap.</strong> Compute and communication overlap at <em>tile/chunk</em> granularity, covering both the intra-node and inter-node legs.</li>
 <li><strong>Persistent kernel with SM specialization.</strong> CTAs self-assign roles — <code>compute</code>, <code>intra-comm</code>, <code>inter-send</code>, <code>inter-reduce</code> — based on a small role table the host sets up before launch. The split is tunable per shape.</li>
-<li><strong>GPU-driven networking, built on <code>libibverbs</code>.</strong> mKernel uses GPU-initiated RDMA writes (and write-with-immediate) without depending on NCCL or NVSHMEM. The same on-GPU kernel runs against either ConnectX-7 (<code>-DINTERNODE_BACKEND_IBVERBS</code>) or AWS EFA / SRD (<code>-DINTERNODE_BACKEND_EFA</code>); only the host-side proxy / session implementation differs.</li>
+<li><strong>GPU-driven networking, built on <code>libibverbs</code>.</strong> mKernel uses GPU-initiated RDMA writes (and write-with-immediate) without depending on NCCL or NVSHMEM. We find that writing the communication backend scratch is helpful to maximize performance as well as cater to heterogenous networking hardware.</li>
 </ul>
 <h2 id="the-five-fused-kernels"><a class="heading-anchor" href="#the-five-fused-kernels">The five fused kernels</a></h2>
 
