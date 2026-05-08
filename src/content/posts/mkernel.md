@@ -1,5 +1,5 @@
 ---
-title: "mKernel: Fast Multi-GPU, Multi-Node Fused Kernels"
+title: "mKernel: Fast Multi-GPU, Multi-Node\nFused Kernels"
 slug: mkernel
 description: "mKernel is a collection of multi-GPU, multi-node fused kernels that put intra-node NVLink communication, inter-node RDMA, and compute inside a single persistent  kernel."
 category:
@@ -70,35 +70,30 @@ We evaluate mKernel on two 2-node × 8-H200 clusters that differ only in the int
 | **AWS EFA** | 2 × 8 H200 | NVLink5 | AWS EFA / SRD | 16 × 200 Gb/s EFA per node (3.2 Tbps/node) | `-DINTERNODE_BACKEND_EFA` |
 | **ConnectX-7** | 2 × 8 H200 | NVLink5 | InfiniBand / RoCE (RC, `libibverbs`) | 8 × 400 Gb/s NVIDIA ConnectX-7 per node | `-DINTERNODE_BACKEND_IBVERBS` |
 
-Both clusters give 50 GB/s of inter-node bandwidth per GPU; the difference is in the transport semantics — EFA's SRD is multi-pathed but gives no per-QP ordering and no native RDMA atomics, while CX-7 RC is in-order with hardware atomics. mKernel's [software-emulated atomics and receiver-side reordering](/posts/efa-programming/) close that gap so the same fused kernel runs on both.
+Both clusters give 50 GB/s of inter-node bandwidth per GPU; the difference is in the transport semantics — EFA's SRD is multi-pathed but gives no per-QP ordering and no native RDMA atomics, while CX-7 RC is in-order with hardware atomics. 
 
 ## Results on ConnectX-7
 
 mKernel is benchmarked against the best published baseline for each workload: NCCL, Triton-distributed, Flux, Mercury, MagiAttention, Transformer-Engine-CP, and ring-flash-attention. We are still doing further benchmarking on larger scale.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/ag_gemm_cx7.png" alt="AllGather + GEMM on ConnectX-7" width="700"/>
-  <br><em>AllGather + GEMM</em>
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/ag_gemm_cx7.png" alt="AllGather + GEMM on ConnectX-7" width="700" style="margin-bottom:0;"/>
+  <em style="display:block;margin-top:0.5rem;">AllGather + GEMM</em>
 </p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/gemm_ar_cx7.png" alt="GEMM + AllReduce on ConnectX-7" width="700"/>
-  <br><em>GEMM + AllReduce</em>
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/gemm_ar_cx7.png" alt="GEMM + AllReduce on ConnectX-7" width="700" style="margin-bottom:0;"/>
+  <em style="display:block;margin-top:0.5rem;">GEMM + AllReduce</em>
 </p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/moe_dispatch_gemm_cx7.png" alt="MoE Dispatch + GEMM on ConnectX-7" width="700"/>
-  <br><em>MoE Dispatch + GEMM</em>
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/ring_attn_cx7.png" alt="Ring Attention on ConnectX-7" width="700" style="margin-bottom:0;"/>
+  <em style="display:block;margin-top:0.5rem;">Ring Attention</em>
 </p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/ring_attn_cx7.png" alt="Ring Attention on ConnectX-7" width="700"/>
-  <br><em>Ring Attention</em>
-</p>
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/gemm_rs_cx7.png" alt="GEMM + ReduceScatter on ConnectX-7" width="700"/>
-  <br><em>GEMM + ReduceScatter</em>
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/gemm_rs_cx7.png" alt="GEMM + ReduceScatter on ConnectX-7" width="700" style="margin-bottom:0;"/>
+  <em style="display:block;margin-top:0.5rem;">GEMM + ReduceScatter</em>
 </p>
 
 ## Results on AWS EFA
@@ -106,28 +101,28 @@ mKernel is benchmarked against the best published baseline for each workload: NC
 The same on-GPU kernels run on the AWS EFA cluster against the same set of baselines.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/ag_gemm_efa.png" alt="AllGather + GEMM on EFA" width="700"/>
-  <br><em>AllGather + GEMM</em>
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/ag_gemm_efa.png" alt="AllGather + GEMM on EFA" width="700" style="margin-bottom:0;"/>
+  <em style="display:block;margin-top:0.5rem;">AllGather + GEMM</em>
 </p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/gemm_ar_efa.png" alt="GEMM + AllReduce on EFA" width="700"/>
-  <br><em>GEMM + AllReduce</em>
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/gemm_ar_efa.png" alt="GEMM + AllReduce on EFA" width="700" style="margin-bottom:0;"/>
+  <em style="display:block;margin-top:0.5rem;">GEMM + AllReduce</em>
 </p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/dispatch_gemm_efa.png" alt="MoE Dispatch + GEMM on EFA" width="700"/>
-  <br><em>MoE Dispatch + GEMM</em>
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/dispatch_gemm_efa.png" alt="MoE Dispatch + GEMM on EFA" width="700" style="margin-bottom:0;"/>
+  <em style="display:block;margin-top:0.5rem;">MoE Dispatch + GEMM</em>
 </p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/ring_attention_efa.png" alt="Ring Attention on EFA" width="700"/>
-  <br><em>Ring Attention</em>
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/ring_attention_efa.png" alt="Ring Attention on EFA" width="700" style="margin-bottom:0;"/>
+  <em style="display:block;margin-top:0.5rem;">Ring Attention</em>
 </p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/gemm_rs_efa.png" alt="GEMM + ReduceScatter on EFA" width="700"/>
-  <br><em>GEMM + ReduceScatter</em>
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/gemm_rs_efa.png" alt="GEMM + ReduceScatter on EFA" width="700" style="margin-bottom:0;"/>
+  <em style="display:block;margin-top:0.5rem;">GEMM + ReduceScatter</em>
 </p>
 
 ## Roadmap
