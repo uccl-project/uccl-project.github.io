@@ -22,34 +22,34 @@ Date: May 8, 2026
 
 <div class="tldr">
 <p>
-<strong>mKernel</strong> is a collection of fast <em>multi-GPU, multi-node</em> fused kernels that enables <em>intra-node</em> NVLink communication, <em>inter-node</em> RDMA, and <em>compute</em> inside a <em>single persistent kernel</em>. 
+<strong>mKernel</strong> is a collection of fast <em>multi-GPU, multi-node</em> fused kernels that enable <em>intra-node</em> communication, <em>inter-node</em> RDMA, and <em>compute</em> inside a <em>single persistent kernel</em>. 
 </p>
 <p>
 Code: <a href="https://github.com/uccl-project/mKernel">github.com/uccl-project/mKernel</a>
 </p>
 </div>
 
-## The problem: host-driven communication is increasingly the bottleneck.
+## The problem: communication is increasingly the bottleneck.
 
-AI training and serving are increasingly limited by communication at scale. In production, communication can consume **43.6% of the forward pass and 32% of end-to-end training time** on GPUs, and inter-device communication can account for **up to 47% of total execution time** across popular MoE models and frameworks. 
+AI training and serving are increasingly limited by communication at scale. In production, communication can consume **43.6% of the forward pass and 32% of end-to-end training time** on GPUs [1], and inter-device communication can account for **up to 47% of total execution time** across popular MoE models and frameworks [2]. 
 
 The traditional model is **host-driven**: the CPU runs the control path, calls into a library (NCCL/NVSHMEM), and the library issues the collective. It is increasingly mismatched with modern AI workloads for two reasons:
 
-1. **Fine-grained overlap to maximize performance.** Host-driven systems overlap by launching compute and communication on separate streams, but their decisions are still made at coarse *kernel boundaries* — leaving finer-grained overlap on the table.
-2. **CPU-mediated control becomes visible as GPUs get faster.** Per-chip throughput is now multi-PFLOP-scale and intra-rack bandwidth is hundreds of TB/s. At these speeds, even microsecond-scale host orchestration overhead — a cudaLaunchKernel, a CPU-side "all writes done" check, an inter-stream event — shows up directly as pipeline bubbles.
+1. **Fine-grained overlap to maximize performance.** Host-driven systems overlap by launching compute and communication on separate streams, but their decisions are still made at coarse *kernel boundaries* — leaving more finer-grained overlap on the table.
+2. **CPU-mediated control becomes visible as GPUs get faster.** Per-chip throughput is now multi-PFLOP-scale (e.g., Google TPU7x/Ironwood at 4.614 PFLOP/s FP8 per chip [3]) and intra-rack bandwidth is hundreds of TB/s (e.g., GB300 NVL72 at 130 TB/s NVLink [4]). At these speeds, even microsecond-scale host orchestration overhead — a cudaLaunchKernel, a CPU-side "all writes done" check, an inter-stream event — shows up directly as pipeline bubbles.
 
 The natural answer is **GPU-driven communication**: let the GPU itself trigger fine-grained transfers, fused into the same kernel as the compute. **However, most existing kernel libraries stop at a single node, if not, a single GPU.** 
 
-mKernel is our attempt at the missing piece: a **GPU-driven**, **fused** kernel design that delivers fine-grained compute–communication overlap across both **intra-node NVLink** and **inter-node RDMA**, while staying portable across NIC backends (ConnectX-7 today, AWS EFA today, more on the way) without depending on NCCL or NVSHMEM.
+mKernel is our attempt at the missing piece: a **GPU-driven**, **fused** kernel design that delivers fine-grained compute–communication overlap across both **intra-node NVLink** and **inter-node RDMA**, while staying portable across NIC backends (ConnectX-7 today, AWS EFA today, more on the way).
 
 ## What mKernel does
 
 mKernel is a small, focused library of persistent CUDA kernels — one per workload — each of which fuses intra-node NVLink communication, inter-node RDMA, and dense compute into a single kernel.
 
-- **Multi-GPU + multi-node, in one kernel.** Intra-node NVLink and inter-node RDMA both live inside the same persistent kernel. Tiles are produced by compute CTAs and consumed immediately by communication CTAs.
-- **Fine-grained intra-kernel overlap.** Compute and communication overlap at *tile/chunk* granularity, covering both the intra-node and inter-node legs. 
-- **Persistent kernel with SM specialization.** CTAs self-assign roles — `compute`, `intra-comm`, `inter-send`, `inter-reduce` — based on a small role table the host sets up before launch. The split is tunable per shape.
-- **GPU-driven networking, built on `libibverbs`.** mKernel uses GPU-initiated RDMA writes (and write-with-immediate) without depending on NCCL or NVSHMEM. We find that writing the communication backend scratch is helpful to maximize performance as well as cater to heterogenous networking hardware. 
+- **Multi-GPU + multi-node, in one kernel.** Intra-node NVLink and inter-node RDMA both live inside the same persistent kernel. 
+- **Fine-grained intra-kernel overlap.** Compute and communication overlap at *tile/chunk* granularity, covering both the intra-node and inter-node GPU communication. 
+- **Persistent kernel with SM specialization.** CTAs self-assign roles, such as `compute`, `intra-comm`, `inter-send`, `inter-reduce`. The split (e.g. number of CTAs dedicated to each role) is tunable per shape.
+- **GPU-driven networking, built on `libibverbs`.** mKernel uses GPU-initiated RDMA writes (and write-with-immediate) without depending on NCCL or NVSHMEM. We find that writing the communication backend from scratch is helpful to maximize performance as well as cater to heterogenous networking devices. 
 
 ## The five fused kernels
 
@@ -132,4 +132,11 @@ The same on-GPU kernels run on the AWS EFA cluster against the same set of basel
 - 🚧 Full support for heterogeneous accelerators and NICs, with topology-aware accelerator/NIC discovery, placement, and routing.
 - 🚧 Inter-node *megakernels*: collapsing several fused steps into a single persistent kernel that spans an entire transformer layer.
 - 🚧 Blackwell GPU support.
+
+## References
+
+1. Chao Jin et al. *MegaScale-MoE: Large-Scale Communication-Efficient Training of Mixture-of-Experts Models in Production*. EuroSys, 2026.
+2. Shulai Zhang et al. *Comet: Fine-grained Computation-communication Overlapping for Mixture-of-Experts*. MLSys, 2025.
+3. Google Cloud. *TPU7x (Ironwood)*. Google Cloud Documentation, 2026.
+4. Microsoft Azure. *ND GB300-v6 Sizes Series*. Azure Virtual Machines Documentation, 2026.
 
