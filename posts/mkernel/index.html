@@ -21,7 +21,7 @@ Date: May 8, 2026
 </p>
 <div class="tldr">
 <p>
-<strong>mKernel</strong> is a collection of fast multi-GPU, multi-node fused kernels that enables <em>intra-node</em> NVLink communication, <em>inter-node</em> RDMA, and <em>compute</em> inside a <em>single persistent kernel</em>. 
+<strong>mKernel</strong> is a collection of fast <em>multi-GPU, multi-node</em> fused kernels that enables <em>intra-node</em> NVLink communication, <em>inter-node</em> RDMA, and <em>compute</em> inside a <em>single persistent kernel</em>. 
 </p>
 <p>
 Code: <a href="https://github.com/uccl-project/mKernel">github.com/uccl-project/mKernel</a>
@@ -31,7 +31,7 @@ Code: <a href="https://github.com/uccl-project/mKernel">github.com/uccl-project/
 <p>AI training and serving are increasingly limited by communication at scale. In production, communication can consume <strong>43.6% of the forward pass and 32% of end-to-end training time</strong> on GPUs, and inter-device communication can account for <strong>up to 47% of total execution time</strong> across popular MoE models and frameworks.</p>
 <p>The traditional model is <strong>host-driven</strong>: the CPU runs the control path, calls into a library (NCCL/NVSHMEM), and the library issues the collective. It is increasingly mismatched with modern AI workloads for two reasons:</p>
 <ol>
-<li><strong>Fine-grained overlap requires sub-kernel scheduling.</strong> Compute kernels produce data incrementally — a tile at a time. Host-driven systems overlap by launching compute and communication on separate streams, but their decisions are still made at coarse <em>kernel boundaries</em> — leaving finer-grained overlap on the table.</li>
+<li><strong>Fine-grained overlap to maximize performance.</strong> Host-driven systems overlap by launching compute and communication on separate streams, but their decisions are still made at coarse <em>kernel boundaries</em> — leaving finer-grained overlap on the table.</li>
 <li><strong>CPU-mediated control becomes visible as GPUs get faster.</strong> Per-chip throughput is now multi-PFLOP-scale and intra-rack bandwidth is hundreds of TB/s. At these speeds, even microsecond-scale host orchestration overhead — a cudaLaunchKernel, a CPU-side “all writes done” check, an inter-stream event — shows up directly as pipeline bubbles.</li>
 </ol>
 <p>The natural answer is <strong>GPU-driven communication</strong>: let the GPU itself trigger fine-grained transfers, fused into the same kernel as the compute. <strong>However, most existing kernel libraries stop at a single node, if not, a single GPU.</strong></p>
