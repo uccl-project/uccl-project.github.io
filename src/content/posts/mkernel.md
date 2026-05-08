@@ -22,7 +22,7 @@ Date: May 8, 2026
 
 <div class="tldr">
 <p>
-<strong>mKernel</strong> is a collection of fast multi-GPU, multi-node fused kernels that enables <em>intra-node</em> NVLink communication, <em>inter-node</em> RDMA, and <em>compute</em> inside a <em>single persistent kernel</em>. 
+<strong>mKernel</strong> is a collection of fast <em>multi-GPU, multi-node</em> fused kernels that enables <em>intra-node</em> NVLink communication, <em>inter-node</em> RDMA, and <em>compute</em> inside a <em>single persistent kernel</em>. 
 </p>
 <p>
 Code: <a href="https://github.com/uccl-project/mKernel">github.com/uccl-project/mKernel</a>
@@ -35,7 +35,7 @@ AI training and serving are increasingly limited by communication at scale. In p
 
 The traditional model is **host-driven**: the CPU runs the control path, calls into a library (NCCL/NVSHMEM), and the library issues the collective. It is increasingly mismatched with modern AI workloads for two reasons:
 
-1. **Fine-grained overlap requires sub-kernel scheduling.** Compute kernels produce data incrementally — a tile at a time. Host-driven systems overlap by launching compute and communication on separate streams, but their decisions are still made at coarse *kernel boundaries* — leaving finer-grained overlap on the table.
+1. **Fine-grained overlap to maximize performance.** Host-driven systems overlap by launching compute and communication on separate streams, but their decisions are still made at coarse *kernel boundaries* — leaving finer-grained overlap on the table.
 2. **CPU-mediated control becomes visible as GPUs get faster.** Per-chip throughput is now multi-PFLOP-scale and intra-rack bandwidth is hundreds of TB/s. At these speeds, even microsecond-scale host orchestration overhead — a cudaLaunchKernel, a CPU-side "all writes done" check, an inter-stream event — shows up directly as pipeline bubbles.
 
 The natural answer is **GPU-driven communication**: let the GPU itself trigger fine-grained transfers, fused into the same kernel as the compute. **However, most existing kernel libraries stop at a single node, if not, a single GPU.** 
