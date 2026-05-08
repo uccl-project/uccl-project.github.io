@@ -1,18 +1,12 @@
 ---
-title: "mKernel: Fast Multi-GPU, Multi-Node Fused Kernels for Compute–Communication Overlap"
+title: "mKernel: Fast Multi-GPU, Multi-Node Fused Kernels"
 slug: mkernel
 description: "mKernel is a collection of multi-GPU, multi-node fused kernels that put intra-node NVLink communication, inter-node RDMA, and compute inside a single persistent  kernel."
 category:
   - One
 tags:
   - Fused Kernels
-  - Megakernel
-  - GEMM
-  - AllReduce
-  - MoE
-  - Ring Attention
   - RDMA
-  - EFA
 pubDate: 2026-05-08
 cover: https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/mkernel.png
 coverAlt: mKernel
