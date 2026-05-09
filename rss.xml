@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>UCCL</title><description>An amazing team!</description><link>https://uccl-project.github.io/</link><language>en-US</language><item><title>mKernel: Fast Multi-GPU, Multi-Node
 Fused Kernels</title><link>https://uccl-project.github.io/posts/mkernel/</link><guid isPermaLink="true">https://uccl-project.github.io/posts/mkernel/</guid><description>mKernel is a collection of multi-GPU, multi-node fused kernels that put intra-node NVLink communication, inter-node RDMA, and compute inside a single persistent  kernel.</description><pubDate>Fri, 08 May 2026 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;
-&lt;strong&gt;By: the UCCL team
+&lt;strong&gt;By: Ziming Mao, the UCCL team
 &lt;br&gt;
 Date: May 8, 2026
 &lt;/strong&gt;
