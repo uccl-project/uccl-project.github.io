@@ -14,7 +14,7 @@ author: UCCL Team
 ---
 
 <p>
-<strong>By: the UCCL team
+<strong>By: Ziming Mao, the UCCL team
 <br>
 Date: May 8, 2026
 </strong>
