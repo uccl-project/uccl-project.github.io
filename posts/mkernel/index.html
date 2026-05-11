@@ -82,7 +82,7 @@ Code: <a href="https://github.com/uccl-project/mKernel">github.com/uccl-project/
 
 <table><thead><tr><th>Kernels</th><th>What it fuses</th><th>Description</th></tr></thead><tbody><tr><td><strong>AllGather + GEMM</strong></td><td>AllGather → GEMM</td><td>Each rank holds a shard of <code>A</code>. While ranks gather peers’ shards over NVLink/RDMA, the local GEMM consumes tiles as soon as they arrive.</td></tr><tr><td><strong>GEMM + AllReduce</strong></td><td>GEMM → AllReduce</td><td>Computes <code>C = A @ B</code> and reduces partial outputs across all ranks in one launch.</td></tr><tr><td><strong>MoE Dispatch + GEMM</strong></td><td>All-to-All dispatch → grouped GEMM</td><td>Routes MoE tokens to their expert ranks (intra-node NVLink + inter-node all-to-all) and runs the per-expert grouped GEMM in the same kernel.</td></tr><tr><td><strong>Ring Attention</strong></td><td>Ring KV exchange → FlashAttention</td><td>Sequence-parallel attention across ranks: each step rotates a KV chunk around the ring while the local FlashAttention consumes the previously-received chunk.</td></tr><tr><td><strong>GEMM + ReduceScatter</strong></td><td>GEMM → ReduceScatter</td><td>Computes <code>C = A @ B</code> and reduce-scatters the output across ranks. Each output tile is reduced and forwarded to its owning rank as soon as it’s produced</td></tr></tbody></table>
 <h2 id="testbeds"><a class="heading-anchor" href="#testbeds">Testbeds</a></h2>
-<p>We evaluate mKernel on two 2-node × 8-H200 clusters that differ only in the inter-node fabric (CX7, EFA). Only the host-side proxy / session differs (<code>session.h</code> vs. <code>session_efa.h</code> in <code>include/comm/internode/</code>).</p>
+<p>We evaluate mKernel on two 2-node × 8-H200 clusters that differ only in the inter-node fabric (CX7, EFA).</p>
 
 
 
@@ -117,10 +117,6 @@ Code: <a href="https://github.com/uccl-project/mKernel">github.com/uccl-project/
 <h2 id="results-on-connectx-7"><a class="heading-anchor" href="#results-on-connectx-7">Results on ConnectX-7</a></h2>
 <p>mKernel is benchmarked against several baselines for each workload: NCCL, Triton-distributed, Flux, Mercury, MagiAttention, Transformer-Engine, and ring-flash-attention. We are still doing further benchmarking on larger scale.</p>
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/ag_gemm_cx7.png" alt="AllGather + GEMM on ConnectX-7" width="700" style="margin-bottom:0;">
-  <em style="display:block;margin-top:0.5rem;">AllGather + GEMM</em>
-</p>
-<p align="center">
   <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/gemm_ar_cx7.png" alt="GEMM + AllReduce on ConnectX-7" width="700" style="margin-bottom:0;">
   <em style="display:block;margin-top:0.5rem;">GEMM + AllReduce</em>
 </p>
@@ -131,6 +127,10 @@ Code: <a href="https://github.com/uccl-project/mKernel">github.com/uccl-project/
 <p align="center">
   <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/gemm_rs_cx7.png" alt="GEMM + ReduceScatter on ConnectX-7" width="700" style="margin-bottom:0;">
   <em style="display:block;margin-top:0.5rem;">GEMM + ReduceScatter</em>
+</p>
+<p align="center">
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/ag_gemm_cx7.png" alt="AllGather + GEMM on ConnectX-7" width="700" style="margin-bottom:0;">
+  <em style="display:block;margin-top:0.5rem;">AllGather + GEMM</em>
 </p>
 <h2 id="results-on-aws-efa"><a class="heading-anchor" href="#results-on-aws-efa">Results on AWS EFA</a></h2>
 <p>We also run on the AWS EFA cluster against the same set of baselines.</p>
