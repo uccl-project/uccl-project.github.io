@@ -63,7 +63,7 @@ mKernel is a small, focused library of persistent CUDA kernels — each of which
 
 ## Testbeds
 
-We evaluate mKernel on two 2-node × 8-H200 clusters that differ only in the inter-node fabric (CX7, EFA). Only the host-side proxy / session differs (`session.h` vs. `session_efa.h` in `include/comm/internode/`).
+We evaluate mKernel on two 2-node × 8-H200 clusters that differ only in the inter-node fabric (CX7, EFA). 
 
 | Testbed | Nodes × GPUs | Intra-node | Inter-node transport | NIC | Backend macro |
 |---|---|---|---|---|---|
@@ -75,11 +75,6 @@ Both clusters give 50 GB/s of inter-node bandwidth per GPU; the difference is in
 ## Results on ConnectX-7
 
 mKernel is benchmarked against several baselines for each workload: NCCL, Triton-distributed, Flux, Mercury, MagiAttention, Transformer-Engine, and ring-flash-attention. We are still doing further benchmarking on larger scale.
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/ag_gemm_cx7.png" alt="AllGather + GEMM on ConnectX-7" width="700" style="margin-bottom:0;"/>
-  <em style="display:block;margin-top:0.5rem;">AllGather + GEMM</em>
-</p>
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/gemm_ar_cx7.png" alt="GEMM + AllReduce on ConnectX-7" width="700" style="margin-bottom:0;"/>
@@ -95,6 +90,12 @@ mKernel is benchmarked against several baselines for each workload: NCCL, Triton
   <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/gemm_rs_cx7.png" alt="GEMM + ReduceScatter on ConnectX-7" width="700" style="margin-bottom:0;"/>
   <em style="display:block;margin-top:0.5rem;">GEMM + ReduceScatter</em>
 </p>
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/ag_gemm_cx7.png" alt="AllGather + GEMM on ConnectX-7" width="700" style="margin-bottom:0;"/>
+  <em style="display:block;margin-top:0.5rem;">AllGather + GEMM</em>
+</p>
+
 
 ## Results on AWS EFA
 
