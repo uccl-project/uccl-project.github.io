@@ -25,16 +25,13 @@ Date: May 12, 2026
 
 <div class="tldr">
 <p>
-OpenAI, together with Microsoft, AMD, Broadcom and NVIDIA, has published <strong>MRC</strong> (Multipath Reliable Connection) — a new RDMA transport that sprays each QP across hundreds of paths, actively load-balances, and rides out link/switch failures using static <strong>SRv6</strong> source routing. The OCP <a href="https://www.opencompute.org/documents/ocp-mrc-1-0-pdf">MRC 1.0 specification</a> has been released, and three different vendors (CX-8, AMD Pollara, Broadcom Thor Ultra) already implement it.
+<strong>Keywords:</strong> MRC, SRv6, RDMA, multipath transport, packet spraying, AI fabric, UET NSCC, UCCL-Tran.
 </p>
 <p>
-Our take: this is a <em>big step forward</em> compared to relying on lossless, single-path RoCE for AI fabrics. MRC joins AWS SRD and <a href="https://arxiv.org/pdf/2504.17307">UCCL-Tran</a> on the same architectural side of the table — <em>host-based packet spraying</em> — and brings it into multi-vendor hardware NICs. Several of the production findings strongly validate UCCL-Tran's core design choices, such as spraying with O(100) entropy values per QP, avoiding PFC and using selective retransmission, adopting more advanced congestion control rather than hardware-baked one.
+OpenAI, together with Microsoft, AMD, Broadcom and NVIDIA, has published <strong>MRC</strong> (Multipath Reliable Connection) [1] — a new RDMA transport that sprays each QP across hundreds of paths, actively load-balances, and rides out link/switch failures using static <strong>SRv6</strong> source routing. The OCP MRC 1.0 specification [2] has been released, and three different vendors (CX-8, AMD Pollara, Broadcom Thor Ultra) already implement it.
 </p>
 <p>
-References:
-<a href="https://cdn.openai.com/pdf/resilient-ai-supercomputer-networking-using-mrc-and-srv6.pdf">MRC + SRv6 paper</a> ·
-<a href="https://www.opencompute.org/documents/ocp-mrc-1-0-pdf">OCP MRC 1.0 spec</a> ·
-<a href="https://arxiv.org/pdf/2504.17307">UCCL-Tran</a>
+Our take: this is a <em>big step forward</em> compared to relying on lossless, single-path RoCE for AI fabrics. MRC joins AWS SRD and UCCL-Tran [3] on the same architectural side of the table — <em>host-based packet spraying</em> — and brings it into multi-vendor hardware NICs. Several of the production findings strongly validate UCCL-Tran's core design choices, such as spraying with O(100) entropy values per QP, avoiding PFC and using selective retransmission, adopting more advanced congestion control rather than hardware-baked one.
 </p>
 </div>
 
@@ -46,7 +43,7 @@ At a protocol level, MRC is a focused extension of RoCEv2 RC, deliberately scope
 
 - **Per-packet entropy.** Every data packet carries a 32-bit entropy value (EV) striped across the UDP source port and IPv6 flow label. At QP startup the NIC builds an active EV set of typically 128–256 entries, plus a backup set, and rotates through it packet by packet. ECMP and SRv6-based source routing are both supported.
 - **PFC off, lossy Ethernet.** MRC explicitly disables PFC. Spraying makes PFC's per-priority queueing approximately useless and head-of-line blocking actively harmful.
-- **Congestion control: UET NSCC.** MRC uses NSCC — [UET](https://ultraethernet.org/wp-content/uploads/sites/20/2025/06/UE-Specification-6.11.25.pdf)'s Network-Signalled Congestion Control (§3.6.13.3–7). It is a **sender-side, SACK-clocked, window-based, ECN + RTT** algorithm whose goal is to keep the requestor→responder queueing delay under a configured target queuing delay.
+- **Congestion control: UET NSCC.** MRC uses NSCC — UET's Network-Signalled Congestion Control [4] (§3.6.13.3–7). It is a **sender-side, SACK-clocked, window-based, ECN + RTT** algorithm whose goal is to keep the requestor→responder queueing delay under a configured target queuing delay.
 - **Selective retransmit + packet trimming.** SACK identifies exactly which packets were lost; trimmed packets (header-only, priority-forwarded under congestion) trigger fast NACKs and let MRC distinguish congestion loss from link-failure loss.
 - **Out-of-order placement.** Every data packet carries the RDMA virtual address and rkey, so the receiver can DMA each packet into its final memory location regardless of arrival order. Messages on the same QP can also complete out of order with respect to each other; the only ordering primitive left is `WRITE_WITH_IMM`, which acts as a barrier and is guaranteed to complete only after all preceding WRITEs on the QP have landed.
 - **Implemented on the latest generation of smart RDMA NICs.** MRC is not a software protocol — it is baked into the data plane of three vendors' newest silicon: **NVIDIA ConnectX-8** (800 Gb/s), **AMD Pollara / Vulcano** (400/800 Gb/s), and **Broadcom Thor Ultra** (800 Gb/s). The host-side API is **`libibverbs`-compatible**: applications continue to use the standard verbs surface (QPs, MRs, work-request posting, CQ polling), so existing RDMA stacks like NCCL/RCCL plug in without a new user-space library.
@@ -83,13 +80,38 @@ MRC is genuinely impressive engineering but it still has some limitations that w
 
   This matters more than it sounds. The "WRITE-only" pattern is fine for synchronous pretraining collectives, but it is awkward for several important newer workloads:
 
-  - **MoE dispatch / expert-parallel all-to-all** (e.g., [DeepEP](https://github.com/deepseek-ai/DeepEP)) increasingly relies on **`ATOMIC` fetch-and-add** for fast, lock-free token-count exchange between senders and experts. Earlier DeepEP versions did fall back to `WRITE_WITH_IMM`, but that forced the receiver GPU to poll the CQ and re-post RQ entries on the critical path — extra GPU work that competes with the dispatch kernel and is generally regarded as a worse design. The switch to the atomic-based path landed in commit [2d0cf41](https://github.com/deepseek-ai/DeepEP/commit/2d0cf41).
+  - **MoE dispatch / expert-parallel all-to-all** (e.g., DeepEP [5]) increasingly relies on **`ATOMIC` fetch-and-add** for fast, lock-free token-count exchange between senders and experts. Earlier DeepEP versions did fall back to `WRITE_WITH_IMM`, but that forced the receiver GPU to poll the CQ and re-post RQ entries on the critical path — extra GPU work that competes with the dispatch kernel and is generally regarded as a worse design. The switch to the atomic-based path landed in commit [2d0cf41](https://github.com/deepseek-ai/DeepEP/commit/2d0cf41).
   - **KV transfer for prefill–decode disaggregation** wants `READ` so that the decode side pulls KV on demand without a coordination round-trip.
   - **Parameter-server / control-plane traffic** wants two-sided `SEND/RECV`.
 
 - **`WRITE_WITH_IMM` has a small in-flight cap.** `WRITE_WITH_IMM` is not just "WRITE plus 4 bytes." The immediate-data CQE must be delivered to the responder **in order with respect to all prior WRITEs on the QP** — i.e., a `WRITE_WITH_IMM` cannot complete until every preceding WRITE has landed. In a sprayed, out-of-order data plane that means the NIC has to track per-QP barrier state and hold completion resources for every outstanding `WRITE_WITH_IMM`, which is exactly the kind of bookkeeping that does not scale on-chip. As a result MRC implementations cap the number of in-flight `WRITE_WITH_IMM` operations per QP (the spec calls this out and adds a dedicated "Inflight WriteImm limit exceeded" NACK code). Workloads that try to use `WRITE_WITH_IMM` as a fine-grained signaling primitive — one immediate per chunk — will hit this cap before they hit bandwidth.
 - **Built into the newest silicon only.** MRC ships on CX-8, AMD Pollara/Vulcano, and Broadcom Thor Ultra. The very large installed base of CX-5/6/7, BlueField, EFA, and Thor 1/2 cannot run MRC at all — a fleet-wide upgrade is on the order of years and many billions of dollars.
 - **Last-hop incast.** NSCC is solid, but in practice MRC leans on packet trimming + selective retransmit to absorb receiver-side bursts. For workloads with very skewed receiver-side hot spots (MoE serving with hot experts, prefill-decode disaggregation, irregular all-to-all), a receiver-driven scheduler (EQDS-style) is a strictly better answer — and it's unclear whether MRC can support this.
+
+## 3. Tradeoff summary: MRC vs. UCCL-Tran / UCCL-P2P
+
+|                        | **MRC (hardware)**                              | **UCCL-Tran / UCCL-P2P (software)**                |
+|------------------------|-------------------------------------------------|----------------------------------------------------|
+| Where transport runs   | NIC ASIC data plane                             | Host CPU control path + RDMA UC/RC/UD or `AF_XDP` data path |
+| Hardware requirement   | CX-8 / Pollara·Vulcano / Thor Ultra only        | Runs on legacy NICs: CX-5/6/7, BlueField, EFA, Thor 1/2 |
+| Wire format            | Frozen by OCP MRC 1.0 spec                      | Open, change in software in weeks                  |
+| Spraying granularity   | Per-packet                                      | Per-chunk, per-packet for UD/AF_XDP   |
+| Verb surface           | `WRITE` + `WRITE_WITH_IMM` only                 | All verbs the underlying NIC exposes (incl. `READ`, `ATOMIC`, `SEND/RECV`) |
+| Congestion control     | UET NSCC (ECN + RTT, window-based)       | Pluggable: Cubic, EQDS receiver-driven, Swift, custom |
+| Loss recovery          | SACK + packet trimming, in-NIC                  | SACK + selective retransmit, in software           |
+| PFC                    | Off (lossy by design)                           | Off (lossy by design)                              |
+| Path selection         | EV → ECMP hash *or* SRv6 uSID source-route      | EV → ECMP hash; SRv6 not yet plumbed               |
+| Topology assumption    | Co-designed with multi-plane port-breakout fabric | Works on whatever fabric you already have (single-plane, rail, multi-plane) |
+| Time to ship a new idea | New silicon tape-out + spec revision + limited programmability          | Code change                                        |
+| Observatoin  | Limited by hardware interface       | Highly observable in software    |
+
+## References
+
+1. J. Araujo, S. Anantharamu, K. Doddapaneni, E. Davis, A. Barnea, M. Handley, J. Padhye, J. Jose, R. Sohan, S. Sur, et al. *Resilient AI Supercomputer Networking using MRC and SRv6.* OpenAI / Microsoft / AMD / Broadcom / NVIDIA, 2026. <https://cdn.openai.com/pdf/resilient-ai-supercomputer-networking-using-mrc-and-srv6.pdf>
+2. R. Sohan, E. Spada, E. Davis, M. Handley, I. Burstein, T. Hurson, J. Jose, V. Kashyap, R. Pan, S. Sur. *Multipath Reliable Connection (MRC) Specification, v1.0.* Open Compute Project, 2026. <https://www.opencompute.org/documents/ocp-mrc-1-0-pdf>
+3. Y. Zhou, Z. Chen, Z. Mao, C. Lao, S. Yang, P. G. Kannan, J. Gao, Y. Zhao, Y. Wu, K. You, F. Ren, Z. Xu, C. Raiciu, I. Stoica. *UCCL-Tran: An Extensible Software Transport Layer for Machine Learning Workloads.* USENIX OSDI, 2026. <https://arxiv.org/pdf/2504.17307>
+4. Ultra Ethernet Consortium. *Ultra Ethernet Specification v1.0.* 2025. <https://ultraethernet.org/wp-content/uploads/sites/20/2025/06/UE-Specification-6.11.25.pdf>
+5. DeepSeek-AI. *DeepEP — An efficient expert-parallel communication library.* GitHub, 2025–2026. <https://github.com/deepseek-ai/DeepEP>
 
 
 
