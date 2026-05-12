@@ -7,37 +7,29 @@ category:
 tags:
   - MRC
   - SRv6
-  - RDMA
-  - Multipath
-  - UCCL
+  - Multi-plane
+  - UCCL-Tran
 pubDate: 2026-05-12
 cover: https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/openai-mrc/openai-mrc.png
 coverAlt: OpenAI MRC
-author: Zhongjie Chen, UCCL Team
+author: Zhongjie Chen, the UCCL Team
 ---
 
 <p>
-<strong>By: Zhongjie Chen, UCCL team
+<strong>By: Zhongjie Chen, the UCCL team
 <br>
 Date: May 12, 2026
 </strong>
 </p>
 
 <div class="tldr">
+<p><strong>Keywords:</strong> MRC; SRv6; Multi-plane; UCCL-Tran</p>
 <p>
-<strong>Keywords:</strong> MRC, SRv6, RDMA, multipath transport, packet spraying, AI fabric, UET NSCC, UCCL-Tran.
-</p>
-<p>
-OpenAI, together with Microsoft, AMD, Broadcom and NVIDIA, has published <strong>MRC</strong> (Multipath Reliable Connection) [1] — a new RDMA transport that sprays each QP across hundreds of paths, actively load-balances, and rides out link/switch failures using static <strong>SRv6</strong> source routing. The OCP MRC 1.0 specification [2] has been released, and three different vendors (CX-8, AMD Pollara, Broadcom Thor Ultra) already implement it.
-</p>
-<p>
-Our take: this is a <em>big step forward</em> compared to relying on lossless, single-path RoCE for AI fabrics. MRC joins AWS SRD and UCCL-Tran [3] on the same architectural side of the table — <em>host-based packet spraying</em> — and brings it into multi-vendor hardware NICs. Several of the production findings strongly validate UCCL-Tran's core design choices, such as spraying with O(100) entropy values per QP, avoiding PFC and using selective retransmission, adopting more advanced congestion control rather than hardware-baked one.
+<strong>MRC</strong> (Multipath Reliable Connection) [1] is a new RDMA transport from OpenAI/Microsoft/AMD/Broadcom/NVIDIA. Based on RoCEv2 RC, it adds <strong>per-QP packet spraying, out-of-order delivery, and selective retransmission, UET's congestion control</strong>, together with <strong> multi-plane topology and static SRv6 source routing</strong>. The OCP MRC 1.0 spec [2] is out, and CX-8, AMD Pollara, and Broadcom Thor Ultra already ship it.
 </p>
 </div>
 
 ## 1. What MRC actually is
-
-At a protocol level, MRC is a focused extension of RoCEv2 RC, deliberately scoped to what large-scale AI pretraining actually needs.
 
 ## 1.1 Modern Transport protocol
 
