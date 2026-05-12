@@ -1,0 +1,211 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900" role="img" aria-label="A cartoon view of MRC: host-based packet spraying across four planes with ECN-based load balancing, no PFC, lossy Ethernet, supporting both ECMP and SRv6, with WRITE and WRITE_WITH_IMM verbs">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fde7c5"/>
+      <stop offset="0.55" stop-color="#fbd5e7"/>
+      <stop offset="1" stop-color="#c7e2ff"/>
+    </linearGradient>
+    <linearGradient id="cloud" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#f3f0ff"/>
+    </linearGradient>
+    <linearGradient id="leftGpu" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffe28a"/>
+      <stop offset="1" stop-color="#ffb84d"/>
+    </linearGradient>
+    <linearGradient id="rightGpu" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c4f4d4"/>
+      <stop offset="1" stop-color="#7ed7a3"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="6" stdDeviation="4" flood-color="#000" flood-opacity="0.18"/>
+    </filter>
+    <filter id="softshadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="3" stdDeviation="2" flood-color="#000" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#sky)"/>
+
+  <!-- fluffy clouds -->
+  <g fill="url(#cloud)" filter="url(#softshadow)" opacity="0.95">
+    <g transform="translate(140,90)">
+      <ellipse cx="0" cy="0" rx="55" ry="28"/>
+      <ellipse cx="40" cy="-10" rx="48" ry="26"/>
+      <ellipse cx="80" cy="6" rx="42" ry="24"/>
+    </g>
+    <g transform="translate(1340,110)">
+      <ellipse cx="0" cy="0" rx="60" ry="30"/>
+      <ellipse cx="50" cy="-12" rx="50" ry="28"/>
+      <ellipse cx="-45" cy="6" rx="40" ry="22"/>
+    </g>
+  </g>
+
+  <!-- title -->
+  <g font-family="'Baloo 2','Comic Sans MS','Chalkboard SE',system-ui,sans-serif" text-anchor="middle">
+    <text x="800" y="115" font-size="84" font-weight="900" fill="#4338ca" stroke="#1e1b4b" stroke-width="3" paint-order="stroke" letter-spacing="-1">
+      MRC: Multipath, From the Host!
+    </text>
+    <text x="800" y="172" font-size="30" font-weight="700" fill="#1e3a8a">
+      A UCCL-Tran reading of OpenAI's resilient AI supercomputer fabric
+    </text>
+  </g>
+
+  <!-- transport control badges row -->
+  <g font-family="'Baloo 2',system-ui,sans-serif" font-weight="900" text-anchor="middle">
+    <g transform="translate(280,235)" filter="url(#softshadow)">
+      <rect x="-130" y="-32" width="260" height="64" rx="32" fill="#fff" stroke="#b91c1c" stroke-width="4"/>
+      <text y="-2" font-size="22" fill="#b91c1c">NO PFC</text>
+      <text y="22" font-size="16" fill="#1e1b4b">lossy Ethernet, by design</text>
+    </g>
+    <g transform="translate(620,235)" filter="url(#softshadow)">
+      <rect x="-170" y="-32" width="340" height="64" rx="32" fill="#fff" stroke="#0f766e" stroke-width="4"/>
+      <text y="-2" font-size="22" fill="#0f766e">Smart Multipath LB</text>
+      <text y="22" font-size="16" fill="#1e1b4b">retire hot EVs, resurrect on probes</text>
+    </g>
+    <g transform="translate(980,235)" filter="url(#softshadow)">
+      <rect x="-150" y="-32" width="300" height="64" rx="32" fill="#fff" stroke="#7c3aed" stroke-width="4"/>
+      <text y="-2" font-size="22" fill="#7c3aed">Packet Trimming</text>
+      <text y="22" font-size="16" fill="#1e1b4b">fast NACK on incast</text>
+    </g>
+    <g transform="translate(1320,235)" filter="url(#softshadow)">
+      <rect x="-140" y="-32" width="280" height="64" rx="32" fill="#fff" stroke="#b45309" stroke-width="4"/>
+      <text y="-2" font-size="22" fill="#b45309">SACK retransmit</text>
+      <text y="22" font-size="16" fill="#1e1b4b">selective, no go-back-N</text>
+    </g>
+  </g>
+
+  <!-- left GPU character -->
+  <g transform="translate(140,470)" filter="url(#shadow)">
+    <rect x="0" y="0" width="280" height="290" rx="42" fill="url(#leftGpu)" stroke="#7a4a00" stroke-width="5"/>
+    <rect x="22" y="88" width="236" height="142" rx="18" fill="#fff8e7" stroke="#7a4a00" stroke-width="3"/>
+    <g>
+      <circle cx="92" cy="52" r="18" fill="#fff" stroke="#1e1b4b" stroke-width="4"/>
+      <circle cx="188" cy="52" r="18" fill="#fff" stroke="#1e1b4b" stroke-width="4"/>
+      <circle cx="96" cy="56" r="7" fill="#1e1b4b"/>
+      <circle cx="192" cy="56" r="7" fill="#1e1b4b"/>
+    </g>
+    <path d="M108 258 Q140 282 172 258" fill="none" stroke="#1e1b4b" stroke-width="6" stroke-linecap="round"/>
+    <g font-family="'Baloo 2','Comic Sans MS',system-ui,sans-serif" text-anchor="middle">
+      <text x="140" y="122" font-size="22" font-weight="900" fill="#7c2d12">Sender NIC</text>
+      <text x="140" y="156" font-size="20" font-weight="800" fill="#1e1b4b">256 EVs</text>
+      <text x="140" y="184" font-size="18" font-weight="800" fill="#4338ca">WRITE / WRITE_W_IMM</text>
+      <text x="140" y="212" font-size="18" font-weight="800" fill="#0f766e">ECMP or SRv6</text>
+    </g>
+    <text x="140" y="330" text-anchor="middle" font-family="'Baloo 2',system-ui,sans-serif" font-size="24" font-weight="900" fill="#1e1b4b">GPU node A</text>
+  </g>
+
+  <!-- right GPU character -->
+  <g transform="translate(1180,470)" filter="url(#shadow)">
+    <rect x="0" y="0" width="280" height="290" rx="42" fill="url(#rightGpu)" stroke="#14532d" stroke-width="5"/>
+    <rect x="22" y="88" width="236" height="142" rx="18" fill="#f0fff7" stroke="#14532d" stroke-width="3"/>
+    <g>
+      <circle cx="92" cy="52" r="18" fill="#fff" stroke="#1e1b4b" stroke-width="4"/>
+      <circle cx="188" cy="52" r="18" fill="#fff" stroke="#1e1b4b" stroke-width="4"/>
+      <circle cx="88" cy="56" r="7" fill="#1e1b4b"/>
+      <circle cx="184" cy="56" r="7" fill="#1e1b4b"/>
+    </g>
+    <path d="M108 260 Q140 280 172 260" fill="none" stroke="#1e1b4b" stroke-width="6" stroke-linecap="round"/>
+    <g font-family="'Baloo 2','Comic Sans MS',system-ui,sans-serif" text-anchor="middle">
+      <text x="140" y="122" font-size="22" font-weight="900" fill="#14532d">Receiver NIC</text>
+      <text x="140" y="156" font-size="20" font-weight="800" fill="#1e1b4b">out-of-order place</text>
+      <text x="140" y="184" font-size="18" font-weight="800" fill="#4338ca">SACK + trim NACK</text>
+      <text x="140" y="212" font-size="18" font-weight="800" fill="#b91c1c">echo ECN per EV</text>
+    </g>
+    <text x="140" y="330" text-anchor="middle" font-family="'Baloo 2',system-ui,sans-serif" font-size="24" font-weight="900" fill="#1e1b4b">GPU node B</text>
+  </g>
+
+  <!-- 4 plane pipes -->
+  <g>
+    <g>
+      <path d="M430 510 C 700 490, 900 490, 1170 510" fill="none" stroke="#1e1b4b" stroke-width="24" stroke-linecap="round"/>
+      <path d="M430 510 C 700 490, 900 490, 1170 510" fill="none" stroke="#60a5fa" stroke-width="14" stroke-linecap="round"/>
+      <text x="800" y="476" text-anchor="middle" font-family="'Baloo 2',system-ui,sans-serif" font-size="20" font-weight="900" fill="#1e3a8a">Plane 0</text>
+    </g>
+    <g>
+      <path d="M430 590 C 700 580, 900 580, 1170 590" fill="none" stroke="#1e1b4b" stroke-width="24" stroke-linecap="round"/>
+      <path d="M430 590 C 700 580, 900 580, 1170 590" fill="none" stroke="#c084fc" stroke-width="14" stroke-linecap="round"/>
+      <text x="800" y="558" text-anchor="middle" font-family="'Baloo 2',system-ui,sans-serif" font-size="20" font-weight="900" fill="#6d28d9">Plane 1</text>
+    </g>
+    <g>
+      <path d="M430 670 C 700 665, 900 665, 1170 670" fill="none" stroke="#1e1b4b" stroke-width="24" stroke-linecap="round"/>
+      <path d="M430 670 C 700 665, 900 665, 1170 670" fill="none" stroke="#34d399" stroke-width="14" stroke-linecap="round"/>
+      <text x="800" y="640" text-anchor="middle" font-family="'Baloo 2',system-ui,sans-serif" font-size="20" font-weight="900" fill="#065f46">Plane 2 — ECN marked</text>
+      <!-- ECN flag near middle of plane 2 -->
+      <g transform="translate(900,632)">
+        <rect x="-50" y="-22" width="100" height="32" rx="10" fill="#fffbeb" stroke="#b45309" stroke-width="3"/>
+        <text x="0" y="0" text-anchor="middle" font-family="'Baloo 2',system-ui,sans-serif" font-size="16" font-weight="900" fill="#b45309">ECN!</text>
+      </g>
+    </g>
+    <g>
+      <path d="M430 750 C 600 745, 720 745, 820 745" fill="none" stroke="#1e1b4b" stroke-width="24" stroke-linecap="round"/>
+      <path d="M430 750 C 600 745, 720 745, 820 745" fill="none" stroke="#fb923c" stroke-width="14" stroke-linecap="round"/>
+      <path d="M960 745 C 1060 745, 1100 755, 1170 750" fill="none" stroke="#1e1b4b" stroke-width="24" stroke-linecap="round"/>
+      <path d="M960 745 C 1060 745, 1100 755, 1170 750" fill="none" stroke="#fb923c" stroke-width="14" stroke-linecap="round"/>
+      <g transform="translate(890,745)">
+        <circle r="38" fill="#fff" stroke="#1e1b4b" stroke-width="4"/>
+        <circle r="38" fill="#fecaca" opacity="0.6"/>
+        <g stroke="#b91c1c" stroke-width="9" stroke-linecap="round">
+          <line x1="-17" y1="-17" x2="17" y2="17"/>
+          <line x1="17" y1="-17" x2="-17" y2="17"/>
+        </g>
+      </g>
+      <text x="890" y="810" text-anchor="middle" font-family="'Baloo 2',system-ui,sans-serif" font-size="18" font-weight="900" fill="#b91c1c">EV retired in ~us</text>
+      <text x="800" y="720" text-anchor="middle" font-family="'Baloo 2',system-ui,sans-serif" font-size="20" font-weight="900" fill="#9a3412">Plane 3 — link down</text>
+    </g>
+  </g>
+
+  <!-- cartoon packets -->
+  <g font-family="'Baloo 2',system-ui,sans-serif" font-weight="900" font-size="13" text-anchor="middle">
+    <g>
+      <g transform="translate(560,508)"><rect x="-26" y="-16" width="52" height="32" rx="9" fill="#dbeafe" stroke="#1e1b4b" stroke-width="3"/><text y="5" fill="#1e3a8a">PKT</text></g>
+      <g transform="translate(720,500)"><rect x="-26" y="-16" width="52" height="32" rx="9" fill="#dbeafe" stroke="#1e1b4b" stroke-width="3"/><text y="5" fill="#1e3a8a">PKT</text></g>
+      <g transform="translate(900,498)"><rect x="-26" y="-16" width="52" height="32" rx="9" fill="#dbeafe" stroke="#1e1b4b" stroke-width="3"/><text y="5" fill="#1e3a8a">PKT</text></g>
+      <g transform="translate(1060,504)"><rect x="-26" y="-16" width="52" height="32" rx="9" fill="#dbeafe" stroke="#1e1b4b" stroke-width="3"/><text y="5" fill="#1e3a8a">PKT</text></g>
+    </g>
+    <g>
+      <g transform="translate(620,586)"><rect x="-26" y="-16" width="52" height="32" rx="9" fill="#ede9fe" stroke="#1e1b4b" stroke-width="3"/><text y="5" fill="#5b21b6">PKT</text></g>
+      <g transform="translate(820,582)"><rect x="-26" y="-16" width="52" height="32" rx="9" fill="#ede9fe" stroke="#1e1b4b" stroke-width="3"/><text y="5" fill="#5b21b6">PKT</text></g>
+      <g transform="translate(1000,584)"><rect x="-26" y="-16" width="52" height="32" rx="9" fill="#ede9fe" stroke="#1e1b4b" stroke-width="3"/><text y="5" fill="#5b21b6">PKT</text></g>
+    </g>
+    <g>
+      <g transform="translate(580,668)"><rect x="-26" y="-16" width="52" height="32" rx="9" fill="#d1fae5" stroke="#1e1b4b" stroke-width="3"/><text y="5" fill="#065f46">PKT</text></g>
+      <g transform="translate(760,666)"><rect x="-26" y="-16" width="52" height="32" rx="9" fill="#d1fae5" stroke="#1e1b4b" stroke-width="3"/><text y="5" fill="#065f46">PKT</text></g>
+      <g transform="translate(1040,669)"><rect x="-26" y="-16" width="52" height="32" rx="9" fill="#fde68a" stroke="#b45309" stroke-width="3"/><text y="5" fill="#92400e">CE</text></g>
+    </g>
+    <g>
+      <g transform="translate(620,748)"><rect x="-26" y="-16" width="52" height="32" rx="9" fill="#ffedd5" stroke="#1e1b4b" stroke-width="3"/><text y="5" fill="#9a3412">PKT</text></g>
+      <g transform="translate(780,748)"><rect x="-26" y="-16" width="52" height="32" rx="9" fill="#fecaca" stroke="#b91c1c" stroke-width="3" stroke-dasharray="3 3"/><text y="5" fill="#b91c1c">trim</text></g>
+    </g>
+  </g>
+
+  <!-- spray arrows from sender -->
+  <g fill="none" stroke-width="6" stroke-linecap="round">
+    <path d="M420 590 C 380 540, 400 520, 430 510" stroke="#60a5fa"/>
+    <path d="M420 605 C 405 600, 415 595, 430 590" stroke="#c084fc"/>
+    <path d="M420 625 C 410 645, 415 655, 430 670" stroke="#34d399"/>
+    <path d="M420 655 C 410 705, 415 730, 430 750" stroke="#fb923c"/>
+  </g>
+
+  <!-- sparkles -->
+  <g fill="#fde68a" stroke="#92400e" stroke-width="2">
+    <g transform="translate(490,380)"><polygon points="0,-16 4,-4 16,0 4,4 0,16 -4,4 -16,0 -4,-4"/></g>
+    <g transform="translate(1110,380)"><polygon points="0,-14 3,-3 14,0 3,3 0,14 -3,3 -14,0 -3,-3"/></g>
+  </g>
+
+  <!-- speech bubble left -->
+  <g transform="translate(280,400)" filter="url(#softshadow)">
+    <path d="M0,0 q0,-44 44,-44 h190 q44,0 44,44 v40 q0,44 -44,44 h-140 l-34,28 v-28 h-16 q-44,0 -44,-44 z"
+          fill="#ffffff" stroke="#1e1b4b" stroke-width="4"/>
+    <text x="139" y="32" text-anchor="middle" font-family="'Baloo 2',system-ui,sans-serif" font-size="28" font-weight="900" fill="#1e1b4b">spray packets!</text>
+    <text x="139" y="62" text-anchor="middle" font-family="'Baloo 2',system-ui,sans-serif" font-size="16" font-weight="800" fill="#4338ca">host-based, like UCCL &amp; SRD</text>
+  </g>
+
+  <!-- speech bubble right -->
+  <g transform="translate(1040,400)" filter="url(#softshadow)">
+    <path d="M278,0 q0,-44 -44,-44 h-190 q-44,0 -44,44 v40 q0,44 44,44 h140 l34,28 v-28 h16 q44,0 44,-44 z"
+          fill="#ffffff" stroke="#1e1b4b" stroke-width="4"/>
+    <text x="139" y="32" text-anchor="middle" font-family="'Baloo 2',system-ui,sans-serif" font-size="28" font-weight="900" fill="#1e1b4b">got it, out of order!</text>
+    <text x="139" y="62" text-anchor="middle" font-family="'Baloo 2',system-ui,sans-serif" font-size="16" font-weight="800" fill="#0f766e">rkey + vaddr in every PKT</text>
+  </g>
+</svg>
