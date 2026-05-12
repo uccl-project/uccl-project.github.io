@@ -46,7 +46,7 @@ At a protocol level, MRC is a focused extension of RoCEv2 RC, deliberately scope
 
 - **Per-packet entropy.** Every data packet carries a 32-bit entropy value (EV) striped across the UDP source port and IPv6 flow label. At QP startup the NIC builds an active EV set of typically 128–256 entries, plus a backup set, and rotates through it packet by packet. ECMP and SRv6-based source routing are both supported.
 - **PFC off, lossy Ethernet.** MRC explicitly disables PFC. Spraying makes PFC's per-priority queueing approximately useless and head-of-line blocking actively harmful.
-- **Congestion control: UET NSCC.** MRC uses NSCC — UET's Network-Signalled Congestion Control. It is a **sender-side, SACK-clocked, window-based, ECN + RTT** algorithm whose goal is to keep the requestor→responder queueing delay under a configured target queuing delay.
+- **Congestion control: UET NSCC.** MRC uses NSCC — [UET](https://ultraethernet.org/wp-content/uploads/sites/20/2025/06/UE-Specification-6.11.25.pdf)'s Network-Signalled Congestion Control (§3.6.13.3–7). It is a **sender-side, SACK-clocked, window-based, ECN + RTT** algorithm whose goal is to keep the requestor→responder queueing delay under a configured target queuing delay.
 - **Selective retransmit + packet trimming.** SACK identifies exactly which packets were lost; trimmed packets (header-only, priority-forwarded under congestion) trigger fast NACKs and let MRC distinguish congestion loss from link-failure loss.
 - **Out-of-order placement.** Every data packet carries the RDMA virtual address and rkey, so the receiver can DMA each packet into its final memory location regardless of arrival order.
 - **Implemented on the latest generation of smart RDMA NICs.** MRC is not a software protocol — it is baked into the data plane of three vendors' newest silicon: **NVIDIA ConnectX-8** (800 Gb/s), **AMD Pollara / Vulcano** (400/800 Gb/s), and **Broadcom Thor Ultra** (800 Gb/s).
@@ -83,7 +83,7 @@ MRC is genuinely impressive engineering but it still has some limitations that w
 
   This matters more than it sounds. The "WRITE-only" pattern is fine for synchronous pretraining collectives, but it is awkward for several important newer workloads:
 
-  - **MoE dispatch / expert-parallel all-to-all** (e.g., DeepEP) increasingly relies on **`ATOMIC` fetch-and-add** for fast, lock-free token-count exchange between senders and experts. Earlier DeepEP versions did fall back to `WRITE_WITH_IMM`, but that forced the receiver GPU to poll the CQ and re-post RQ entries on the critical path — extra GPU work that competes with the dispatch kernel and is generally regarded as a worse design.
+  - **MoE dispatch / expert-parallel all-to-all** (e.g., [DeepEP](https://github.com/deepseek-ai/DeepEP)) increasingly relies on **`ATOMIC` fetch-and-add** for fast, lock-free token-count exchange between senders and experts. Earlier DeepEP versions did fall back to `WRITE_WITH_IMM`, but that forced the receiver GPU to poll the CQ and re-post RQ entries on the critical path — extra GPU work that competes with the dispatch kernel and is generally regarded as a worse design. The switch to the atomic-based path landed in commit [2d0cf41](https://github.com/deepseek-ai/DeepEP/commit/2d0cf41).
   - **KV transfer for prefill–decode disaggregation** wants `READ` so that the decode side pulls KV on demand without a coordination round-trip.
   - **Parameter-server / control-plane traffic** wants two-sided `SEND/RECV`.
 
