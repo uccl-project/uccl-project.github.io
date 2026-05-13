@@ -59,6 +59,8 @@ The transport story gets most of the airtime, but the operational story is just 
 - Every EV deterministically encodes a physical path. Probes from a per-node Clustermapper agent take *exactly* the same path an MRC data packet would. There is no dynamic-routing layer in between to lie to you.
 - Switches forward SRv6 in the dataplane at line rate. So every host can probe every directly attached T0 (and a sample of T1s) every millisecond. This gives ground truth about forwarding-plane health, independent of the switch control plane.
 - Localizing a failure becomes trivial: if T0-loopback probes succeed but T1-loopback probes fail, the bad component is the T0–T1 link.
+- Bad-path avoidance becomes more precise and controllable. With SRv6, changing to a replacement EV can deterministically move traffic onto a different physical path, while it cannot make the same guarantee with hash-based ECMP forwarding. With help from Clustermapper, SRv6 also lets bad-path avoidance extend beyond a single QP: the denylist can exclude bad EVs from a shared EV Profile, or exclude a failed NIC port so traffic is sprayed across the remaining planes.
+
 
 This is operationally a much better story than pingmesh-style end-to-end probing on hash-based ECMP, where you fundamentally cannot tell which physical path a probe took.
 
@@ -78,7 +80,7 @@ MRC is genuinely impressive engineering but it still has some limitations that w
 
 - **`WRITE_WITH_IMM` has a small in-flight cap.** `WRITE_WITH_IMM` is not just "WRITE plus 4 bytes." The immediate-data CQE must be delivered to the responder **in order with respect to all prior WRITEs on the QP** — i.e., a `WRITE_WITH_IMM` cannot complete until every preceding WRITE has landed. In a sprayed, out-of-order data plane that means the NIC has to track per-QP barrier state and hold completion resources for every outstanding `WRITE_WITH_IMM`, which is exactly the kind of bookkeeping that does not scale on-chip. As a result MRC implementations cap the number of in-flight `WRITE_WITH_IMM` operations per QP (the spec calls this out and adds a dedicated "Inflight WriteImm limit exceeded" NACK code). Workloads that try to use `WRITE_WITH_IMM` as a fine-grained signaling primitive — one immediate per chunk — will hit this cap before they hit bandwidth.
 - **Built into the newest silicon only.** MRC ships on CX-8, AMD Pollara/Vulcano, and Broadcom Thor Ultra. The very large installed base of CX-5/6/7, BlueField, EFA, and Thor 1/2 cannot run MRC at all — a fleet-wide upgrade is on the order of years and many billions of dollars.
-- **Last-hop incast.** NSCC is solid, but in practice MRC leans on packet trimming + selective retransmit to absorb receiver-side bursts. For workloads with very skewed receiver-side hot spots (MoE serving with hot experts, prefill-decode disaggregation, irregular all-to-all), a receiver-driven scheduler (EQDS-style) is a strictly better answer — and it's unclear whether MRC can support this.
+- **Last-hop incast.** NSCC is solid, but in practice MRC leans on packet trimming + selective retransmit + receiver-side backpressure to absorb receiver-side bursts. For workloads with very skewed receiver-side hot spots (MoE serving with hot experts, prefill-decode disaggregation, irregular all-to-all), a receiver-driven scheduler (EQDS-style) is a strictly better answer — and it's unclear whether MRC can support this.
 
 ## 3. Tradeoff summary: MRC vs. UCCL-Tran / UCCL-P2P
 
@@ -95,7 +97,7 @@ MRC is genuinely impressive engineering but it still has some limitations that w
 | Path selection         | EV → ECMP hash *or* SRv6 uSID source-route      | EV → ECMP hash; SRv6 not yet plumbed               |
 | Topology assumption    | Co-designed with multi-plane port-breakout fabric | Works on whatever fabric you already have (single-plane, rail, multi-plane) |
 | Time to ship a new idea | New silicon tape-out + spec revision + limited programmability          | Code change                                        |
-| Observatoin  | Limited by hardware interface       | Highly observable in software    |
+| Observation  | Limited by hardware interface       | Highly observable in software    |
 
 ## References
 
