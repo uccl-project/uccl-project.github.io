@@ -23,15 +23,31 @@ const {
   fallbackFormat = "avif",
   class: className = "mx-auto w-full max-w-full rounded-lg"
 } = Astro.props;
+
+const rawGithubAssetPrefix =
+  "https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/";
+const useLocalGithubAssetFallback =
+  process.env.LOCAL_GITHUB_ASSET_FALLBACK === "1";
+const shouldUseLocalFallback =
+  useLocalGithubAssetFallback && src.startsWith(rawGithubAssetPrefix);
+const renderedSrc = shouldUseLocalFallback
+  ? `/assets/${src.slice(rawGithubAssetPrefix.length)}`
+  : src;
 ---
 
-<Picture
-  src={src}
-  alt={alt}
-  widths={widths}
-  sizes={sizes}
-  formats={formats}
-  fallbackFormat={fallbackFormat}
-  class={className}
-  inferSize
-/>
+{
+  shouldUseLocalFallback ? (
+    <img src={renderedSrc} alt={alt} class={className} decoding="async" />
+  ) : (
+    <Picture
+      src={renderedSrc}
+      alt={alt}
+      widths={widths}
+      sizes={sizes}
+      formats={formats}
+      fallbackFormat={fallbackFormat}
+      class={className}
+      inferSize
+    />
+  )
+}
