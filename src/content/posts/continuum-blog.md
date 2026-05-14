@@ -16,7 +16,7 @@ author: ChonLam Lao
 ---
 
 <p>
-<strong>By: <a href="https://chonlamlao.github.io/">ChonLam Lao</a> (Harvard University & Alibaba Group), Jiaqi Gao (Alibaba Group), Aditya Akella (UT Austin), Minlan Yu (Harvard University), Ennan Zhai (Alibaba Group), and the TrainMover team
+<strong>By: ChonLam Lao, Jiaqi Gao and the TrainMover team
 <br>
 Date: May 5, 2026
 </strong>
@@ -27,7 +27,7 @@ Date: May 5, 2026
 Training a large language model is a weeks-long marathon across thousands of GPUs. When something breaks — and something always breaks — every GPU stops and waits. We present <strong>TrainMover</strong>, an interruption-resilient LLM training runtime accepted at <strong>OSDI '26</strong>, that reduces recovery downtime to <strong>~20 seconds</strong> regardless of cluster size or model size, while using <strong>zero additional GPU memory</strong>.
 </p>
 <p>
-📄 Paper: <a href="https://arxiv.org/abs/2412.12636">TrainMover: An Interruption-Resilient Runtime for ML Training</a> <em>(preliminary arXiv version — not the final OSDI '26 paper)</em>
+<!-- 📄 Paper: <a href="https://arxiv.org/abs/2412.12636">TrainMover: An Interruption-Resilient Runtime for ML Training</a> <em>(arXiv version; final version to appear at OSDI '26)</em> -->
 </p>
 </div>
 
@@ -45,14 +45,11 @@ Modern LLMs are trained at extraordinary scale. GPT-3 required 1,024 GPUs runnin
 
 This creates a brutal property: **a single failure halts the entire cluster.**
 
-```
-  GPU 0 ─── GPU 1 ─── GPU 2 ─── GPU 3
-    │          │          │          │
-    └──────────┴──────────┘     ✗ FAIL
-                                    │
-           Every GPU stops ─────────┘
-           and waits
-```
+<p align="center">
+<img src="/continuum-blog/cluster-halt.png" alt="A single GPU failure halts the entire training cluster" width="75%"/>
+<br>
+<em>In tightly synchronized distributed training, every GPU must exchange data every iteration. When a single GPU fails, every other GPU in the cluster goes idle until recovery completes.</em>
+</p>
 
 And failures are not rare. Alibaba's FALCON [4] reports that 60% of large-scale training jobs experience hardware slowdowns. Meta reports that a 1,024-GPU job has a mean-time-to-failure (MTTF) of just **7.9 hours** [5]. At 16,000 GPUs, that drops to **2.7 hours** [1].
 
@@ -123,13 +120,11 @@ Recognizing this waste, researchers proposed a different angle: rather than stop
 
 This cleverly eliminates the infrastructure overhead at the top of the restart table — **Job Stop & Cleanup (7.7%)** and **Job Reschedule (23.1%)** are avoided entirely, since the job never stops. But the recovery time is not actually reduced: the new joiner still must go through checkpoint loading, NCCL re-instantiation, and cold warmup from scratch before it can contribute — and even with a reconfiguration system, every other machine in the cluster must wait for it. The critical path is the same; you just skipped the preamble.
 
-```
-  ✓ Job Stop & Cleanup   (eliminated — job never stops)
-  ✓ Job Reschedule       (eliminated — no cluster restart)
-  ✗ Checkpoint Loading   ──┐
-  ✗ NCCL Instantiation   ──┼── still on the critical path (~100–200s)
-  ✗ Cold Warmup          ──┘
-```
+<p align="center">
+<img src="/continuum-blog/strategy2-critical-path.png" alt="Strategy 2 eliminates the preamble but leaves the heaviest phases on the critical path" width="80%"/>
+<br>
+<em>Elastic training removes Job Stop & Cleanup and Job Reschedule from the critical path, but Checkpoint Loading, NCCL Instantiation, and Cold Warmup — the heaviest phases — are still serially blocking every other GPU in the cluster.</em>
+</p>
 
 The fundamental bottleneck remains: **bringing a new machine online requires re-initialization, and re-initialization is slow and unavoidable — until now.**
 
@@ -141,26 +136,19 @@ The critical path is the real enemy. Strategy 1 puts everything on it. Strategy 
 
 Both strategies above treat the replacement machine as something to be *found* at failure time. But in practice, it was already there all along.
 
-Every large training cluster in production keeps a pool of standby machines on hand. Llama-3 [1] was trained on 16K GPUs within a 24K-GPU cluster. Alibaba's HPN [10] reserves 6% of GPUs as backup in each segment. ByteDance [6] allocates warm-standby pools based on the 99th percentile of historical GPU failure rates. Google [11] maintains standby TPU cubes within each SuperPod. The standby pool is not a luxury — it's standard operating practice.
+Every large training cluster in production keeps a pool of standby machines on hand. Llama-3 [1] was trained on 16K GPUs within a 24K-GPU cluster. Alibaba's HPN [10] reserves 6% of GPUs as backup in each segment. ByteDance [6] allocates warm-standby pools based on the 99th percentile of historical GPU failure rates. The standby pool is not a luxury — it's standard operating practice.
 
 But these machines sit cold. The moment a failure happens, initialization starts from zero — and everything in Part 2 applies. The standby is physically present; it is logically absent.
 
-What if it wasn't? What if the standby had already compiled the CUDA kernels, pre-established its NCCL groups, and staged the model weights — all before any failure occurred?
+What if it wasn't? What if the standby had already compiled the CUDA kernels, pre-established its NCCL groups, and prepared to recover model state from surviving peer GPUs — all before any failure occurred?
 
-That is exactly what TrainMover does. Instead of triggering initialization at failure time, it runs the entire initialization sequence **in the background, in advance**. By the time an interruption happens, the standby is ready. Joining the cluster takes ~20 seconds instead of 4+ minutes.
+That is exactly what TrainMover does. Instead of triggering initialization at failure time, it runs the expensive setup sequence **in the background, in advance**. When an interruption happens, the replacement recovers state from in-memory peers instead of fetching a checkpoint from remote storage. Joining the cluster takes ~20 seconds instead of 4+ minutes.
 
-```
-  Without TrainMover:
-  ✗ Checkpoint Loading   ──┐
-  ✗ NCCL Instantiation   ──┼── on the critical path (~100–200s)
-  ✗ Cold Warmup          ──┘
-
-  With TrainMover (standby pre-warmed):
-  ✓ Checkpoint Loading   (done in background before failure)
-  ✓ NCCL Instantiation   (pre-established, delta update only)
-  ✓ Cold Warmup          (shadow iterations run in advance)
-  → Critical path: ~20s
-```
+<!-- <p align="center">
+<img src="/continuum-blog/trainmover-vs-baseline.png" alt="TrainMover moves recovery work off the critical path" width="85%"/>
+<br>
+<em>Without TrainMover, checkpoint loading from remote storage, NCCL instantiation, and cold warmup all happen serially after the failure. With TrainMover, the expensive setup is completed on the standby in the background <strong>before</strong> any failure occurs, and model state is recovered from in-memory peer GPUs during switchover, leaving only ~20s on the critical path.</em>
+</p> -->
 
 But wait — is keeping a standby machine worth the cost? You are, after all, paying for GPU capacity that just sits there. The answer depends entirely on your cluster scale.
 
@@ -185,7 +173,7 @@ The right question is not "can I afford a standby machine?" — it's "can I affo
 
 We won't go into the full design here — the paper has all the details.
 
-> 📄 **[TrainMover: An Interruption-Resilient Runtime for ML Training](https://arxiv.org/abs/2412.12636)** — OSDI '26 *(preliminary arXiv version — not the final paper)*
+> 📄 **[TrainMover: An Interruption-Resilient Runtime for ML Training](https://arxiv.org/abs/2412.12636)** — OSDI '26 *(arXiv version; final version to appear at OSDI '26)*
 
 ---
 
@@ -220,7 +208,6 @@ TrainMover's migration primitive is general — it applies to any scenario requi
 - **Straggler eviction**: when a slow machine drags the cluster, migrate it out while training continues, losing only ~5% efficiency
 - **Load rebalancing**: redistribute workloads periodically for locality or power balance, sustaining 97% ETTR even at 10-minute intervals
 - **Planned maintenance**: driver updates and firmware patches become ~20-second live migrations instead of full restarts
-- **Multi-machine migration**: swap out up to 33% of GPUs simultaneously for large-scale operations
 
 Full results for each use case are in the paper.
 
@@ -240,7 +227,7 @@ Full results for each use case are in the paper.
 
 ## Conclusion
 
-TrainMover achieves **20–30 seconds of migration downtime** at 1,024-GPU scale with **zero memory overhead**, handling both planned data center events and unexpected hardware failures. **Accepted at OSDI '26** — we will be open-sourcing the implementation soon. If you want to know the challenges we faced and how we solved them, check our arXiv or come find us at OSDI '26 in Seattle — happy to see you in person!
+TrainMover achieves **20–30 seconds of migration downtime** at 1,024-GPU scale with **zero memory overhead**, handling both planned data center events and unexpected hardware failures. **Accepted at OSDI '26** — we will be open-sourcing the implementation soon. If you want to know the challenges we faced and how we solved them, check our [arXiv](https://arxiv.org/abs/2412.12636) or come find us at OSDI '26 in Seattle — happy to see you in person!
 
 ---
 
