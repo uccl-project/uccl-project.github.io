@@ -233,7 +233,7 @@ TrainMover achieves **20–30 seconds of migration downtime** at 1,024-GPU scale
 [^11]: Gemini Team, &quot;Gemini: A Family of Highly Capable Multimodal Models,&quot; arXiv 2025.  
 [^12]: AWS, &quot;Amazon EC2 P5 Instance Pricing,&quot; 2025.</content:encoded></item><item><title>mKernel: Fast Multi-GPU, Multi-Node
 Fused Kernels</title><link>https://uccl-project.github.io/posts/mkernel/</link><guid isPermaLink="true">https://uccl-project.github.io/posts/mkernel/</guid><description>mKernel is a collection of multi-GPU, multi-node fused kernels that put intra-node NVLink communication, inter-node RDMA, and compute inside a single persistent  kernel.</description><pubDate>Fri, 08 May 2026 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;
-&lt;strong&gt;By: Ziming Mao, the UCCL team
+&lt;strong&gt;By: Ziming Mao, and the UCCL team
 &lt;br&gt;
 Date: May 8, 2026
 &lt;/strong&gt;
@@ -296,22 +296,22 @@ Both clusters give 50 GB/s of inter-node bandwidth per GPU; the difference is in
 mKernel is benchmarked against several baselines for each workload: NCCL, Triton-distributed, Flux, Mercury, MagiAttention, Transformer-Engine, and ring-flash-attention. We are still doing further benchmarking on larger scale.
 
 &lt;p align=&quot;center&quot;&gt;
-  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/gemm_ar_cx7.png&quot; alt=&quot;GEMM + AllReduce on ConnectX-7&quot; width=&quot;700&quot; style=&quot;margin-bottom:0;&quot;/&gt;
+  &lt;img src=&quot;/mkernel/gemm_ar_cx7.png&quot; alt=&quot;GEMM + AllReduce on ConnectX-7&quot; width=&quot;700&quot; style=&quot;margin-bottom:0;&quot;/&gt;
   &lt;em style=&quot;display:block;margin-top:0.5rem;&quot;&gt;GEMM + AllReduce&lt;/em&gt;
 &lt;/p&gt;
 
 &lt;p align=&quot;center&quot;&gt;
-  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/ring_attn_cx7.png&quot; alt=&quot;Ring Attention on ConnectX-7&quot; width=&quot;700&quot; style=&quot;margin-bottom:0;&quot;/&gt;
+  &lt;img src=&quot;/mkernel/ring_attn_cx7.png&quot; alt=&quot;Ring Attention on ConnectX-7&quot; width=&quot;700&quot; style=&quot;margin-bottom:0;&quot;/&gt;
   &lt;em style=&quot;display:block;margin-top:0.5rem;&quot;&gt;Ring Attention&lt;/em&gt;
 &lt;/p&gt;
 
 &lt;p align=&quot;center&quot;&gt;
-  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/gemm_rs_cx7.png&quot; alt=&quot;GEMM + ReduceScatter on ConnectX-7&quot; width=&quot;700&quot; style=&quot;margin-bottom:0;&quot;/&gt;
+  &lt;img src=&quot;/mkernel/gemm_rs_cx7.png&quot; alt=&quot;GEMM + ReduceScatter on ConnectX-7&quot; width=&quot;700&quot; style=&quot;margin-bottom:0;&quot;/&gt;
   &lt;em style=&quot;display:block;margin-top:0.5rem;&quot;&gt;GEMM + ReduceScatter&lt;/em&gt;
 &lt;/p&gt;
 
 &lt;p align=&quot;center&quot;&gt;
-  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/ag_gemm_cx7.png&quot; alt=&quot;AllGather + GEMM on ConnectX-7&quot; width=&quot;700&quot; style=&quot;margin-bottom:0;&quot;/&gt;
+  &lt;img src=&quot;/mkernel/ag_gemm_cx7.png&quot; alt=&quot;AllGather + GEMM on ConnectX-7&quot; width=&quot;700&quot; style=&quot;margin-bottom:0;&quot;/&gt;
   &lt;em style=&quot;display:block;margin-top:0.5rem;&quot;&gt;AllGather + GEMM&lt;/em&gt;
 &lt;/p&gt;
 
@@ -321,27 +321,27 @@ mKernel is benchmarked against several baselines for each workload: NCCL, Triton
 We also run on the AWS EFA cluster against the same set of baselines.
 
 &lt;p align=&quot;center&quot;&gt;
-  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/ag_gemm_efa.png&quot; alt=&quot;AllGather + GEMM on EFA&quot; width=&quot;700&quot; style=&quot;margin-bottom:0;&quot;/&gt;
+  &lt;img src=&quot;/mkernel/ag_gemm_efa.png&quot; alt=&quot;AllGather + GEMM on EFA&quot; width=&quot;700&quot; style=&quot;margin-bottom:0;&quot;/&gt;
   &lt;em style=&quot;display:block;margin-top:0.5rem;&quot;&gt;AllGather + GEMM&lt;/em&gt;
 &lt;/p&gt;
 
 &lt;p align=&quot;center&quot;&gt;
-  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/gemm_ar_efa.png&quot; alt=&quot;GEMM + AllReduce on EFA&quot; width=&quot;700&quot; style=&quot;margin-bottom:0;&quot;/&gt;
+  &lt;img src=&quot;/mkernel/gemm_ar_efa.png&quot; alt=&quot;GEMM + AllReduce on EFA&quot; width=&quot;700&quot; style=&quot;margin-bottom:0;&quot;/&gt;
   &lt;em style=&quot;display:block;margin-top:0.5rem;&quot;&gt;GEMM + AllReduce&lt;/em&gt;
 &lt;/p&gt;
 
 &lt;p align=&quot;center&quot;&gt;
-  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/dispatch_gemm_efa.png&quot; alt=&quot;MoE Dispatch + GEMM on EFA&quot; width=&quot;700&quot; style=&quot;margin-bottom:0;&quot;/&gt;
+  &lt;img src=&quot;/mkernel/dispatch_gemm_efa.png&quot; alt=&quot;MoE Dispatch + GEMM on EFA&quot; width=&quot;700&quot; style=&quot;margin-bottom:0;&quot;/&gt;
   &lt;em style=&quot;display:block;margin-top:0.5rem;&quot;&gt;MoE Dispatch + GEMM&lt;/em&gt;
 &lt;/p&gt;
 
 &lt;p align=&quot;center&quot;&gt;
-  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/ring_attention_efa.png&quot; alt=&quot;Ring Attention on EFA&quot; width=&quot;700&quot; style=&quot;margin-bottom:0;&quot;/&gt;
+  &lt;img src=&quot;/mkernel/ring_attention_efa.png&quot; alt=&quot;Ring Attention on EFA&quot; width=&quot;700&quot; style=&quot;margin-bottom:0;&quot;/&gt;
   &lt;em style=&quot;display:block;margin-top:0.5rem;&quot;&gt;Ring Attention&lt;/em&gt;
 &lt;/p&gt;
 
 &lt;p align=&quot;center&quot;&gt;
-  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/gemm_rs_efa.png&quot; alt=&quot;GEMM + ReduceScatter on EFA&quot; width=&quot;700&quot; style=&quot;margin-bottom:0;&quot;/&gt;
+  &lt;img src=&quot;/mkernel/gemm_rs_efa.png&quot; alt=&quot;GEMM + ReduceScatter on EFA&quot; width=&quot;700&quot; style=&quot;margin-bottom:0;&quot;/&gt;
   &lt;em style=&quot;display:block;margin-top:0.5rem;&quot;&gt;GEMM + ReduceScatter&lt;/em&gt;
 &lt;/p&gt;
 
@@ -381,8 +381,8 @@ Code: &lt;a href=&quot;https://github.com/uccl-project/uccl/blob/main/experiment
 AWS uses customized RDMA NICs called **EFA** (Elastic Fabric Adapter) across their GPU instances: Hopper-based p5, p5e, p5en VMs and Blackwell-based p6 VMs. Under the hood, EFA runs a proprietary multi-path transport protocol called **SRD** (Scalable Reliable Datagram), described in the [SRD paper](https://assets.amazon.science/a6/34/41496f64421faafa1cbe301c007c/a-cloud-optimized-transport-protocol-for-elastic-and-scalable-hpc.pdf). SRD supports efficient multi-pathing to avoid single-path network congestion in datacenter networks, without relying on PFC (Priority Flow Control) which is notoriously hard to manage at large scale.
 
 &lt;div class=&quot;not-prose my-6 grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-start [&amp;&gt;img:first-child]:col-start-2 [&amp;&gt;img:last-child]:col-start-4 [&amp;&gt;img]:!my-0 [&amp;&gt;img]:h-auto [&amp;&gt;img]:max-w-[450px] [&amp;&gt;img]:min-w-0 [&amp;&gt;img]:w-full&quot;&gt;
-  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/efa-programming/single_path.png&quot; alt=&quot;Single-path transport&quot; width=&quot;450&quot;/&gt;
-  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/efa-programming/multi_path.png&quot; alt=&quot;Multi-path transport&quot; width=&quot;450&quot;/&gt;
+  &lt;img src=&quot;/efa-programming/single_path.png&quot; alt=&quot;Single-path transport&quot; width=&quot;450&quot;/&gt;
+  &lt;img src=&quot;/efa-programming/multi_path.png&quot; alt=&quot;Multi-path transport&quot; width=&quot;450&quot;/&gt;
 &lt;/div&gt;
 &lt;p align=&quot;center&quot;&gt;&lt;em&gt;Left: Traditional single-path transport sends all packets along one fixed route, which is vulnerable to congestion at any single hop. Right: EFA&apos;s SRD multi-path transport dynamically sprays packets across multiple paths, balancing load and avoiding hotspots without PFC.&lt;/em&gt;&lt;/p&gt;
 
@@ -623,7 +623,7 @@ An alternative approach is **sender-side ordering**: the sender holds the atomic
 The receiver-driven approach pipelines the atomic with the writes: the sender fires the atomic immediately after the writes without waiting, and the receiver reorders as needed. This results in measurably lower end-to-end latency:
 
 &lt;p align=&quot;center&quot;&gt;
-  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/efa-programming/sender_vs_receiver_latency.png&quot; alt=&quot;Sender-side vs Receiver-side ordering latency&quot; width=&quot;300&quot;/&gt;
+  &lt;img src=&quot;/efa-programming/sender_vs_receiver_latency.png&quot; alt=&quot;Sender-side vs Receiver-side ordering latency&quot; width=&quot;300&quot;/&gt;
   &lt;br&gt;
   &lt;em&gt;Latency comparison between sender-side ordering (hold atomic until all write completions) vs. receiver-side reordering approach.&lt;/em&gt;
 &lt;/p&gt;
