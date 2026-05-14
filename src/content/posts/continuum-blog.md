@@ -9,16 +9,16 @@ tags:
   - Fault Tolerance
   - Systems
   - OSDI
-pubDate: 2026-05-05
+pubDate: 2026-05-14
 cover: /continuum-blog/datacenter.png
 coverAlt: TrainMover Overview — Two-phase machine migration design
 author: ChonLam Lao
 ---
 
 <p>
-<strong>By: ChonLam Lao, Jiaqi Gao and the TrainMover team
+<strong>By: <a href="https://laochanlam.com/">ChonLam Lao</a>, <a href="https://jqgao.me/">Jiaqi Gao</a> and the TrainMover team
 <br>
-Date: May 5, 2026
+Date: May 14, 2026
 </strong>
 </p>
 
@@ -41,7 +41,7 @@ This post explains why this problem is harder than it sounds, why existing appro
 
 ## Part 1: The Scale of the Problem
 
-Modern LLMs are trained at extraordinary scale. GPT-3 required 1,024 GPUs running for 34 days. Llama 3 used 16,000 H100 GPUs for 54 days [1]. Meta, xAI, and others are scaling to 100K+ GPUs [2, 3]. These jobs run on tightly synchronized distributed training frameworks like Megatron-LM and DeepSpeed, where every GPU must exchange intermediate results before every training iteration.
+Modern LLMs are trained at extraordinary scale. GPT-3 required 1,024 GPUs running for 34 days. Llama 3 used 16,000 H100 GPUs for 54 days [^1]. Meta, xAI, and others are scaling to 100K+ GPUs [^2] [^3]. These jobs run on tightly synchronized distributed training frameworks like Megatron-LM and DeepSpeed, where every GPU must exchange intermediate results before every training iteration.
 
 This creates a brutal property: **a single failure halts the entire cluster.**
 
@@ -51,7 +51,7 @@ This creates a brutal property: **a single failure halts the entire cluster.**
 <em>In tightly synchronized distributed training, every GPU must exchange data every iteration. When a single GPU fails, every other GPU in the cluster goes idle until recovery completes.</em>
 </p>
 
-And failures are not rare. Alibaba's FALCON [4] reports that 60% of large-scale training jobs experience hardware slowdowns. Meta reports that a 1,024-GPU job has a mean-time-to-failure (MTTF) of just **7.9 hours** [5]. At 16,000 GPUs, that drops to **2.7 hours** [1].
+And failures are not rare. Alibaba's FALCON [^4] reports that 60% of large-scale training jobs experience hardware slowdowns. Meta reports that a 1,024-GPU job has a mean-time-to-failure (MTTF) of just **7.9 hours** [^5]. At 16,000 GPUs, that drops to **2.7 hours** [^1].
 
 The consequences compound with scale:
 
@@ -63,7 +63,7 @@ The consequences compound with scale:
 
 > **ETTR** is the fraction of time the cluster is actually making training progress, rather than restarting or recovering. An ETTR of 0.6 means 40% of your GPU time is wasted.
 
-The financial stakes are enormous. Training across 16K GPUs with AWS pricing costs $1.44M per day [12]. A single interruption on an 8,192-GPU job — even with a fully automated recovery stack [1] — incurs **6.47 minutes of downtime** and **$86,000 in daily waste**.
+The financial stakes are enormous. Training across 16K GPUs with AWS pricing costs $1.44M per day [^12]. A single interruption on an 8,192-GPU job — even with a fully automated recovery stack [^1] — incurs **6.47 minutes of downtime** and **$86,000 in daily waste**.
 
 What makes this especially alarming is how non-linearly the damage scales. A restart time of just a few minutes looks tolerable in isolation — but combine it with the MTTF of a large cluster and you get a collapse in effective throughput that accelerates as you add more GPUs.
 
@@ -73,7 +73,7 @@ What makes this especially alarming is how non-linearly the damage scales. A res
 <em>ETTR (Effective Training Time Ratio) as a function of cluster scale. Even a fixed per-interruption downtime causes throughput efficiency to collapse at production scales — Llama 3 (16K GPUs) and Grok 3 (80K+) operate deep in the red zone. Reducing downtime from minutes to seconds shifts the entire curve upward.</em>
 </p>
 
-This is the "downtime optimization space" — the gap between where training efficiency is today and where it could be with fast recovery. At 64K GPUs it represents **$3.63M per day** in wasted compute [3, 6]. TrainMover's goal is to reclaim it.
+This is the "downtime optimization space" — the gap between where training efficiency is today and where it could be with fast recovery. At 64K GPUs it represents **$3.63M per day** in wasted compute [^3] [^6]. TrainMover's goal is to reclaim it.
 
 ---
 
@@ -116,7 +116,7 @@ The simplest answer: when an interruption occurs, stop the job, remove the bad m
 
 ### Runtime Reconfiguration — entering the picture
 
-Recognizing this waste, researchers proposed a different angle: rather than stopping the entire job, enable *runtime reconfiguration* via elastic training systems. Academic proposals like Oobleck [7], Parcae [8], and ReCycle [9] take this approach: when a machine goes down, the job continues at reduced throughput with −1 machine, and a replacement is added back (+1) once one becomes available — no full restart needed.
+Recognizing this waste, researchers proposed a different angle: rather than stopping the entire job, enable *runtime reconfiguration* via elastic training systems. Academic proposals like Oobleck [^7], Parcae [^8], and ReCycle [^9] take this approach: when a machine goes down, the job continues at reduced throughput with −1 machine, and a replacement is added back (+1) once one becomes available — no full restart needed.
 
 This cleverly eliminates the infrastructure overhead at the top of the restart table — **Job Stop & Cleanup (7.7%)** and **Job Reschedule (23.1%)** are avoided entirely, since the job never stops. But the recovery time is not actually reduced: the new joiner still must go through checkpoint loading, NCCL re-instantiation, and cold warmup from scratch before it can contribute — and even with a reconfiguration system, every other machine in the cluster must wait for it. The critical path is the same; you just skipped the preamble.
 
@@ -136,7 +136,7 @@ The critical path is the real enemy. Strategy 1 puts everything on it. Strategy 
 
 Both strategies above treat the replacement machine as something to be *found* at failure time. But in practice, it was already there all along.
 
-Every large training cluster in production keeps a pool of standby machines on hand. Llama-3 [1] was trained on 16K GPUs within a 24K-GPU cluster. Alibaba's HPN [10] reserves 6% of GPUs as backup in each segment. ByteDance [6] allocates warm-standby pools based on the 99th percentile of historical GPU failure rates. The standby pool is not a luxury — it's standard operating practice.
+Every large training cluster in production keeps a pool of standby machines on hand. Llama-3 [^1] was trained on 16K GPUs within a 24K-GPU cluster. Alibaba's HPN [^10] reserves 6% of GPUs as backup in each segment. ByteDance [^6] allocates warm-standby pools based on the 99th percentile of historical GPU failure rates. The standby pool is not a luxury — it's standard operating practice.
 
 But these machines sit cold. The moment a failure happens, initialization starts from zero — and everything in Part 2 applies. The standby is physically present; it is logically absent.
 
@@ -231,21 +231,21 @@ TrainMover achieves **20–30 seconds of migration downtime** at 1,024-GPU scale
 
 ---
 
-*Questions or thoughts? Reach out to the TrainMover team.*
+*Questions or thoughts? Reach out to the TrainMover team: ChonLam Lao \<chonlamlao@gmail.com\>, Jiaqi Gao \<gaojiaqi0@gmail.com\>.*
 
 ---
 
 ## References
 
-[1] A. Grattafiori et al., "The Llama 3 Herd of Models," arXiv 2024.  
-[2] xAI, "xAI's Colossus Supercomputer Cluster," 2024.  
-[3] M. Si et al., "Collective Communication for 100k+ GPUs," arXiv 2025.  
-[4] T. Wu et al., "FALCON: Pinpointing and Mitigating Stragglers for Large-Scale Hybrid-Parallel Training," arXiv 2024.  
-[5] A. Kokolis et al., "Revisiting Reliability in Large-Scale Machine Learning Research Clusters," arXiv 2024.  
-[6] B. Wan et al., "Robust LLM Training Infrastructure at ByteDance," EuroSys 2025.  
-[7] I. Jang et al., "Oobleck: Resilient Distributed Training of Large Models Using Pipeline Templates," SOSP 2023.  
-[8] J. Duan et al., "Parcae: Proactive, Liveput-Optimized DNN Training on Preemptible Instances," NSDI 2024.  
-[9] S. Gandhi et al., "ReCycle: Resilient Training of Large DNNs using Pipeline Adaptation," SOSP 2024.  
-[10] K. Qian et al., "Alibaba HPN: A Data Center Network for Large Language Model Training," SIGCOMM 2024.  
-[11] Gemini Team, "Gemini: A Family of Highly Capable Multimodal Models," arXiv 2025.  
-[12] AWS, "Amazon EC2 P5 Instance Pricing," 2025.
+[^1]: A. Grattafiori et al., "The Llama 3 Herd of Models," arXiv 2024.  
+[^2]: xAI, "xAI's Colossus Supercomputer Cluster," 2024.  
+[^3]: M. Si et al., "Collective Communication for 100k+ GPUs," arXiv 2025.  
+[^4]: T. Wu et al., "FALCON: Pinpointing and Mitigating Stragglers for Large-Scale Hybrid-Parallel Training," arXiv 2024.  
+[^5]: A. Kokolis et al., "Revisiting Reliability in Large-Scale Machine Learning Research Clusters," arXiv 2024.  
+[^6]: B. Wan et al., "Robust LLM Training Infrastructure at ByteDance," EuroSys 2025.  
+[^7]: I. Jang et al., "Oobleck: Resilient Distributed Training of Large Models Using Pipeline Templates," SOSP 2023.  
+[^8]: J. Duan et al., "Parcae: Proactive, Liveput-Optimized DNN Training on Preemptible Instances," NSDI 2024.  
+[^9]: S. Gandhi et al., "ReCycle: Resilient Training of Large DNNs using Pipeline Adaptation," SOSP 2024.  
+[^10]: K. Qian et al., "Alibaba HPN: A Data Center Network for Large Language Model Training," SIGCOMM 2024.  
+[^11]: Gemini Team, "Gemini: A Family of Highly Capable Multimodal Models," arXiv 2025.  
+[^12]: AWS, "Amazon EC2 P5 Instance Pricing," 2025.
