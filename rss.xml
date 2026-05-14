@@ -1,4 +1,237 @@
-<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>UCCL</title><description>An amazing team!</description><link>https://uccl-project.github.io/</link><language>en-US</language><item><title>mKernel: Fast Multi-GPU, Multi-Node
+<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>UCCL</title><description>An amazing team!</description><link>https://uccl-project.github.io/</link><language>en-US</language><item><title>When Your AI Training Cluster Crashes at 3 AM: How We Cut Recovery Time to 20 Seconds</title><link>https://uccl-project.github.io/posts/continuum-blog/</link><guid isPermaLink="true">https://uccl-project.github.io/posts/continuum-blog/</guid><description>An educational deep-dive into interruption resilience for large-scale LLM training, and how TrainMover (OSDI &apos;26) reduces downtime to ~20 seconds with zero memory overhead.</description><pubDate>Thu, 14 May 2026 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;
+&lt;strong&gt;By: &lt;a href=&quot;https://laochanlam.com/&quot;&gt;ChonLam Lao&lt;/a&gt;, &lt;a href=&quot;https://jqgao.me/&quot;&gt;Jiaqi Gao&lt;/a&gt; and the TrainMover team
+&lt;br&gt;
+Date: May 14, 2026
+&lt;/strong&gt;
+&lt;/p&gt;
+
+&lt;div class=&quot;tldr&quot;&gt;
+&lt;p&gt;
+Training a large language model is a weeks-long marathon across thousands of GPUs. When something breaks — and something always breaks — every GPU stops and waits. We explore why failures are unavoidable at production scale, why recovery is so slow today, and how &lt;strong&gt;TrainMover&lt;/strong&gt; — accepted at &lt;strong&gt;OSDI &apos;26&lt;/strong&gt; — cuts recovery downtime to &lt;strong&gt;~20 seconds&lt;/strong&gt; with &lt;strong&gt;zero additional GPU memory&lt;/strong&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+&lt;!-- 📄 Paper: &lt;a href=&quot;https://arxiv.org/abs/2412.12636&quot;&gt;TrainMover: An Interruption-Resilient Runtime for ML Training&lt;/a&gt; &lt;em&gt;(arXiv version; final version to appear at OSDI &apos;26)&lt;/em&gt; --&gt;
+&lt;/p&gt;
+&lt;/div&gt;
+
+---
+
+Training a large language model is not a single button press. It is a weeks-long marathon, spread across thousands of GPUs, running in perfect synchrony. When something breaks — and something always breaks — every GPU in the cluster stops and waits. The bill keeps running.
+
+This post explains why this problem is harder than it sounds, why existing approaches leave significant performance on the table, and how our system **TrainMover** reduces interruption downtime to around **20 seconds** — a 10× improvement over prior approaches — while using **zero additional GPU memory**.
+
+---
+
+## Part 1: The Scale of the Problem
+
+Modern LLMs are trained at extraordinary scale. GPT-3 required 1,024 GPUs running for 34 days. Llama 3 used 16,000 H100 GPUs for 54 days [^1]. Meta, xAI, and others are scaling to 100K+ GPUs [^2] [^3]. These jobs run on tightly synchronized distributed training frameworks like Megatron-LM and DeepSpeed, where every GPU must exchange intermediate results before every training iteration.
+
+This creates a brutal property: **a single failure halts the entire cluster.**
+
+&lt;p align=&quot;center&quot;&gt;
+&lt;img src=&quot;/continuum-blog/cluster-halt.png&quot; alt=&quot;A single GPU failure halts the entire training cluster&quot; width=&quot;75%&quot;/&gt;
+&lt;br&gt;
+&lt;em&gt;In tightly synchronized distributed training, every GPU must exchange data every iteration. When a single GPU fails, every other GPU in the cluster goes idle until recovery completes.&lt;/em&gt;
+&lt;/p&gt;
+
+And failures are not rare. Alibaba&apos;s FALCON [^4] reports that 60% of large-scale training jobs experience hardware slowdowns. Meta reports that a 1,024-GPU job has a mean-time-to-failure (MTTF) of just **7.9 hours** [^5]. At 16,000 GPUs, that drops to **2.7 hours** [^1].
+
+The consequences compound with scale:
+
+| Cluster Size | ETTR (Effective Training Time Ratio) | Daily Cost Wasted |
+|:---:|:---:|:---:|
+| 8K GPUs | ~60% | ~$0.58M |
+| 16K GPUs | ~83.5% | significant |
+| 64K GPUs | ~68.2% | ~$3.63M/day |
+
+&gt; **ETTR** is the fraction of time the cluster is actually making training progress, rather than restarting or recovering. An ETTR of 0.6 means 40% of your GPU time is wasted.
+
+The financial stakes are enormous. Training across 16K GPUs with AWS pricing costs $1.44M per day [^12]. A single interruption on an 8,192-GPU job — even with a fully automated recovery stack [^1] — incurs **6.47 minutes of downtime** and **$86,000 in daily waste**.
+
+What makes this especially alarming is how non-linearly the damage scales. A restart time of just a few minutes looks tolerable in isolation — but combine it with the MTTF of a large cluster and you get a collapse in effective throughput that accelerates as you add more GPUs.
+
+&lt;p align=&quot;center&quot;&gt;
+&lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/continuum-blog-post/assets/continuum-blog/scale-throughput-loss.png&quot; alt=&quot;Impact of downtime on ETTR at different GPU scales&quot; width=&quot;75%&quot;/&gt;
+&lt;br&gt;
+&lt;em&gt;ETTR (Effective Training Time Ratio) as a function of cluster scale. Even a fixed per-interruption downtime causes throughput efficiency to collapse at production scales — Llama 3 (16K GPUs) and Grok 3 (80K+) operate deep in the red zone. Reducing downtime from minutes to seconds shifts the entire curve upward.&lt;/em&gt;
+&lt;/p&gt;
+
+This is the &quot;downtime optimization space&quot; — the gap between where training efficiency is today and where it could be with fast recovery. At 64K GPUs it represents **$3.63M per day** in wasted compute [^3] [^6]. TrainMover&apos;s goal is to reclaim it.
+
+---
+
+## Part 2: Why Is Recovery So Slow?
+
+When a machine fails, operators need to bring in a healthy replacement. The new machine — the **joiner** — must go through a painful initialization sequence before it can participate in training:
+
+| Phase | Avg. Time | % of Total |
+|:---|:---:|:---:|
+| Job Stop &amp; Cleanup | 0.52 min | 7.7% |
+| Job Reschedule | 1.50 min | 23.1% |
+| Checkpoint Loading | 1.73 min | 26.5% |
+| NCCL Instantiation | 0.92 min | 14.1% |
+| Cold Warmup (CUDA/JIT/etc.) | 1.09 min | 16.7% |
+| **TOTAL** | **6.47 min** | **100%** |
+
+Each phase deserves attention:
+
+**1. Job Stop &amp; Cleanup (7.7%):** When an interruption is detected, the management system halts the training job and cleans up all servers — stopping the training framework, disconnecting remote storage, finalizing logs, and removing temporary data. Even this &quot;bookkeeping&quot; step costs over 30 seconds at scale.
+
+**2. Job Reschedule (23.1%):** The affected machines are blacklisted or offlined and returned to the server pool. The job is then rescheduled: the system selects candidate replacement servers, runs health checks, configures the virtualized network, launches containers, and reinitializes monitoring and logging services. This coordination across the infrastructure stack accounts for nearly a quarter of total restart time.
+
+**3. Checkpoint Loading (26.5%):** Model weights and optimizer states — potentially hundreds of gigabytes — must be fetched from remote storage and loaded onto GPU memory. This cost scales directly with model size and dominates for large models; loading a 175B-parameter model alone can take several minutes.
+
+**4. NCCL Instantiation (14.1%):** Every parallelism dimension (DP, PP, TP) requires its own NCCL communication group. Forming these groups requires multi-round handshakes, topology discovery, and connection establishment across all nodes. At 1,000 machines, the number of connections scales as 1,000 × (# of CCL groups) × (# of channels per group) — all globally synchronized, with no shortcut.
+
+**5. Cold Warmup (16.7%):** Modern training frameworks rely on hardware-aware optimizations — JIT-compiled CUDA kernels, memory-layout specialization, fused operators — that only activate when **real data arrives**. The first training iteration is up to 6× slower than steady state. In pipeline-parallel training, each stage depends on the previous stage completing its P2P communication before it can proceed, so this cascades serially across all pipeline stages.
+
+The cruel irony: **every one of these phases happens on the critical path**, with every other GPU in the cluster sitting idle, waiting for the joiner to be ready.
+
+---
+
+## Part 3: Existing Approaches
+
+The natural response to this problem is to optimize the restart sequence itself. Two approaches have emerged.
+
+### The Straightforward Fix: Stop, Reschedule, Reinitialize
+
+The simplest answer: when an interruption occurs, stop the job, remove the bad machine, bring in a healthy standby machine, restore from the latest checkpoint, and restart training. It is simple and robust — and it is what most large-scale training deployments do today. The downside is that every step of the restart sequence — all 6.47 minutes of it — runs on the critical path with every other GPU idle.
+
+### Runtime Reconfiguration — entering the picture
+
+Recognizing this waste, researchers proposed a different angle: rather than stopping the entire job, enable *runtime reconfiguration* via elastic training systems. Academic proposals like Oobleck [^7], Parcae [^8], and ReCycle [^9] take this approach: when a machine goes down, the job continues at reduced throughput with −1 machine, and a replacement is added back (+1) once one becomes available — no full restart needed.
+
+This cleverly eliminates the infrastructure overhead at the top of the restart table — **Job Stop &amp; Cleanup (7.7%)** and **Job Reschedule (23.1%)** are avoided entirely, since the job never stops. But the recovery time is not actually reduced: the new joiner still must go through checkpoint loading, NCCL re-instantiation, and cold warmup from scratch before it can contribute — and even with a reconfiguration system, every other machine in the cluster must wait for it. The critical path is the same; you just skipped the preamble.
+
+&lt;p align=&quot;center&quot;&gt;
+&lt;img src=&quot;/continuum-blog/strategy2-critical-path.png&quot; alt=&quot;Strategy 2 eliminates the preamble but leaves the heaviest phases on the critical path&quot; width=&quot;80%&quot;/&gt;
+&lt;br&gt;
+&lt;em&gt;Elastic training removes Job Stop &amp; Cleanup and Job Reschedule from the critical path, but Checkpoint Loading, NCCL Instantiation, and Cold Warmup — the heaviest phases — are still serially blocking every other GPU in the cluster.&lt;/em&gt;
+&lt;/p&gt;
+
+The fundamental bottleneck remains: **bringing a new machine online requires re-initialization, and re-initialization is slow and unavoidable — until now.**
+
+The critical path is the real enemy. Strategy 1 puts everything on it. Strategy 2 removes the top two phases but still leaves checkpoint loading, NCCL re-instantiation, and cold warmup — the heaviest phases — squarely in the way. Any further progress requires moving work *off* the critical path entirely, before the failure ever happens.
+
+---
+
+## Part 4: The Standby That Was Already There
+
+Both strategies above treat the replacement machine as something to be *found* at failure time. But in practice, it was already there all along.
+
+Every large training cluster in production keeps a pool of standby machines on hand. Llama-3 [^1] was trained on 16K GPUs within a 24K-GPU cluster. Alibaba&apos;s HPN [^10] reserves 6% of GPUs as backup in each segment. ByteDance [^6] allocates warm-standby pools based on the 99th percentile of historical GPU failure rates. The standby pool is not a luxury — it&apos;s standard operating practice.
+
+But these machines sit cold. The moment a failure happens, initialization starts from zero — and everything in Part 2 applies. The standby is physically present; it is logically absent.
+
+What if it wasn&apos;t? What if the standby had already compiled the CUDA kernels, pre-established its NCCL groups, and prepared to recover model state from surviving peer GPUs — all before any failure occurred?
+
+That is exactly what TrainMover does. Instead of triggering initialization at failure time, it runs the expensive setup sequence **in the background, in advance**. When an interruption happens, the replacement recovers state from in-memory peers instead of fetching a checkpoint from remote storage. Joining the cluster takes ~20 seconds instead of 4+ minutes.
+
+&lt;!-- &lt;p align=&quot;center&quot;&gt;
+&lt;img src=&quot;/continuum-blog/trainmover-vs-baseline.png&quot; alt=&quot;TrainMover moves recovery work off the critical path&quot; width=&quot;85%&quot;/&gt;
+&lt;br&gt;
+&lt;em&gt;Without TrainMover, checkpoint loading from remote storage, NCCL instantiation, and cold warmup all happen serially after the failure. With TrainMover, the expensive setup is completed on the standby in the background &lt;strong&gt;before&lt;/strong&gt; any failure occurs, and model state is recovered from in-memory peer GPUs during switchover, leaving only ~20s on the critical path.&lt;/em&gt;
+&lt;/p&gt; --&gt;
+
+But wait — is keeping a standby machine worth the cost? You are, after all, paying for GPU capacity that just sits there. The answer depends entirely on your cluster scale.
+
+---
+
+## Part 5: All GPUs Training, or Keep Some on Standby?
+
+Say you have a budget of 32,008 GPUs. You have two choices:
+
+- **Option A:** Put all 32,008 GPUs into training.
+- **Option B:** Run 32,000 GPUs on training, and keep 1 machine (8 GPUs) pre-warmed as a standby.
+
+Option A sounds obviously better — more GPUs, more throughput. But it ignores the cost of downtime. At 32K-GPU scale, failures happen roughly every 54 minutes, and each one costs ~4.5 minutes of full-cluster idle time. Those lost GPU-hours accumulate fast.
+
+Option B gives up 8 GPUs of raw capacity. But with TrainMover, that standby machine cuts recovery time from 4.5 minutes to ~20 seconds — and at this scale, that reduction in downtime is **equivalent to recovering roughly 2,400 GPU-hours per interruption**.
+
+Put differently: **the 8 GPUs you gave up deliver the same effective throughput as 2,400 extra training GPUs would.**
+
+This trade-off is not always favorable — at small scale (say, 1K GPUs), failures are rare enough that the standby machine just sits idle and the math doesn&apos;t work out. But past a certain cluster size, the calculus flips decisively. At 8K GPUs (MTTF = 3 hours), a single standby already pays for itself many times over. At 128K GPUs, the gap is enormous.
+
+The right question is not &quot;can I afford a standby machine?&quot; — it&apos;s &quot;can I afford *not* to have one?&quot;
+
+We won&apos;t go into the full design here — the paper has all the details.
+
+&gt; 📄 **[TrainMover: An Interruption-Resilient Runtime for ML Training](https://arxiv.org/abs/2412.12636)** — OSDI &apos;26 *(arXiv version; final version to appear at OSDI &apos;26)*
+
+---
+
+## Part 6: Results
+
+We evaluated TrainMover on a **1,024-GPU testbed** across models from GPT-2.7B to GPT-175B Dense and MoE models up to 5.12T parameters.
+
+### Downtime at Scale
+
+| Scale | TrainMover (expected) | TrainMover (unexpected) | Megatron-LM |
+|:---:|:---:|:---:|:---:|
+| 32 GPUs | 11.5s | 19.6s | ~80s |
+| 128 GPUs | 14.5s | 20.2s | ~190s |
+| 256 GPUs | 15.5s | 20.4s | ~230s |
+| 512 GPUs | 14.2s | 20.4s | ~260s |
+| 1024 GPUs | 16.6s | 21.1s | ~300s |
+
+TrainMover&apos;s downtime grows by less than 10 seconds from 32 → 1,024 GPUs. Megatron-LM&apos;s grows nearly 4×. This scale-insensitivity comes from the delta-based design: only the leaver–joiner connections are updated; every other machine in the cluster is untouched.
+
+### GPU-Hour Waste at Production Scale
+
+Based on our projections from the 1,024-GPU testbed measurements, at 64K GPUs — a realistic production deployment:
+
+- TrainMover reduces wasted GPU hours by **55%** vs. the best alternative
+- This saves **1.4 million GPU-hours per week**
+- At 128K GPUs, projected weekly waste with a standby machine drops by **~95%** relative to Megatron-LM
+
+### Beyond Fault Tolerance
+
+TrainMover&apos;s migration primitive is general — it applies to any scenario requiring a machine swap, not just hardware failures:
+
+- **Straggler eviction**: when a slow machine drags the cluster, migrate it out while training continues, losing only ~5% efficiency
+- **Load rebalancing**: redistribute workloads periodically for locality or power balance, sustaining 97% ETTR even at 10-minute intervals
+- **Planned maintenance**: driver updates and firmware patches become ~20-second live migrations instead of full restarts
+
+Full results for each use case are in the paper.
+
+---
+
+## What We Learned
+
+**Interruptions are the norm, not the exception.** Data center events — maintenance, rebalancing, preemptions, hardware failures — average roughly one per hour at 100K+ GPU scale. The question is never *whether* your cluster will be disrupted, but how quickly it recovers.
+
+**The bottleneck has shifted from GPU count to recovery speed.** When a cluster fails every few hours and each restart idles thousands of GPUs for minutes, raw compute headroom matters less than how quickly you return to training. Past a threshold, a single pre-warmed standby machine delivers more effective GPU-hours than many raw training GPUs ever could — simply by converting minutes of downtime into seconds.
+
+**Zero memory overhead is non-negotiable at scale.** GPU memory at training scale is fully packed. Any system requiring pre-allocated recovery buffers risks out-of-memory crashes or forces model size reductions. TrainMover&apos;s delta-based CCL design keeps all preparation state in CPU memory and NVMe, touching GPU memory only at the final switchover moment.
+
+**The downtime–memory tradeoff is a false dichotomy.** Prior approaches accepted it as a given: fast recovery *or* full GPU utilization. TrainMover breaks this by asking which steps must stay on the critical path — and moving everything else off it, keeping all preparation state in CPU memory and NVMe with zero GPU overhead.
+
+---
+
+## Conclusion
+
+TrainMover achieves **20–30 seconds of migration downtime** at 1,024-GPU scale with **zero memory overhead**, handling both planned data center events and unexpected hardware failures. **Accepted at OSDI &apos;26** — we will be open-sourcing the implementation soon. If you want to know the challenges we faced and how we solved them, check our [arXiv](https://arxiv.org/abs/2412.12636) or come find us at OSDI &apos;26 in Seattle — happy to see you in person!
+
+---
+
+*Questions or thoughts? Reach out to the TrainMover team: ChonLam Lao \&lt;chonlamlao@gmail.com\&gt;, Jiaqi Gao \&lt;gaojiaqi0@gmail.com\&gt;.*
+
+---
+
+## References
+
+[^1]: A. Grattafiori et al., &quot;The Llama 3 Herd of Models,&quot; arXiv 2024.  
+[^2]: xAI, &quot;xAI&apos;s Colossus Supercomputer Cluster,&quot; 2024.  
+[^3]: M. Si et al., &quot;Collective Communication for 100k+ GPUs,&quot; arXiv 2025.  
+[^4]: T. Wu et al., &quot;FALCON: Pinpointing and Mitigating Stragglers for Large-Scale Hybrid-Parallel Training,&quot; arXiv 2024.  
+[^5]: A. Kokolis et al., &quot;Revisiting Reliability in Large-Scale Machine Learning Research Clusters,&quot; arXiv 2024.  
+[^6]: B. Wan et al., &quot;Robust LLM Training Infrastructure at ByteDance,&quot; EuroSys 2025.  
+[^7]: I. Jang et al., &quot;Oobleck: Resilient Distributed Training of Large Models Using Pipeline Templates,&quot; SOSP 2023.  
+[^8]: J. Duan et al., &quot;Parcae: Proactive, Liveput-Optimized DNN Training on Preemptible Instances,&quot; NSDI 2024.  
+[^9]: S. Gandhi et al., &quot;ReCycle: Resilient Training of Large DNNs using Pipeline Adaptation,&quot; SOSP 2024.  
+[^10]: K. Qian et al., &quot;Alibaba HPN: A Data Center Network for Large Language Model Training,&quot; SIGCOMM 2024.  
+[^11]: Gemini Team, &quot;Gemini: A Family of Highly Capable Multimodal Models,&quot; arXiv 2025.  
+[^12]: AWS, &quot;Amazon EC2 P5 Instance Pricing,&quot; 2025.</content:encoded></item><item><title>mKernel: Fast Multi-GPU, Multi-Node
 Fused Kernels</title><link>https://uccl-project.github.io/posts/mkernel/</link><guid isPermaLink="true">https://uccl-project.github.io/posts/mkernel/</guid><description>mKernel is a collection of multi-GPU, multi-node fused kernels that put intra-node NVLink communication, inter-node RDMA, and compute inside a single persistent  kernel.</description><pubDate>Fri, 08 May 2026 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;
 &lt;strong&gt;By: Ziming Mao, the UCCL team
 &lt;br&gt;
@@ -421,265 +654,4 @@ For workloads with many small messages (e.g., fine-grained GPU-initiated communi
 | Connection model | Connectionless (like UDP) | Connection-oriented |
 | Multi-destination per QP | Yes (via AH) | No (1:1 QP binding) |
 
-The lack of atomics and ordering is a real constraint that hinders many advanced communication libraries (e.g., DeepEP) from running on EFA directly. Fortunately, **UCCL fully addresses these constraints** with the software atomics and receiver-side reordering techniques described above, enabling advanced GPU communication on AWS instances. Check out our [UCCL project](https://github.com/uccl-project/uccl) for more details.</content:encoded></item><item><title>UCCL-EP: Portable Expert-Parallel Communication — Full Results</title><link>https://uccl-project.github.io/posts/uccl-ep-full/</link><guid isPermaLink="true">https://uccl-project.github.io/posts/uccl-ep-full/</guid><description>Full evaluation of UCCL-EP across NVIDIA and AMD GPUs, AWS EFA, InfiniBand, and Broadcom NICs — with application-level results on SGLang, vLLM inference and Megatron-LM training.</description><pubDate>Mon, 06 Apr 2026 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;
-&lt;strong&gt;By: &lt;a href=&quot;https://maoziming.github.io/&quot;&gt;Ziming Mao&lt;/a&gt; (UC Berkeley), &lt;a href=&quot;https://laochanlam.com/&quot;&gt;ChonLam Lao&lt;/a&gt; (Harvard), &lt;a href=&quot;https://yangzhou1997.github.io/&quot;&gt;Yang Zhou&lt;/a&gt; (UC Davis), &lt;a href=&quot;github.com/CalebZ9909&quot; class=&quot;no-github-icon&quot;&gt;Yihan Zhang&lt;/a&gt; (UC Davis), &lt;a href=&quot;https://github.com/HermesCui&quot; class=&quot;no-github-icon&quot;&gt;Chihan Cui&lt;/a&gt; (UW-Madison), &lt;a href=&quot;https://zhongjiechen.github.io/&quot; class=&quot;no-github-icon&quot;&gt;Zhongjie Chen&lt;/a&gt; (Tsinghua), &lt;a href=&quot;https://xuzhiying9510.github.io/&quot;&gt;Zhiying Xu&lt;/a&gt; (AWS), and other UCCL-EP contributors
-&lt;br&gt;
-Date: April 6th, 2026
-&lt;/strong&gt;
-&lt;/p&gt;
-
-&lt;div class=&quot;tldr&quot;&gt;
-&lt;p&gt;
-We present &lt;strong&gt;UCCL-EP&lt;/strong&gt;, a portable expert-parallel communication library that achieves state-of-the-art performance across &lt;strong&gt;heterogeneous GPU and NIC hardware&lt;/strong&gt;. UCCL-EP outperforms the best existing EP solution by up to &lt;strong&gt;2.3x&lt;/strong&gt; for dispatch and combine on AWS EFA. For end-to-end applications, UCCL-EP improves Megatron-LM training throughput by up to &lt;strong&gt;45%&lt;/strong&gt; over RCCL on 128 AMD GPUs, speeds up SGLang inference throughput by up to &lt;strong&gt;40%&lt;/strong&gt; over NCCL over 32 H200 GPUs, and reduces vLLM inference TPOT by up to &lt;strong&gt;25%&lt;/strong&gt; over NCCL. UCCL-EP is a drop-in replacement for DeepEP applications. 
-&lt;/p&gt;
-&lt;p&gt;
-Paper: &lt;a href=&quot;https://arxiv.org/pdf/2512.19849&quot;&gt;arxiv.org/pdf/2512.19849&lt;/a&gt; (OSDI&apos;26) | Code: &lt;a href=&quot;https://github.com/uccl-project/uccl/tree/main/ep&quot;&gt;uccl-project/uccl/ep&lt;/a&gt; (Apache-2.0)
-&lt;/p&gt;
-&lt;/div&gt;
-
-## Recap: Why UCCL-EP?
-
-In our [previous blog post](https://uccl-project.github.io/posts/uccl-ep/), we introduced UCCL-EP and the key challenge it addresses: state-of-the-art EP communication systems like DeepEP achieve high performance through &lt;strong&gt;GPU-initiated token-level RDMA&lt;/strong&gt;, but are tightly coupled to the NVIDIA GPU + NVIDIA NIC ecosystem (via IBGDA). This tight coupling prevents running on public clouds like AWS (which use EFA NICs), on AMD GPUs, or on alternative NIC vendors like Broadcom.
-
-UCCL-EP solves this with a clean separation of concerns:
-
-- **GPUs** retain fine-grained token-level communication initiation for maximal overlap with computation.
-- **CPUs** handle the control-intensive networking aspects — queue management, flow control, ordering enforcement — through a lightweight, multi-threaded proxy.
-
-This architecture reduces the porting effort from O(m x n) (left figure, for m GPU vendors and n NIC vendors) down to O(m) (right figure), as the CPU proxy can use the `libibverbs` API that most RDMA NICs support. In fact, UCCL-EP provides **drop-in support for vLLM, SGLang, and Megatron-LM**, making it easy to adopt without modifying application or framework code.
-
-&lt;div class=&quot;not-prose my-6 grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-start [&amp;&gt;img:first-child]:col-start-2 [&amp;&gt;img:last-child]:col-start-4 [&amp;&gt;img]:!my-0 [&amp;&gt;img]:h-auto [&amp;&gt;img]:max-w-[300px] [&amp;&gt;img]:min-w-0 [&amp;&gt;img]:w-full&quot;&gt;
-  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep-full/uep_intro_ibgda.png&quot; alt=&quot;IBGDA-style: O(m x n) porting effort&quot; width=&quot;300&quot;/&gt;
-  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep-full/uep_intro_ucclep.png&quot; alt=&quot;UCCL-EP: O(m) porting effort&quot; width=&quot;300&quot;/&gt;
-&lt;/div&gt;
-&lt;p align=&quot;center&quot;&gt;&lt;em&gt;Left: IBGDA-style GPU-initiated communication requires O(m x n) porting effort across GPU and NIC vendors. Right: UCCL-EP reduces this to O(m) by using the CPU as a portable intermediary via libibverbs.&lt;/em&gt;&lt;/p&gt;
-
-UCCL-EP architecture is shown in the figure below. GPUs delegate token-routing commands to multi-threaded CPU proxies via lock-free FIFO channels. CPU proxies issue GPUDirect RDMA on behalf of GPUs, while managing ordering, flow control, and completion handling. 
-
-&lt;p align=&quot;center&quot;&gt;
-  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep-full/uep_architecture.png&quot; alt=&quot;UCCL-EP Architecture&quot; width=&quot;600&quot;/&gt;
-  &lt;em&gt;UCCL-EP architecture.&lt;/em&gt;
-&lt;/p&gt;
-
-We discuss two key techniques in UCCL-EP (please refer to the [paper](https://arxiv.org/pdf/2512.19849) for more details):
-
-**CPU Proxy with Lock-Free FIFO Channels.** UCCL-EP uses a 128-bit `TransferCmd` descriptor that GPU threads enqueue into shared, lock-free FIFO channels. CPU proxy threads dequeue these commands and issue the corresponding RDMA operations. Each GPU uses multiple FIFO channels, each mapped to a dedicated RDMA Queue Pair (QP).
-
-**Immediate-Data-Based Ordering for Heterogeneous NICs.** Different NICs provide different delivery guarantees. For example, AWS EFA uses the Scalable Reliable Datagram (SRD) protocol with multi-pathing, which does not guarantee in-order delivery within a single QP. UCCL-EP embeds per-channel sequence numbers into RDMA immediate data, allowing the receiver-side CPU proxy to reorder out-of-sequence control messages before committing them to GPU memory. This approach also enables **software-level atomics** — piggybacking completion notifications on regular RDMA writes — which is both more portable (no hardware atomic support required) and more efficient (one RDMA operation instead of two for write + atomic).
-
-### CPU Proxy Throughput Is Not the Bottleneck
-
-We measure the FIFO channel latency and compare it against the end-to-end RDMA latency on EFA and Broadcom NICs. The FIFO channel sustains over **8 million operations per second**, with average latency of **~3 us** and P99 under **8 us** — an order of magnitude lower than the RDMA network latency (which ranges from 20–50+ us on EFA). This confirms that the CPU-GPU channel is not the bottleneck, and the additional proxy latency is amortized across the much larger network transfer time.
-
----
-
-## Evaluation Testbeds
-
-We have since evaluated UCCL-EP on a diverse set of platforms spanning NVIDIA and AMD GPUs with EFA, InfiniBand, and Broadcom NICs. 
-
-| Name | Servers | GPU | NIC | CPU | Cloud |
-|:----:|:-------:|:---:|:---:|:---:|:-----:|
-| NV_EFAv3 | 4 | NVIDIA H200 x8 | AWS EFAv3 200G x16 | 192 cores | AWS (p5en) |
-| NV_EFAv4 | 4 | NVIDIA B200 x8 | AWS EFAv4 400G x8 | 192 cores | AWS (p6-b200) |
-| NV_IB | 4 | NVIDIA H100 x8 | ConnectX-7 400G x8 | 128 cores | Nebius |
-| NV_GH200 | 2 | NVIDIA GH200 x1 | ConnectX-7 200G x1 | 72 cores | Lambda |
-| AMD_CX7 | 4-16 | AMD MI300X x8 | ConnectX-7 400G x8 | 128 cores | OCI |
-| AMD_BRC | 4 | AMD MI300X x8 | Broadcom Thor-2 400G x8 | 128 cores | Vultr |
-| AMD_AINIC | 4 | AMD MI355X x8 | Pollara AI NIC IB x8 | 128 cores | AMD |
-
-**Baselines:** NCCL/RCCL, DeepEP (NVIDIA-only), Perplexity Kernels ([PPLX](https://github.com/perplexityai/pplx-garden)), and CPU-assisted IBGDA. UCCL-EP uses 4 CPU proxy threads per GPU.
-
-Please reach out to us if you would like to improve and evaluate EP communication on your own platform!
-
----
-
-## Application Results
-
-### Megatron-LM Training on AMD (MI300X + Broadcom)
-
-We evaluate end-to-end Megatron-LM training of DeepSeek-V3 on 16 MI300X nodes (128 GPUs) using the AMD Primus/Megatron-LM framework.
-
-&lt;div class=&quot;not-prose my-6 grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-start [&amp;&gt;img:first-child]:col-start-2 [&amp;&gt;img:last-child]:col-start-4 [&amp;&gt;img]:!my-0 [&amp;&gt;img]:h-auto [&amp;&gt;img]:max-w-[300px] [&amp;&gt;img]:min-w-0 [&amp;&gt;img]:w-full&quot;&gt;
-  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep-full/amd_megatron_deepseekv3_tflops.png&quot; alt=&quot;Megatron-LM TFLOPS&quot; width=&quot;300&quot;/&gt;
-  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep-full/amd_megatron_deepseekv3_tokens.png&quot; alt=&quot;Megatron-LM tokens/s&quot; width=&quot;300&quot;/&gt;
-&lt;/div&gt;
-&lt;p align=&quot;center&quot;&gt;&lt;em&gt;Megatron-LM training throughput (TFLOPS and tokens/s) on 16-node AMD MI300X + Broadcom Thor-2.&lt;/em&gt;&lt;/p&gt;
-
-Across all configurations, UCCL-EP matches or exceeds the TFLOPS by **7–36%** and throughput by **7–45%** compared to RCCL. These results show that UCCL-EP provides significant performance benefits for MoE training.
-
-### SGLang Inference on AWS (NVIDIA + EFA)
-
-We evaluate UCCL-EP in SGLang v0.5.3 on a prefill-heavy workload on p5en instances. We compare against NCCL, as DeepEP cannot run on EFA and PPLX had not been integrated into open-source inference engines at the time of evaluation.
-
-&lt;div class=&quot;not-prose my-6 grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-start [&amp;&gt;img:first-child]:col-start-2 [&amp;&gt;img:last-child]:col-start-4 [&amp;&gt;img]:!my-0 [&amp;&gt;img]:h-auto [&amp;&gt;img]:max-w-[300px] [&amp;&gt;img]:min-w-0 [&amp;&gt;img]:w-full&quot;&gt;
-  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep-full/sglang_deepseek_r1_throughput.png&quot; alt=&quot;SGLang DeepSeek R1 throughput&quot; width=&quot;300&quot;/&gt;
-  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep-full/sglang_qwen3_throughput.png&quot; alt=&quot;SGLang Qwen3 throughput&quot; width=&quot;300&quot;/&gt;
-&lt;/div&gt;
-&lt;p align=&quot;center&quot;&gt;&lt;em&gt;SGLang throughput comparison using UCCL-EP vs. NCCL on p5en. Left: DeepSeek R1 (671B). Right: Qwen3 (235B).&lt;/em&gt;&lt;/p&gt;
-
-**DeepSeek R1 (671B):**
-- EP=16: UCCL-EP reaches **46K tok/s** input throughput, about 5% higher than NCCL.
-- EP=32: UCCL-EP improves to **74K tok/s**, a **1.6x** speedup over its own EP=16 run.
-
-**Qwen3 (235B):**
-- EP=32: UCCL-EP reaches **62K tok/s** vs. 44K tok/s for NCCL — about **40% higher** throughput.
-
-UCCL-EP enables larger EP configurations (EP=32) where NCCL either significantly underperforms or cannot run. CPU utilization increases modestly from an average 8% to 22%.
-
-### vLLM Inference on AWS (NVIDIA H200 + EFA)
-
-We evaluate UCCL-EP on vLLM v0.16.0 with 1k input and 256 output tokens for `deepseek-ai/DeepSeek-V3-0324` on two p5en instances (EP16). 
-
-| Mode | Req Throughput (req/s) | Output Tok Throughput (tok/s) | Mean TTFT (ms) | P99 TTFT (ms) | Mean TPOT (ms) | P99 TPOT (ms) |
-|------|------------------------|-------------------------------|----------------|---------------|----------------|---------------|
-| Allgather + ReduceScatter | 8.92 | 2282.44 | 303.19 | 659.66 | 81.41 | 94.21 |
-| UCCL-EP - Low Latency | 9.24 | 2365.44 | 271.31 | 688.79 | 61.02 | 77.52 |
-
-UCCL-EP achieves slightly higher throughput, compariable TTFT, and up to 25% lower TPOT than the NCCL solution. Checkout this [tutorial](https://github.com/uccl-project/uccl/tree/main/ep/bench/vllm) to reproduce.  
-
----
-
-## Microbenchmark Results
-
-### On NVIDIA GPUs and AWS EFA
-
-On p5en instances (8x H200, 16x 200 Gb/s EFA), we measure EP32 dispatch and combine latency while varying the number of tokens. UCCL-EP uses the minimum of high-throughput (HT) and low-latency (LL) mode latency, while PPLX operates in a single mode.
-
-At small batch sizes (128 tokens), PPLX achieves lower latency because UCCL-EP (extending DeepEP) issues messages at 7 KB token granularity, whereas PPLX packs tokens into larger messages. However, as the token count increases, **UCCL-EP quickly overtakes PPLX** — delivering **2.3x lower dispatch latency** and **1.1–1.5x lower combine latency** for medium and large batches.
-
-&lt;div class=&quot;not-prose my-6 grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-start [&amp;&gt;img:first-child]:col-start-2 [&amp;&gt;img:last-child]:col-start-4 [&amp;&gt;img]:!my-0 [&amp;&gt;img]:h-auto [&amp;&gt;img]:max-w-[300px] [&amp;&gt;img]:min-w-0 [&amp;&gt;img]:w-full&quot;&gt;
-  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep-full/p5en_dispatch_latency_vs_tokens_pplx_uccl.jpg&quot; alt=&quot;p5en dispatch latency vs tokens&quot; width=&quot;300&quot;/&gt;
-  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep-full/p5en_combine_latency_vs_tokens_pplx_uccl.jpg&quot; alt=&quot;p5en combine latency vs tokens&quot; width=&quot;300&quot;/&gt;
-&lt;/div&gt;
-&lt;p align=&quot;center&quot;&gt;&lt;em&gt;EP32 dispatch (left) and combine (right) latency vs. number of tokens on p5en (H200 + EFA 400 Gbps).&lt;/em&gt;&lt;/p&gt;
-
-We present more results in the table below. 
-
-&lt;!-- #### B200 + EFA (p6-b200)
-
-On p6-b200 instances (8x B200, 8x 400 Gb/s EFA), we see similar trends with UCCL-EP outperforming PPLX at larger token counts:
-
-&lt;p align=&quot;center&quot;&gt;
-  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep-full/p6_dispatch_ll_ht.png&quot; alt=&quot;p6 dispatch&quot; width=&quot;300&quot;/&gt;
-  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep-full/p6_combine_ll_ht.png&quot; alt=&quot;p6 combine&quot; width=&quot;300&quot;/&gt;
-  &lt;em&gt;EP32 dispatch (left) and combine (right) comparison on p6-b200 (B200 + EFA 400 Gbps).&lt;/em&gt;
-&lt;/p&gt; --&gt;
-
-##### Normal Mode Bandwidth (EFA)
-
-Following the DeepSeek-V3 pretraining configuration (4096 tokens, 7168 hidden, top-4 groups, top-8 experts, FP8 dispatch / BF16 combine):
-
-| Platform | Type | #EP | Dispatch BW &amp; Latency | Combine BW &amp; Latency |
-|:---:|:---:|:---:|:---:|:---:|
-| p5en (H200) | Intranode | 8 | 320 GB/s (NVLink), 500 us | 319 GB/s (NVLink), 973 us |
-| p5en (H200) | Internode | 16 | 50 GB/s (RDMA), 1196 us | 18 GB/s (RDMA), 6379 us |
-| p5en (H200) | Internode | 24 | 53 GB/s (RDMA), 1633 us | 26 GB/s (RDMA), 6365 us |
-| p5en (H200) | Internode | 32 | 54 GB/s (RDMA), 2022 us | 43 GB/s (RDMA), 4899 us |
-| p6 (B200) | Intranode | 8 | 280 GB/s (NVLink), 571 us | 426 GB/s (NVLink), 727 us |
-| p6 (B200) | Internode | 16 | 53 GB/s (RDMA), 1141 us | 60 GB/s (RDMA), 1965 us |
-| p6 (B200) | Internode | 24 | 53 GB/s (RDMA), 1637 us | 59 GB/s (RDMA), 2887 us |
-| p6 (B200) | Internode | 32 | 53 GB/s (RDMA), 2072 us | 57 GB/s (RDMA), 3724 us |
-
-##### Low-Latency Mode (EFA)
-
-Following a DeepSeek-V3 inference setting (128 tokens, 7168 hidden, top-8 experts, FP8 dispatch / BF16 combine):
-
-| Platform | #EP | Dispatch Latency | Dispatch BW | Combine Latency | Combine BW |
-|:---:|:---:|:---:|:---:|:---:|:---:|
-| p5en (H200) | 16 | 226 us | 36 GB/s | 293 us | 48 GB/s |
-| p5en (H200) | 24 | 386 us | 20 GB/s | 580 us | 26 GB/s |
-| p5en (H200) | 32 | 465 us | 16 GB/s | 694 us | 25 GB/s |
-| p6 (B200) | 16 | 228 us | 33 GB/s | 318 us | 46 GB/s |
-| p6 (B200) | 24 | 448 us | 17 GB/s | 566 us | 26 GB/s |
-| p6 (B200) | 32 | 406 us | 19 GB/s | 617 us | 24 GB/s |
-
-### On AMD GPUs
-
-UCCL-EP enables GPU-initiated token-level EP communication on AMD GPUs. We evaluate on MI300X with both CX7 RoCE (OCI) and Broadcom Thor-2 NICs (Vultr).
-
-&lt;div class=&quot;not-prose my-6 grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-start [&amp;&gt;img:first-child]:col-start-2 [&amp;&gt;img:last-child]:col-start-4 [&amp;&gt;img]:!my-0 [&amp;&gt;img]:h-auto [&amp;&gt;img]:max-w-[300px] [&amp;&gt;img]:min-w-0 [&amp;&gt;img]:w-full&quot;&gt;
-  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep-full/amd_dispatch_ll_ht.png&quot; alt=&quot;AMD dispatch&quot; width=&quot;300&quot;/&gt;
-  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep-full/amd_combine_ll_ht.png&quot; alt=&quot;AMD combine&quot; width=&quot;300&quot;/&gt;
-&lt;/div&gt;
-&lt;p align=&quot;center&quot;&gt;&lt;em&gt;EP32 dispatch (left) and combine (right) on AMD MI300X with CX7 RoCE and Broadcom Thor-2 NICs.&lt;/em&gt;&lt;/p&gt;
-
-&lt;!-- UCCL-EP achieves similar performance across both NIC vendors, demonstrating true portability. On MI300X + CX7 RoCE, UCCL-EP achieves comparable performance to DeepEP on the NVIDIA-only platform. --&gt;
-
-More results across heterogeneous platforms are shown in the tables below. 
-
-#### Normal Mode Bandwidth (AMD)
-
-| Platform | Type | #EP | FP8 Dispatch BW | BF16 Dispatch BW | Combine BW |
-|:---:|:---:|:---:|:---:|:---:|:---:|
-| MI300X + CX7 RoCE | Intranode | 8 | 260 GB/s (xGMI) | 295 GB/s (xGMI) | 304 GB/s (xGMI) |
-| MI300X + CX7 RoCE | Internode | 16 | 74 GB/s (RDMA) | 82 GB/s (RDMA) | 78 GB/s (RDMA) |
-| MI300X + CX7 RoCE | Internode | 32 | 60 GB/s (RDMA) | 61 GB/s (RDMA) | 60 GB/s (RDMA) |
-| MI300X + CX7 RoCE | Internode | 64 | 52 GB/s (RDMA) | 53 GB/s (RDMA) | 51 GB/s (RDMA) |
-| MI355X + Pollara | Intranode | 8 | 299 GB/s (xGMI) | 336 GB/s (xGMI) | 333 GB/s (xGMI) |
-| MI355X + Pollara | Internode | 16 | 82 GB/s (RDMA) | 82 GB/s (RDMA) | 82 GB/s (RDMA) |
-| MI355X + Pollara | Internode | 32 | 59 GB/s (RDMA) | 58 GB/s (RDMA) | 59 GB/s (RDMA) |
-| MI355X + Pollara | Internode | 64 | 50 GB/s (RDMA) | 49 GB/s (RDMA) | 49 GB/s (RDMA) |
-| MI300X + Broadcom | Internode | 16 | 71 GB/s (RDMA) | 81 GB/s (RDMA) | 45 GB/s (RDMA) |
-| MI300X + Broadcom | Internode | 32 | 49 GB/s (RDMA) | 55 GB/s (RDMA) | 50 GB/s (RDMA) |
-
-#### Low-Latency Mode (AMD MI300X + CX7 RoCE)
-
-| #EP | Dispatch Latency | Dispatch BW | Combine Latency | Combine BW |
-|:---:|:---:|:---:|:---:|:---:|
-| 8 | 65 us | 114 GB/s | 92 us | 157 GB/s |
-| 16 | 136 us | 55 GB/s | 207 us | 70 GB/s |
-| 32 | 224 us | 30 GB/s | 341 us | 42 GB/s |
-
-### Porting to AMD GPUs
-
-UCCL-EP&apos;s CPU proxy architecture makes porting to new GPU vendors straightforward — only the GPU kernels need to change, while the CPU-side networking code remains identical. Porting to AMD GPUs and AWS EFA NICs took only **3 person-months**.
-
-The key changes for AMD included:
-- Migrating CUDA PTX intrinsics (atomics, memory fences, timers) to ROCm alternatives
-- Switching `WARP_SIZE` from 32 to 64 to match AMD wavefronts
-- Replacing NVIDIA TMA-based data copy with AMD CU-based (compute unit) copy
-- Merging &quot;coordinator&quot; wavefronts into &quot;receiver&quot; wavefronts in the HT kernel, since AMD GPUs support fewer wavefronts but more threads per wavefront
-
-After these GPU-side changes, UCCL-EP immediately ran on AMD platforms with any supported NIC (CX7 RoCE, Broadcom Thor-2, Pollara AI NIC) — no per-NIC work was needed.
-
----
-
-## Towards More Efficient Low-Latency Kernels
-
-UCCL-EP&apos;s low-latency (LL) kernel, extending DeepEP, currently issues one 7 KB token per RDMA message. On EFA NICs, this is suboptimal because the current EFA firmware cannot process small tokens at a high enough rate (AWS has confirmed they are working on a firmware fix). PPLX, by contrast, packs tokens into larger messages.
-
-A natural optimization is to pack tokens in a **best-effort manner** before sending. On the latest UCCL-EP, we have implemented per-expert batching of tokens for low-latency mode. On p5en (EP32, 128 tokens), batching improves BF16 dispatch from 299 us to 268 us (**10.4%** improvement) and FP8 dispatch from 217 us to 178 us (**18.0%** improvement).  We evaluate these LL improvements on p5en while comparing against PPLX on both FP8 and BF16 dispatch paths.
-
-**BF16 vs. FP8 Dispatch:**
-Similar to the DeepEP benchmark script, the input to the low-latency kernel is in BF16.
-* BF16 dispatch means the kernel transfers token in BF16 without casting BF16 to FP8.
-* FP8 dispatch means the kernel transfers token in FP8, either by casting BF16 to FP8 before kernel entry or using in-kernel BF16-&gt;FP8 conversion.
-
-&lt;p align=&quot;center&quot;&gt;
-  &lt;img src=&quot;https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep-full/p5en_dispatch_bf16_fp8_uccl_vs_pplx.png&quot; alt=&quot;p5en dispatch BF16 to FP8 UCCL vs PPLX fair measurement&quot; width=&quot;300&quot;/&gt;
-  &lt;em&gt;P5en comparison with PPLX for BF16 and FP8 dispatch.&lt;/em&gt;
-&lt;/p&gt;
-
-**A Note on Comparison with PPLX Kernels:** PPLX uses a different measurement methodology than our original DeepEP-inherited setup. One key difference is that unlike DeepEP and UCCL-EP, PPLX does not support in-kernel BF16-&gt;FP8 conversion. For a fair comparison, the FP8 results we report include BF16-&gt;FP8 casting time before entering the PPLX kernel (266.90 us). The PPLX dispatch time excluding external BF16-&gt;FP8 pre-cast time is 232.30 us, still higher than UCCL-EP&apos;s. For BF16 dispatch, we evaluate at the same setup where both UCCL-EP and PPLX kernels transfer token in BF16 with no casting. We also align with the PPLX measurement methodology (e.g. warmup, timing measurements, etc.). 
-
----
-
-## Enabling Flow Control
-
-A key advantage of UCCL-EP&apos;s CPU proxy architecture is the ability to implement **flow control** — which otherwise is difficult with IBGDA, where GPU threads typically blindly issue one-sided RDMA operations without awareness of NIC queue pressure or completion.
-
-We observe that the number of outstanding RDMA requests can have a significant impact on various NICs, particularly affecting **tail latency**. This becomes increasingly critical as the number of destinations increases, where a single straggler can slow down the entire dispatch or combine operation.
-
-We illustrate this on **Broadcom Thor-2** (EP32, normal mode) by sweeping communication configurations, such as various NVLink chunk sizes and RDMA chunk sizes. **Without flow control, non-optimal configurations catastrophically degrade** — bandwidth can collapse from ~49 GB/s to as low as **4.4 GB/s**, and notify latency can explode from hundreds of microseconds to **over 70 ms**. With flow control (e.g., 1.5 MB inflight limit), performance is stable across all configurations.
-
-UCCL-EP&apos;s CPU proxy supports request tracking and pacing:
-- If outstanding requests grow too high, the proxy **temporarily buffers messages** at the sender to avoid incast at the receiver.
-- The proxy can **shard outgoing requests across multiple NICs and QPs** to avoid congestion and adapt to NIC-specific characteristics.
-
-This is particularly important for **Broadcom Thor-2** and **AMD Pollara AI** NICs. We provide the environment variables `UCCL_IB_MAX_INFLIGHT_BYTES` and `UCCL_IB_MAX_INFLIGHT_NORMAL` to configure flow control. Without it, these NICs can encounter CQE error 12 (Transport Retry Counter Exceeded) under high load.
-
----
-
-## Acknowledgements
-
-This research is supported by gifts from Accenture, AMD, Anyscale, AWS, Broadcom, Cisco, Google, IBM, Intel, Intesa Sanpaolo, Lambda, Lightspeed, Mibura, Microsoft, NVIDIA, Samsung SDS, and SAP.</content:encoded></item></channel></rss>
+The lack of atomics and ordering is a real constraint that hinders many advanced communication libraries (e.g., DeepEP) from running on EFA directly. Fortunately, **UCCL fully addresses these constraints** with the software atomics and receiver-side reordering techniques described above, enabling advanced GPU communication on AWS instances. Check out our [UCCL project](https://github.com/uccl-project/uccl) for more details.</content:encoded></item></channel></rss>
