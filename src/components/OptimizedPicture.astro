@@ -15,34 +15,23 @@ const {
   src,
   alt,
   widths = [392, 700, 980, 1960],
-  sizes = `(max-width: 360px) 392px,
-           (max-width: 720px) 700px,
-           (max-width: 1600px) 980px,
+  sizes = `(max-width: 360px) 392px, 
+           (max-width: 720px) 700px, 
+           (max-width: 1600px) 980px, 
            1960px`,
   formats = ["avif"],
   fallbackFormat = "avif",
   class: className = "mx-auto w-full max-w-full rounded-lg"
 } = Astro.props;
-
-// inferSize only works for real remote URLs; local public/ paths need explicit dimensions
-const isRemote = src.startsWith("http://") || src.startsWith("https://");
 ---
 
-{isRemote ? (
-  <Picture
-    src={src}
-    alt={alt}
-    widths={widths}
-    sizes={sizes}
-    formats={formats}
-    fallbackFormat={fallbackFormat}
-    class={className}
-    inferSize
-  />
-) : (
-  <img
-    src={src}
-    alt={alt}
-    class={className}
-  />
-)}
+<Picture
+  src={src}
+  alt={alt}
+  widths={widths}
+  sizes={sizes}
+  formats={formats}
+  fallbackFormat={fallbackFormat}
+  class={className}
+  inferSize
+/>
