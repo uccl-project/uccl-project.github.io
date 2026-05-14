@@ -24,7 +24,7 @@ Date: May 5, 2026
 
 <div class="tldr">
 <p>
-Training a large language model is a weeks-long marathon across thousands of GPUs. When something breaks — and something always breaks — every GPU stops and waits. We present <strong>TrainMover</strong>, an interruption-resilient LLM training runtime accepted at <strong>OSDI '26</strong>, that reduces recovery downtime to <strong>~20 seconds</strong> regardless of cluster size or model size, while using <strong>zero additional GPU memory</strong>.
+Training a large language model is a weeks-long marathon across thousands of GPUs. When something breaks — and something always breaks — every GPU stops and waits. We explore why failures are unavoidable at production scale, why recovery is so slow today, and how <strong>TrainMover</strong> — accepted at <strong>OSDI '26</strong> — cuts recovery downtime to <strong>~20 seconds</strong> with <strong>zero additional GPU memory</strong>.
 </p>
 <p>
 <!-- 📄 Paper: <a href="https://arxiv.org/abs/2412.12636">TrainMover: An Interruption-Resilient Runtime for ML Training</a> <em>(arXiv version; final version to appear at OSDI '26)</em> -->
@@ -63,9 +63,9 @@ The consequences compound with scale:
 
 > **ETTR** is the fraction of time the cluster is actually making training progress, rather than restarting or recovering. An ETTR of 0.6 means 40% of your GPU time is wasted.
 
-The financial stakes are enormous. Training across 16K GPUs with AWS pricing costs $1.44M per day. A single interruption on an 8,192-GPU job — even with a fully automated recovery stack [1] — incurs **6.47 minutes of downtime** and **$86,000 in daily waste**.
+The financial stakes are enormous. Training across 16K GPUs with AWS pricing costs $1.44M per day [12]. A single interruption on an 8,192-GPU job — even with a fully automated recovery stack [1] — incurs **6.47 minutes of downtime** and **$86,000 in daily waste**.
 
-What makes this especially alarming is how non-linearly the damage scales. A 4.45-minute restart time looks tolerable in isolation — but combine it with the MTTF of a large cluster and you get a collapse in effective throughput that accelerates as you add more GPUs.
+What makes this especially alarming is how non-linearly the damage scales. A restart time of just a few minutes looks tolerable in isolation — but combine it with the MTTF of a large cluster and you get a collapse in effective throughput that accelerates as you add more GPUs.
 
 <p align="center">
 <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/continuum-blog-post/assets/continuum-blog/scale-throughput-loss.png" alt="Impact of downtime on ETTR at different GPU scales" width="75%"/>
@@ -199,7 +199,7 @@ Based on our projections from the 1,024-GPU testbed measurements, at 64K GPUs �
 
 - TrainMover reduces wasted GPU hours by **55%** vs. the best alternative
 - This saves **1.4 million GPU-hours per week**
-- At 128K GPUs, projected weekly waste with a standby machine drops by **88%** relative to Parcae
+- At 128K GPUs, projected weekly waste with a standby machine drops by **~95%** relative to Megatron-LM
 
 ### Beyond Fault Tolerance
 
@@ -217,7 +217,7 @@ Full results for each use case are in the paper.
 
 **Interruptions are the norm, not the exception.** Data center events — maintenance, rebalancing, preemptions, hardware failures — average roughly one per hour at 100K+ GPU scale. The question is never *whether* your cluster will be disrupted, but how quickly it recovers.
 
-**The performance bottleneck has shifted from scaling to failure handling.** At production scale, adding more GPUs yields diminishing returns when a growing fraction of those GPU-hours is lost to restarts. The real leverage is no longer in how many GPUs you have — it's in how fast you recover when something goes wrong. A single well-placed standby machine, properly pre-warmed, can recover any interruption in ~20 seconds — delivering more effective training throughput than adding many more raw GPUs to the job.
+**The bottleneck has shifted from GPU count to recovery speed.** When a cluster fails every few hours and each restart idles thousands of GPUs for minutes, raw compute headroom matters less than how quickly you return to training. Past a threshold, a single pre-warmed standby machine delivers more effective GPU-hours than many raw training GPUs ever could — simply by converting minutes of downtime into seconds.
 
 **Zero memory overhead is non-negotiable at scale.** GPU memory at training scale is fully packed. Any system requiring pre-allocated recovery buffers risks out-of-memory crashes or forces model size reductions. TrainMover's delta-based CCL design keeps all preparation state in CPU memory and NVMe, touching GPU memory only at the final switchover moment.
 
@@ -237,24 +237,15 @@ TrainMover achieves **20–30 seconds of migration downtime** at 1,024-GPU scale
 
 ## References
 
-[1] A. Grattafiori et al., "The Llama 3 Herd of Models," arXiv 2024. [Link](https://arxiv.org/abs/2407.21783)
-
-[2] xAI, "xAI's Colossus Supercomputer Cluster," 2024. [Link](https://x.ai/colossus/)
-
-[3] M. Si et al., "Collective Communication for 100k+ GPUs," arXiv 2025. [Link](https://arxiv.org/abs/2510.20171)
-
-[4] T. Wu et al., "FALCON: Pinpointing and Mitigating Stragglers for Large-Scale Hybrid-Parallel Training," arXiv 2024. [Link](https://arxiv.org/abs/2410.12588)
-
-[5] A. Kokolis et al., "Revisiting Reliability in Large-Scale Machine Learning Research Clusters," arXiv 2024. [Link](https://arxiv.org/abs/2410.21680)
-
-[6] B. Wan et al., "Robust LLM Training Infrastructure at ByteDance," EuroSys 2025. [Link](https://doi.org/10.1145/3731569.3764838)
-
-[7] I. Jang et al., "Oobleck: Resilient Distributed Training of Large Models Using Pipeline Templates," SOSP 2023. [Link](https://dl.acm.org/doi/10.1145/3600006.3613152)
-
-[8] J. Duan et al., "Parcae: Proactive, Liveput-Optimized DNN Training on Preemptible Instances," NSDI 2024. [Link](https://www.usenix.org/conference/nsdi24/presentation/duan)
-
-[9] S. Gandhi et al., "ReCycle: Resilient Training of Large DNNs using Pipeline Adaptation," SOSP 2024. [Link](https://dl.acm.org/doi/10.1145/3694715.3695960)
-
-[10] K. Qian et al., "Alibaba HPN: A Data Center Network for Large Language Model Training," SIGCOMM 2024. [Link](https://dl.acm.org/doi/10.1145/3651890.3672265)
-
-[11] Gemini Team, "Gemini: A Family of Highly Capable Multimodal Models," arXiv 2025. [Link](https://arxiv.org/abs/2312.11805)
+[1] A. Grattafiori et al., "The Llama 3 Herd of Models," arXiv 2024.  
+[2] xAI, "xAI's Colossus Supercomputer Cluster," 2024.  
+[3] M. Si et al., "Collective Communication for 100k+ GPUs," arXiv 2025.  
+[4] T. Wu et al., "FALCON: Pinpointing and Mitigating Stragglers for Large-Scale Hybrid-Parallel Training," arXiv 2024.  
+[5] A. Kokolis et al., "Revisiting Reliability in Large-Scale Machine Learning Research Clusters," arXiv 2024.  
+[6] B. Wan et al., "Robust LLM Training Infrastructure at ByteDance," EuroSys 2025.  
+[7] I. Jang et al., "Oobleck: Resilient Distributed Training of Large Models Using Pipeline Templates," SOSP 2023.  
+[8] J. Duan et al., "Parcae: Proactive, Liveput-Optimized DNN Training on Preemptible Instances," NSDI 2024.  
+[9] S. Gandhi et al., "ReCycle: Resilient Training of Large DNNs using Pipeline Adaptation," SOSP 2024.  
+[10] K. Qian et al., "Alibaba HPN: A Data Center Network for Large Language Model Training," SIGCOMM 2024.  
+[11] Gemini Team, "Gemini: A Family of Highly Capable Multimodal Models," arXiv 2025.  
+[12] AWS, "Amazon EC2 P5 Instance Pricing," 2025.
