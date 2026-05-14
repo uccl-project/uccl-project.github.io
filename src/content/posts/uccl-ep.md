@@ -10,7 +10,7 @@ tags:
   - IBGDA
   - RDMA
 pubDate: 2025-10-27
-cover: https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep/uccl-ep.png
+cover: /uccl-ep/uccl-ep.png
 coverAlt: UCCL-EP
 author: UCCL Team
 ---
@@ -35,7 +35,7 @@ GPU-driven communication (e.g., DeepEP) is the key to efficient and large-scale 
 This selective routing requires frequent **dispatch** (sending token embeddings to the correct expert GPUs) and **combine** (gathering expert outputs back to the sender ranks, followed by a weighted sum) operations across the network. These data exchanges are typically performed using Remote Direct Memory Access (RDMA) over high-speed interconnects such as InfiniBand or RoCE.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep/ep-overview.png" alt="EP illustration" width="600"/>
+  <img src="/uccl-ep/ep-overview.png" alt="EP illustration" width="600"/>
   <em>Figure 1: Expert parallelism communication involves frequent dispatch and combine operations across multiple GPUs and nodes. 
 </em>
 </p>
@@ -78,7 +78,7 @@ Essentially, instead of having GPUs post RDMA operations directly to the NIC (as
 We note that UCCL-EP’s approach shares similarity with NVSHMEM’s IBRC solution that uses CPU proxies as well, but differs significantly from them by leveraging multiple CPU proxy threads for performance, and supporting a wide range of vendors for portability.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep/ep-illustration.png" alt="UCCL-EP illustration" width="600"/>
+  <img src="/uccl-ep/ep-illustration.png" alt="UCCL-EP illustration" width="600"/>
   <em>Figure 2: RDMA commands initiated by the GPU are handed off to multiple CPU proxy threads. 
 </em>
 </p>
@@ -96,7 +96,7 @@ Moreover, each control command in expert parallelism typically represents a **ba
 A central challenge in UCCL-EP is building an efficient **forwarding channel between GPUs and CPUs** that can sustain tens of millions of RDMA requests per second without becoming a bottleneck. UCCL-EP implements this channel as a **lock-free FIFO queue** shared between GPU producers and CPU consumers. Each GPU enqueues lightweight RDMA transfer descriptors into the queue, while multiple CPU threads dequeue and execute them.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep/ep-fifo.png" alt="UCCL-EP FIFO illustration" width="400"/>
+  <img src="/uccl-ep/ep-fifo.png" alt="UCCL-EP FIFO illustration" width="400"/>
   <em>Figure 3: UCCL-EP employs multiple channels per GPU; The tail is read by CPU thread and allocated on host, the head is read and updated by GPU thread and allocated on device. It further caches the tail value on GPU for faster access. Each TransferCmd is small, occupying only 128 bits. 
 </em>
 </p>
@@ -126,7 +126,7 @@ To enable UCCL EP work with diverse GPU vendors, we have taken the first step in
 On EFA, we observe UCCL-EP significantly outperforms other baselines as we increase the number of tokens in dispatch and combine. We used unmodified [Perplexity MoE Kernels](https://github.com/perplexityai/pplx-kernels/tree/master) and ran on H200 with EFA NICs. For the NVSHMEM and Torch baselines, we wrote an efficient packing and unpacking kernel, and relied on their respective AlltoAll APIs to distribute packed tokens to destination ranks in a single contiguous transfer. 
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/uccl-ep/ep-efa.png" alt="UCCL-EP EFA results" width="500"/>
+  <img src="/uccl-ep/ep-efa.png" alt="UCCL-EP EFA results" width="500"/>
   <em>Figure 4: On 2 nodes, H200 + EFA (400 Gbps). PPLX errored out for 4096 tokens.
 </em>
 </p>

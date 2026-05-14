@@ -9,7 +9,7 @@ tags:
   - AI
   - RDMA
 pubDate: 2025-05-26
-cover: https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-uccl/uccl_tran_cover.png
+cover: /about-uccl/uccl_tran_cover.png
 coverAlt: About
 author: UCCL Team
 ---
@@ -39,7 +39,7 @@ Operational evidence from several large-scale deployments underscores the proble
 UCCL-Tran is a software-only extensible transport layer for GPU networking. It is designed to address the challenges of fast-evolving ML workloads and the limitations of existing RDMA NICs. UCCL-Tran provides a flexible and extensible framework that allows developers to implement custom transport protocols and congestion control algorithms tailored to the specific needs of each ML workload. 
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-uccl/arch.png" alt="UCCL-Tran Architecture" width="600"/>
+  <img src="/about-uccl/arch.png" alt="UCCL-Tran Architecture" width="600"/>
   <em>Figure 1: UCCL-Tran architecture.</em>
 </p>
 
@@ -68,12 +68,12 @@ different control path logic like packet reliability and CC; this heterogeneity 
 UCCL-Tran's architecture revolves around a clean separation of control logic and data movement. All decisions that benefit from rapid iteration—such as congestion control, path selection, and loss recovery—run in user space on the CPU, while the heavy‐weight transfer of tensor data stays on the NIC/GPU data path via GPUDirect DMA. This design places three concrete requirements on the transport substrate: minimal hardware intervention in the data path, direct GPU memory access, and compatibility with the diverse queue-pair (QP) types offered by different RDMA vendors. Whenever available, UCCL-Tran chooses the Unreliable Connection (UC) QP because it offers NIC-side segmentation/reassembly yet leaves congestion control and reliability to software. For NICs that lack UC, it falls back to Reliable Connection (RC) with hardware CC disabled, or, as a last resort, Unreliable Datagram (UD), accepting higher CPU cost in exchange for full software control. 
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-uccl/uc_rc_decouple.png" alt="UCCL-Tran UC/RC decoupling" width="600"/>
+  <img src="/about-uccl/uc_rc_decouple.png" alt="UCCL-Tran UC/RC decoupling" width="600"/>
   <em>Figure 2: Moving control paths to CPU via RDMA UC/RC.</em>
 </p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-uccl/ud_decouple.png" alt="UCCL-Tran UD decoupling" width="800"/>
+  <img src="/about-uccl/ud_decouple.png" alt="UCCL-Tran UD decoupling" width="800"/>
   <em>Figure 3: Moving control paths to CPU via RDMA UD.</em>
 </p>
 
@@ -84,7 +84,7 @@ Operating over UD, however, raises practical issues because the NIC no longer re
 One of the key motivations for GPU network extensibility is to harness the multipath capacity of modern datacenter networks. UCCL-Tran achieves this by using multiple UC, RC, or UD QPs. Basically, network traffic from different QPs will likely go through different network paths, as both RoCE and Infiniband usually use ECMP (Equal-Cost Multi-Path) for multipath routing with source and destination QP numbers as the hash inputs. For UC and RC, UCCL-Tran by default uses 256 QPs, which provides maximum 256 different network paths as used by recent transport research. For UD, UCCL-Tran uses a much smaller number of QPs by combining different source and destination QPs. For example, 16 source UD QPs and 16 destination UD QPs will provide maximum 16×16=256 different network paths, because for connection-less UD, each source QP can send packets to any destination QP. 
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-uccl/multipath.png" alt="UCCL-Tran multipathing" width="600"/>
+  <img src="/about-uccl/multipath.png" alt="UCCL-Tran multipathing" width="600"/>
   <em>Figure 4: Harnessing multi-path.</em>
 </p>
 
@@ -108,19 +108,19 @@ To demonstrate the versatility of this interface and the power of UCCL-Tran's ex
 
 1. We implement a multipath transport protocol that mitigates flow collisions by leveraging packet spraying—randomly sending packets from a single connection across different paths. This transport achieves 3.3 × higher throughput for collective communication over AWS's SRD on EFA NICs. 
     <p align="center">
-      <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-uccl/alltoall_perf.png" alt="UCCL-Tran alltoall EFA" width="600"/>
+      <img src="/about-uccl/alltoall_perf.png" alt="UCCL-Tran alltoall EFA" width="600"/>
       <em>Figure 5: UCCL-Tran vs. NCCL on 4 AWS p4d.24xlarge VMs (NVLink disabled to simulate a larger testbed).</em>
     </p>
 
 2. We implement the receiver-driven EQDS [^4] protocol to handle network incast in MoE-like workloads, reducing message tail latency by 4.9 × compared with InfiniBand's built-in transport. 
     <p align="center">
-      <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-uccl/incast.png" alt="UCCL-Tran incast" width="600"/>
+      <img src="/about-uccl/incast.png" alt="UCCL-Tran incast" width="600"/>
       <em>Figure 6: Complementary CDF of FCT (Flow Completion Time) on Nvidia ConnectX-7 InfiniBand NICs when co-locating 15-to-1 incast traffic and permutation traffic.</em>
     </p>
 
 3. We implement selective retransmission for efficient loss recovery and demonstrate its superiority over RDMA hardware transport under packet loss. Prior work has reported that RDMA hardware transport can only keep 20-40% of throughput under 0.1% packet loss [^5], while UCCL-Tran can keep 60-80%. 
     <p align="center">
-      <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-uccl/packetloss.png" alt="UCCL-Tran packet loss" width="600"/>
+      <img src="/about-uccl/packetloss.png" alt="UCCL-Tran packet loss" width="600"/>
       <em>Figure 7: Performance comparison on Nvidia ConnectX-7 InfiniBand NICs under different instrumented packet loss rates.</em>
     </p>
 

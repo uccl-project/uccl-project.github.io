@@ -8,13 +8,13 @@ tags:
   - Fused Kernels
   - RDMA
 pubDate: 2026-05-08
-cover: https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/mkernel.png
+cover: /mkernel/mkernel.png
 coverAlt: mKernel
 author: UCCL Team
 ---
 
 <p>
-<strong>By: Ziming Mao, the UCCL team
+<strong>By: Ziming Mao, and the UCCL team
 <br>
 Date: May 8, 2026
 </strong>
@@ -77,22 +77,22 @@ Both clusters give 50 GB/s of inter-node bandwidth per GPU; the difference is in
 mKernel is benchmarked against several baselines for each workload: NCCL, Triton-distributed, Flux, Mercury, MagiAttention, Transformer-Engine, and ring-flash-attention. We are still doing further benchmarking on larger scale.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/gemm_ar_cx7.png" alt="GEMM + AllReduce on ConnectX-7" width="700" style="margin-bottom:0;"/>
+  <img src="/mkernel/gemm_ar_cx7.png" alt="GEMM + AllReduce on ConnectX-7" width="700" style="margin-bottom:0;"/>
   <em style="display:block;margin-top:0.5rem;">GEMM + AllReduce</em>
 </p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/ring_attn_cx7.png" alt="Ring Attention on ConnectX-7" width="700" style="margin-bottom:0;"/>
+  <img src="/mkernel/ring_attn_cx7.png" alt="Ring Attention on ConnectX-7" width="700" style="margin-bottom:0;"/>
   <em style="display:block;margin-top:0.5rem;">Ring Attention</em>
 </p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/gemm_rs_cx7.png" alt="GEMM + ReduceScatter on ConnectX-7" width="700" style="margin-bottom:0;"/>
+  <img src="/mkernel/gemm_rs_cx7.png" alt="GEMM + ReduceScatter on ConnectX-7" width="700" style="margin-bottom:0;"/>
   <em style="display:block;margin-top:0.5rem;">GEMM + ReduceScatter</em>
 </p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/ag_gemm_cx7.png" alt="AllGather + GEMM on ConnectX-7" width="700" style="margin-bottom:0;"/>
+  <img src="/mkernel/ag_gemm_cx7.png" alt="AllGather + GEMM on ConnectX-7" width="700" style="margin-bottom:0;"/>
   <em style="display:block;margin-top:0.5rem;">AllGather + GEMM</em>
 </p>
 
@@ -102,27 +102,27 @@ mKernel is benchmarked against several baselines for each workload: NCCL, Triton
 We also run on the AWS EFA cluster against the same set of baselines.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/ag_gemm_efa.png" alt="AllGather + GEMM on EFA" width="700" style="margin-bottom:0;"/>
+  <img src="/mkernel/ag_gemm_efa.png" alt="AllGather + GEMM on EFA" width="700" style="margin-bottom:0;"/>
   <em style="display:block;margin-top:0.5rem;">AllGather + GEMM</em>
 </p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/gemm_ar_efa.png" alt="GEMM + AllReduce on EFA" width="700" style="margin-bottom:0;"/>
+  <img src="/mkernel/gemm_ar_efa.png" alt="GEMM + AllReduce on EFA" width="700" style="margin-bottom:0;"/>
   <em style="display:block;margin-top:0.5rem;">GEMM + AllReduce</em>
 </p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/dispatch_gemm_efa.png" alt="MoE Dispatch + GEMM on EFA" width="700" style="margin-bottom:0;"/>
+  <img src="/mkernel/dispatch_gemm_efa.png" alt="MoE Dispatch + GEMM on EFA" width="700" style="margin-bottom:0;"/>
   <em style="display:block;margin-top:0.5rem;">MoE Dispatch + GEMM</em>
 </p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/ring_attention_efa.png" alt="Ring Attention on EFA" width="700" style="margin-bottom:0;"/>
+  <img src="/mkernel/ring_attention_efa.png" alt="Ring Attention on EFA" width="700" style="margin-bottom:0;"/>
   <em style="display:block;margin-top:0.5rem;">Ring Attention</em>
 </p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/mkernel/gemm_rs_efa.png" alt="GEMM + ReduceScatter on EFA" width="700" style="margin-bottom:0;"/>
+  <img src="/mkernel/gemm_rs_efa.png" alt="GEMM + ReduceScatter on EFA" width="700" style="margin-bottom:0;"/>
   <em style="display:block;margin-top:0.5rem;">GEMM + ReduceScatter</em>
 </p>
 
