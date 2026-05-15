@@ -9,7 +9,7 @@ tags:
   - Fault Tolerance
   - Systems
   - OSDI
-pubDate: 2026-05-14
+pubDate: 2026-05-15
 cover: /continuum-blog/datacenter.png
 coverAlt: TrainMover Overview — Two-phase machine migration design
 author: ChonLam Lao
@@ -18,7 +18,7 @@ author: ChonLam Lao
 <!-- <p>
 <strong>By: <a href="https://laochanlam.com/">ChonLam Lao</a>, <a href="https://jqgao.me/">Jiaqi Gao</a> and the TrainMover team
 <br> -->
-Date: May 14, 2026
+Date: May 15, 2026
 </strong>
 </p>
 
@@ -55,15 +55,17 @@ And failures are not rare. Alibaba's FALCON [^4] reports that 60% of large-scale
 
 The financial stakes are enormous. Training across 16K GPUs with AWS pricing costs $1.44M per day [^12]. A single interruption on an 8,192-GPU job — even with a fully automated recovery stack [^1] — incurs **6.47 minutes of downtime**.
 
-What makes this especially alarming is how non-linearly the damage scales. A restart time of just a few minutes looks tolerable in isolation — but combine it with the MTTF of a large cluster and you get a collapse in effective throughput that accelerates as you add more GPUs.
+What makes this especially alarming is how non-linearly the damage scales. A restart time of just a few minutes looks tolerable in isolation — but combine it with the MTTF of a large cluster and you get a collapse in effective throughput (ETTR) that accelerates as you add more GPUs.
+
+
+> **ETTR** is the fraction of time the cluster is actually making training progress, rather than restarting or recovering. An ETTR of 0.6 means 40% of your GPU time is wasted.
+
 
 <p align="center">
 <img src="/continuum-blog/scale-throughput-loss.png" alt="Impact of downtime on ETTR at different GPU scales" width="75%"/>
 <br>
 <em>ETTR (Effective Training Time Ratio) as a function of cluster scale. Even a fixed per-interruption downtime causes throughput efficiency to collapse at production scales — Llama 3 (16K GPUs) and Grok 3 (80K+) operate deep in the red zone. Reducing downtime from minutes to seconds shifts the entire curve upward.</em>
 </p>
-
-> **ETTR** is the fraction of time the cluster is actually making training progress, rather than restarting or recovering. An ETTR of 0.6 means 40% of your GPU time is wasted.
 
 This is the "downtime optimization space" — the gap between where training efficiency is today and where it could be with fast recovery. At 64K GPUs it represents **$0.95M per day** in wasted compute [^3] [^6]. TrainMover's goal is to reclaim it.
 
