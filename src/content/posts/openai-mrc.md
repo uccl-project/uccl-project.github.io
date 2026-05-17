@@ -12,11 +12,11 @@ tags:
 pubDate: 2026-05-12
 cover: https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/openai-mrc/openai-mrc.png
 coverAlt: OpenAI MRC
-author: Zhongjie Chen, the UCCL Team
+author: Zhongjie Chen, Xizhi Zhang, the UCCL Team
 ---
 
 <p>
-<strong>By: Zhongjie Chen, the UCCL team
+<strong>By: Zhongjie Chen, Xizhi Zhang, the UCCL team
 <br>
 Date: May 12, 2026
 </strong>
