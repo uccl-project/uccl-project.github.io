@@ -44,7 +44,7 @@ export const FooterLinks = [
 // Social Links, src/components/Footer.astro
 export const SocialLinks = [
   {
-    href: "https://github.com/uccl-project",
+    href: "https://github.com/uccl-project/uccl",
     icon: "tabler:brand-github",
     label: "GitHub",
   },
