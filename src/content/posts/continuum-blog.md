@@ -9,16 +9,16 @@ tags:
   - Fault Tolerance
   - Systems
   - OSDI
-pubDate: 2026-05-15
+pubDate: 2026-05-18
 cover: /continuum-blog/datacenter.png
 coverAlt: TrainMover Overview — Two-phase machine migration design
-author: ChonLam Lao
+author: the UCCL team
 ---
 
-<!-- <p>
-<strong>By: <a href="https://laochanlam.com/">ChonLam Lao</a>, <a href="https://jqgao.me/">Jiaqi Gao</a> and the TrainMover team
-<br> -->
-Date: May 15, 2026
+<p>
+<strong>By: the UCCL team
+<br>
+Date: May 18, 2026
 </strong>
 </p>
 
@@ -26,16 +26,13 @@ Date: May 15, 2026
 <p>
 Training a large language model is a weeks-long marathon across thousands of GPUs. When something breaks — and something always breaks — every GPU stops and waits. This post walks through a paper accepted at <strong>OSDI '26</strong> — <a href="https://arxiv.org/abs/2412.12636"><strong>TrainMover</strong></a> — that cuts recovery downtime to <strong>~20 seconds</strong> with <strong>zero additional GPU memory</strong>. The core insight is surprisingly clean, and the results are hard to argue with.
 </p>
-<p>
-<!-- 📄 Paper: <a href="https://arxiv.org/abs/2412.12636">TrainMover: An Interruption-Resilient Runtime for ML Training</a> <em>(arXiv version; final version to appear at OSDI '26)</em> -->
-</p>
 </div>
 
 ---
 
-I recently read through the TrainMover paper, accepted at OSDI '26, and thought it was worth writing up. The problem it tackles — how to recover a large training job after a machine failure — sounds unglamorous. But once you work through the numbers, it becomes clear this is one of the more consequential systems problems in large-scale ML right now.
+The UCCL team recently reads through the TrainMover paper, accepted at OSDI '26, and thought it was worth writing up. The problem it tackles — how to recover a large training job after a machine failure — sounds unglamorous. But once you work through the numbers, it becomes clear this is one of the more consequential systems problems in large-scale ML right now.
 
-Here is what the paper argues, and why I think it's worth paying attention to.
+Here is what the paper argues, and why we think it's worth paying attention to.
 
 ---
 
@@ -177,7 +174,7 @@ TrainMover was evaluated on a **1,024-GPU testbed** across models from GPT-2.7B 
 
 ### Downtime at Scale
 
-| Scale | TrainMover (expected) | TrainMover (unexpected) | Megatron-LM |
+| Scale | TrainMover (planned failure) | TrainMover (unexpected failure) | Megatron-LM |
 |:---:|:---:|:---:|:---:|
 | 32 GPUs | 11.5s | 19.6s | ~80s |
 | 128 GPUs | 14.5s | 20.2s | ~190s |
@@ -222,9 +219,7 @@ Full results for each use case are in the paper.
 
 ## Conclusion
 
-TrainMover achieves **~20 seconds of migration downtime** at 1,024-GPU scale with **zero memory overhead**, handling both planned data center events and unexpected hardware failures. **Accepted at OSDI '26** — the implementation will be open-sourced soon. For the full technical details, check the [arXiv paper](https://arxiv.org/abs/2412.12636) or find the team at OSDI '26 in Seattle!
-
----
+TrainMover achieves **~20 seconds of migration downtime** at 1,024-GPU scale with **zero memory overhead**, handling both planned data center events and unexpected hardware failures. **Accepted at OSDI '26** — according to TrainMover authors, their implementation will be open-sourced soon. For the full technical details, check the [arXiv paper](https://arxiv.org/abs/2412.12636) or find them at OSDI '26 in Seattle!
 
 *Questions or thoughts? Reach out to the TrainMover team!*
 
