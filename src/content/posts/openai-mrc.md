@@ -7,6 +7,7 @@ category:
 tags:
   - MRC
   - SRv6
+  - SRD
   - Multi-plane
   - UCCL-Tran
 pubDate: 2026-05-12
@@ -23,7 +24,6 @@ Date: May 12, 2026
 </p>
 
 <div class="tldr">
-<p><strong>Keywords:</strong> MRC; SRv6; Multi-plane; UCCL-Tran</p>
 <p>
 <strong>MRC</strong> (Multipath Reliable Connection) [1] is a new RDMA transport from OpenAI/Microsoft/AMD/Broadcom/NVIDIA. Based on RoCEv2 RC, it adds <strong>per-QP packet spraying, out-of-order delivery, and selective retransmission, UET's congestion control</strong>, together with <strong> multi-plane topology and static SRv6 source routing</strong>. The OCP MRC 1.0 spec [2] is out, and CX-8, AMD Pollara, and Broadcom Thor Ultra already ship it.
 </p>
@@ -31,28 +31,84 @@ Date: May 12, 2026
 
 ## 1. What MRC actually is
 
-## 1.1 Modern Transport protocol
+## 1.1 Modern Transport for AI Workloads
 
-- **Per-packet entropy.** Every data packet carries a 32-bit entropy value (EV) striped across the UDP source port and IPv6 flow label. At QP startup the NIC builds an active EV set of typically 128–256 entries, plus a backup set, and rotates through it packet by packet. ECMP and SRv6-based source routing are both supported.
-- **PFC off, lossy Ethernet.** MRC explicitly disables PFC. Spraying makes PFC's per-priority queueing approximately useless and head-of-line blocking actively harmful.
-- **Congestion control: UET NSCC.** MRC uses NSCC — UET's Network-Signalled Congestion Control [4] (§3.6.13.3–7). It is a **sender-side, SACK-clocked, window-based, ECN + RTT** algorithm whose goal is to keep the requestor→responder queueing delay under a configured target queuing delay.
-- **Selective retransmit + packet trimming.** SACK identifies exactly which packets were lost; trimmed packets (header-only, priority-forwarded under congestion) trigger fast NACKs and let MRC distinguish congestion loss from link-failure loss.
-- **Out-of-order placement.** Every data packet carries the RDMA virtual address and rkey, so the receiver can DMA each packet into its final memory location regardless of arrival order. Messages on the same QP can also complete out of order with respect to each other; the only ordering primitive left is `WRITE_WITH_IMM`, which acts as a barrier and is guaranteed to complete only after all preceding WRITEs on the QP have landed.
+- **Packet spraying.** Each MRC QP maintains an Entropy Value (EV) profile. At QP startup the NIC builds an active EV set of typically 128–256 entries, plus a backup set. A programmable Path Selection stage selects an EV for each packet. Each EV is mapped to a specific path, so packets get sprayed across multiple paths. MRC provides three different EV→path mapping models, including ECMP hashing, Structured EV, and SRv6 source routing.  
+
+<p align="center">
+  <img src="/assets/openai-mrc/mrc-multipath.png" alt="MRC multipath data path: ibv_post_send hands a message to the MRC QP, Path Selection sprays packets across multiple EV-defined paths, and per-path SACK/NACK feedback (with ECN or TRIMMED signals) flips EV entries to SKIP in the EV Profile table to avoid congested or lossy paths" width="430"/>
+</p>
+<p align="center"><em>Figure1: After the message is handed to the MRC QP, the Path Selection stage picks an EV from the QP's active EV set for every packet, then packets get sprayed across the network paths in parallel. The sender uses SACK/NACK to update the EV state: an EV that sees ECN or trims gets flipped from `GOOD` to `SKIP` and is temporarily removed from the active set, so subsequent packets steer away from the congestion path.</em></p>
+
+&nbsp;&nbsp;&nbsp;&nbsp;🔧 **Fixes RC pain point — *single-path-per-QP*.** RC QP pins all its traffic to one 5-tuple, so a single ECMP hash collision or one bad link silently bottlenecks (or kills) the QP and leaves the rest of the fabric unused.
+
+- **Congestion control: UET NSCC.** MRC uses NSCC — UET's Network-Signalled Congestion Control [4]. It is a **sender-side, SACK-clocked, window-based, ECN + RTT** algorithm whose goal is to keep the requestor→responder queueing delay under a configured target queuing delay.  
+  &nbsp;&nbsp;&nbsp;&nbsp;🔧 **Fixes RC pain point — *PFC or DCQCN*.** RoCEv2 relies on lossless Ethernet (PFC) plus a rate-based CC (DCQCN) that reacts slowly to ECN, suffers from head-of-line blocking, PFC storms, and victim flows. NSCC is window-based and clocked by SACK/ECN/RTT, so it converges in O(RTT) without needing a lossless fabric underneath.
+- **Selective retransmission + packet trimming.** MRC disables Priority Flow Control (PFC) and embraces lossy network with efficient selective retransmission. SACKs are used to identify exactly which packets were lost; trimmed packets (header-only, priority-forwarded under congestion) trigger fast NACKs and let MRC distinguish congestion loss from link-failure loss.  
+
+
+<p align="center">
+  <img src="/assets/openai-mrc/sack-trim.png" alt="Selective retransmission + packet trimming: the SRC NIC sprays DATA across two switch paths; the DST NIC reports gaps via a SACK bitmap so SRC retransmits only the missing PSNs (RTX DATA); when a switch drops a payload due to congestion, packet trimming forwards a header-only stub that fires a fast NACK, so SRC retransmits exactly that packet without Go-Back-N" width="520"/>
+</p>
+<p align="center"><em>Figure3: the destination NIC reports gaps to the source via a SACK bitmap, so the source retransmits only the missing PSNs instead of Go-Back-N. When a switch decides to drop a payload due to congestion, the switch forwards a header-only stub that elicits an immediate NACK, letting the source patch the loss.</em></p>
+
+  &nbsp;&nbsp;&nbsp;&nbsp;🔧 **Fixes RC pain point — *Go-Back-N retransmission*.** RC drops everything after a single lost PSN and replays the entire window, which is catastrophic under spraying and lossy operation.
+
+- **Out-of-order placement.** Every data packet carries the virtual address, rkey and dma length through RDMA Extended Transport Header (RETH), so the receiver can DMA each packet into its final memory location regardless of arrival order. Messages on the same QP can also complete out of order with respect to each other; the only ordering primitive left is `WRITE_WITH_IMM`, which acts as a barrier and is guaranteed to complete only after all preceding WRITEs on the QP have landed.
+
+<p align="center">
+  <img src="/assets/openai-mrc/ooo-placement.png" alt="Out-of-order placement: every WRITE FIRST/MIDDLE/LAST packet carries its own RETH (VA, rkey, len) so the receiver NIC DMAs each payload directly to its final memory slot regardless of arrival order; a trailing WRITE_WITH_IMM is staged until all preceding WRITEs on the QP land, then generates a CQE to the CPU/GPU" width="520"/>
+</p>
+<p align="center"><em>Figure4: every <code>WRITE packet (FIRST/MIDDLE/LAST/LAST with IMM/ONLY/ONLY with IMM)</code> packet carries its own RETH (<code>VA</code>, <code>rkey</code>, <code>len</code>), so the receiver NIC can DMA each payload directly into its final memory slot in any arrival order. <code>WRITE_WITH_IMM</code> is always staged inside the NIC until every preceding WRITE on the QP has landed, then generates a CQE to the CPU/GPU.</em></p>
+
+&nbsp;&nbsp;&nbsp;&nbsp;🔧 **Fixes RC pain point — *strict in-order delivery*.** RC requires Packet Sequence Numbers (PSNs) to land in order on the wire, which is fundamentally incompatible with spraying — any reordering becomes a loss event.
+
 - **Implemented on the latest generation of smart RDMA NICs.** MRC is not a software protocol — it is baked into the data plane of three vendors' newest silicon: **NVIDIA ConnectX-8** (800 Gb/s), **AMD Pollara / Vulcano** (400/800 Gb/s), and **Broadcom Thor Ultra** (800 Gb/s). The host-side API is **`libibverbs`-compatible**: applications continue to use the standard verbs surface (QPs, MRs, work-request posting, CQ polling), so existing RDMA stacks like NCCL/RCCL plug in without a new user-space library.
 
-> *UCCL-Tran lens.* Almost every protocol-level bet here mirrors decisions UCCL-Tran made in software: per-packet (or per-chunk) spraying across hundreds of logical paths, PFC-off lossy operation, out-of-order DMA placement, and selective retransmission instead of go-back-N. The MRC paper is, in many ways, a hardware realization of the same architectural answer — and that is exactly why we find it interesting. UCCL-Tran keeps that same surface in CPU software, so a new CC profile (e.g., receiver-driven EQDS for MoE incast), a new LB policy, or a new loss-tolerance scheme is a code change, not a new tape-out. We see MRC as raising the floor; UCCL-Tran keeps the ceiling open. **And just as importantly: MRC only runs on the very latest silicon (CX-8 / Pollara / Thor Ultra), while UCCL-Tran brings the same multipath, OoO, selective-retransmit power to the *legacy* RDMA NICs already deployed in the field — CX-5/6/7, BlueField, EFA, Thor 1/2 — without a hardware refresh, albeit with some design tradeoffs.** 
+> *UCCL-Tran lens.* Many protocol-level bet here mirrors decisions UCCL-Tran made in software: per-packet (or per-chunk) spraying across hundreds of logical paths, PFC-off lossy operation, out-of-order DMA placement, and selective retransmission instead of go-back-N. The MRC paper is, in many ways, a hardware realization of the same architectural answer — and that is exactly why we find it interesting. UCCL-Tran keeps that same surface in CPU software, so a new CC profile (e.g., receiver-driven EQDS for MoE incast), a new LB policy, or a new loss-tolerance scheme is a code change, not a new tape-out. We see MRC as raising the floor; UCCL-Tran keeps the ceiling open. **And just as importantly: MRC only runs on the very latest silicon (CX-8 / Pollara / Thor Ultra), while UCCL-Tran brings the same multipath, OoO, selective-retransmit power to the *legacy* RDMA NICs already deployed in the field — CX-5/6/7, BlueField, EFA, Thor 1/2 — without a hardware refresh, albeit with some design tradeoffs.** 
 
 ## 1.2 Multi-plane Topology
-The topology piece is just as important as the transport piece. MRC leans on a key capability of modern NICs — **per-lane port breakout** — to turn one 800 Gb/s NIC port into 4×200 or 8×100 Gb/s independent network ports, and then builds **one Clos plane per lane**. This is the crucial distinction from the more familiar **multi-rail** design (e.g., Alibaba HPN, Meta's rail-optimized fabrics), where each NIC has a single port that lives in a single rail. Multi-plane via NIC breakout gets you:
+The topology piece is just as important as the transport piece. MRC leans on a key capability of modern NICs — **per-lane port breakout** — to turn one 800 Gb/s NIC port into 4×200 or 8×100 Gb/s independent network ports, and then builds **one Clos plane per lane**. This is the crucial distinction from the more familiar **multi-rail** design (e.g., Alibaba HPN, Meta's rail-optimized fabrics), where each NIC has a single port that lives in a single rail.
+
+<p align="center">
+  <img src="/assets/openai-mrc/cx8-multiplane.png" alt="ConnectX-8 multi-plane vs. standard single-port NIC connectivity: on the left, each CX-8 NIC's 800 Gb/s port is split into 4 independent lanes that fan out into 4 separate Spectrum-X Ethernet planes, scaling a two-tier non-blocking fat-tree to 256×512 = 128K GPUs; on the right, a standard 1-port-4-lane NIC stays inside a single plane and tops out at 64×32 = 2K GPUs at the same switch radix" width="900"/>
+</p>
+<p align="center"><em>Figure5: NIC port breakout in action — on the left, each ConnectX-8 NIC's 800 Gb/s port is split into 4 independent lanes that feed 4 separate Spectrum-X Ethernet planes, scaling a two-tier non-blocking fat-tree to <strong>128K GPUs</strong> at switch radix 512; on the right, a standard 1-port-4-lane NIC lives in a single plane and tops out at <strong>2K GPUs</strong> at the same radix. (Source: NVIDIA Hot Chips 2025, ConnectX-8 talk [6].)</em></p>
+
+Multi-plane via NIC breakout gets you:
 
 - **Two switch tiers for 100K+ GPUs.** Each switch effectively has 8× the port count (a 64×800G switch becomes a 512×100G switch), so a 51.2 Tb/s switch alone can fan out to 512 NICs per tier. Two tiers cover 131,072 GPUs (vs. needing three tiers, oversubscription, or rails for a single-plane design). Two tiers means **fewer hops, lower tail latency, fewer optics (~2/3), fewer switches (~3/5)**, and fewer places for partial failures to hide.
 - **Failure blast radius shrinks by an order of magnitude.** Losing one T0–T1 link removes 1/256 ≈ **0.4%** of a NIC's capacity in an 8-plane network, versus ~3% in a single-plane 800 Gb/s design. Losing one *NIC-side* port costs 12% of NIC bandwidth — survivable, the job keeps running on the remaining planes. Multi-rail can't ride out a port loss this gracefully because each rail typically maps to a different NIC, and a rail going down takes that NIC out of the job.
 - **Locality is much easier.** A T0 switch reaches 256 NICs in one hop instead of 32, so collectives like all-gather and ring-attention can exploit T0-local placement far more often, cutting load on the T1 layer.
 - **Built-in load-balancing leverage.** MRC's per-packet EV spraying directly fills all planes equally; the topology and the transport are co-designed for this.
 
+Multi-plane is also what makes MRC's **per-EV failure detection and recovery** practical. Because every EV maps to a specific path through a specific plane, the sender NIC can keep a small EV state table and treat path health as a per-entry property rather than a fabric-wide event. When a packet on EV 42 times out (figure below, left), that EV is locally marked `BAD` and immediately removed from the spraying set — the other EVs keep flowing through the remaining planes, so the QP never stalls and the blast radius of a single link fault stays at one entry out of hundreds.
+
+<p align="center">
+  <img src="/assets/openai-mrc/topo-fail.png" alt="Per-EV failure detection: a link drop in one plane causes packet EV 42 to time out at the source NIC, which marks EV 42 as BAD in its local EV state table and stops spraying onto that path while the other EVs continue to deliver traffic through the surviving planes" width="900"/>
+</p>
+<p align="center"><em>Figure6: when a link fails, only the EV (path) traversing it is timed out and marked <code>BAD</code>; the other EVs continue to drain traffic through the remaining planes.</em></p>
+
+Recovery is the symmetric operation (figure below). The source NIC periodically emits tiny **probe packets** on its `BAD` EVs; as soon as a probe round-trips successfully, the corresponding entry flips back to `GOOD` and the EV rejoins the active spraying set. There is no fabric-wide reconvergence event, no controller in the loop, and no need to renegotiate the QP — the data plane self-heals at EV granularity, on the order of an RTT after the link comes back.
+
+<p align="center">
+  <img src="/assets/openai-mrc/topo-recover.png" alt="Per-EV failure recovery: the source NIC sends probe packets on BAD EVs, and once a probe on EV 42 returns successfully it flips the EV state back to GOOD and resumes spraying onto that path, all without any control-plane coordination" width="900"/>
+</p>
+<p align="center"><em>Figure7: probe packets on a <code>BAD</code> EV elicit a response once the link is back; the entry flips to <code>GOOD</code> and is re-added to the spraying set within an RTT, with no control-plane involvement.</em></p>
+
 > *UCCL-Tran lens.* We think multi-plane via NIC port breakout is **the right direction** — it gets you two-tier 100K-GPU reach, an order-of-magnitude smaller failure blast radius, and a topology that composes naturally with packet-level spraying. UCCL-Tran is fully on board with this destination. That said, the UCCL paper makes the equally important practical point that **rebuilding the fabric is slow and expensive**: new hardware, physical cabling, switch SKUs, optics inventory, and operator playbooks all have to change in lockstep. Most clusters today are single-plane or rail-optimized, and they will remain so for years. Software multipath transports like UCCL-Tran exist precisely to deliver most of the collision-avoidance benefit *on the fabric you already have*, while operators plan the longer multi-plane refresh. The two efforts are sequential, not competing.
 
-## 1.3. SRv6-based Source Routing
+## 1.3. SRv6 uSID Source Routing
+
+The OCP MRC 1.0 spec actually defines three ways the EV in a packet can be turned into a physical path — ECMP hashing, Structured EV, and SRv6 uSID source routing. The following table shows the three models side by side:
+
+<p align="center"><em>Table1: Comparison of three EV→Path Mapping Models</em></p>
+
+| Model                | EV → Path Mapping                                                                                     | Strength                                                                                         | Weakness                                                                                       |
+|----------------------|-------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------|
+| ECMP Hashing         | The switch hashes the EV along with specific packet header fields (UDP port, QPN, etc.) to pick a path. | Easy to deploy | No deterministic path control <br> No visibility into which path a packet took |
+| Structured EV       | The EV is split into fields (UDP port + IPv6 flow label) that directly map to switch forwarding decisions.| Deterministic control | Switch support required |
+| SRv6 uSID Source Routing (**MRC default**) | SRv6 explicitly defines a path from source to destination using micro-segments (uSID) to identify each hop in the path. The switches forward based on the SRv6 segments. | Deterministic control <br> Standardized and observable | Extra header overhead <br> Switch support required |
 
 The transport story gets most of the airtime, but the operational story is just as important — and arguably the harder thing to replicate. In the OpenAI production deployments, dynamic routing is *disabled* and each EV instead maps algorithmically (via SRv6 uSID templates) to a deterministic physical path. With SRv6 uSID source routing:
 
@@ -74,30 +130,37 @@ MRC is genuinely impressive engineering but it still has some limitations that w
 
   This matters more than it sounds. The "WRITE-only" pattern is fine for synchronous pretraining collectives, but it is awkward for several important newer workloads:
 
-  - **MoE dispatch / expert-parallel all-to-all** (e.g., DeepEP [5]) increasingly relies on **`ATOMIC` fetch-and-add** for fast, lock-free token-count exchange between senders and experts. Earlier DeepEP versions did fall back to `WRITE_WITH_IMM`, but that forced the receiver GPU to poll the CQ and re-post RQ entries on the critical path — extra GPU work that competes with the dispatch kernel and is generally regarded as a worse design. The switch to the atomic-based path landed in commit [2d0cf41](https://github.com/deepseek-ai/DeepEP/commit/2d0cf41).
-  - **KV transfer for prefill–decode disaggregation** wants `READ` so that the decode side pulls KV on demand without a coordination round-trip.
-  - **Parameter-server / control-plane traffic** wants two-sided `SEND/RECV`.
+  - **MoE dispatch / combine** (e.g., DeepEP [5]) increasingly relies on **`ATOMIC` fetch-and-add** for fast, lock-free token-count exchange between senders and experts. Earlier DeepEP versions did use `WRITE_WITH_IMM`, but that forced the receiver GPU to poll the CQ and re-post RQ entries on the critical path — extra GPU work that competes with the dispatch kernel and is generally regarded as a worse design. The switch to the atomic-based path landed in commit [2d0cf41](https://github.com/deepseek-ai/DeepEP/commit/2d0cf41).
+  - **KV transfer for PD disaggregation** wants `READ` so that the decode side pulls KV on demand without a coordination round-trip.
 
-- **`WRITE_WITH_IMM` has a small in-flight cap.** `WRITE_WITH_IMM` is not just "WRITE plus 4 bytes." The immediate-data CQE must be delivered to the responder **in order with respect to all prior WRITEs on the QP** — i.e., a `WRITE_WITH_IMM` cannot complete until every preceding WRITE has landed. In a sprayed, out-of-order data plane that means the NIC has to track per-QP barrier state and hold completion resources for every outstanding `WRITE_WITH_IMM`, which is exactly the kind of bookkeeping that does not scale on-chip. As a result MRC implementations cap the number of in-flight `WRITE_WITH_IMM` operations per QP (the spec calls this out and adds a dedicated "Inflight WriteImm limit exceeded" NACK code). Workloads that try to use `WRITE_WITH_IMM` as a fine-grained signaling primitive — one immediate per chunk — will hit this cap before they hit bandwidth.
+- **`WRITE_WITH_IMM` has a small in-flight cap.** The immediate-data CQE must be delivered to the responder **in order with respect to all prior WRITEs on the QP** — i.e., a `WRITE_WITH_IMM` cannot complete until every preceding WRITE has landed. In a sprayed, out-of-order data plane that means the NIC has to track per-QP barrier state and hold completion resources for every outstanding `WRITE_WITH_IMM`, which is exactly the kind of bookkeeping that does not scale on-chip. As a result MRC implementations cap the number of in-flight `WRITE_WITH_IMM` operations per QP (the spec calls this out and adds a dedicated "Inflight WriteImm limit exceeded" NACK code). Workloads that try to use `WRITE_WITH_IMM` as a fine-grained signaling primitive — one immediate per chunk — will hit this cap before they hit bandwidth.
 - **Built into the newest silicon only.** MRC ships on CX-8, AMD Pollara/Vulcano, and Broadcom Thor Ultra. The very large installed base of CX-5/6/7, BlueField, EFA, and Thor 1/2 cannot run MRC at all — a fleet-wide upgrade is on the order of years and many billions of dollars.
-- **Last-hop incast.** NSCC is solid, but in practice MRC leans on packet trimming + selective retransmit + receiver-side backpressure to absorb receiver-side bursts. For workloads with very skewed receiver-side hot spots (MoE serving with hot experts, prefill-decode disaggregation, irregular all-to-all), a receiver-driven scheduler (EQDS-style) is a strictly better answer — and it's unclear whether MRC can support this.
+- **Last-hop incast.** NSCC is solid, but in practice MRC leans on packet trimming + selective retransmit + receiver-side backpressure to absorb receiver-side bursts. For workloads with very skewed receiver-side hot spots (MoE serving with hot experts, PD disaggregation, irregular all-to-all), a receiver-driven scheduler (EQDS-style) is a strictly better answer — and it's unclear whether MRC can support this.
 
-## 3. Tradeoff summary: MRC vs. UCCL-Tran / UCCL-P2P
+## 3. Tradeoff summary: MRC vs. AWS SRD vs. UCCL-Tran / UCCL-P2P
 
-|                        | **MRC (hardware)**                              | **UCCL-Tran / UCCL-P2P (software)**                |
-|------------------------|-------------------------------------------------|----------------------------------------------------|
-| Where transport runs   | NIC ASIC data plane                             | Host CPU control path + RDMA UC/RC/UD or `AF_XDP` data path |
-| Hardware requirement   | CX-8 / Pollara·Vulcano / Thor Ultra only        | Runs on legacy NICs: CX-5/6/7, BlueField, EFA, Thor 1/2 |
-| Wire format            | Frozen by OCP MRC 1.0 spec                      | Open, change in software in weeks                  |
-| Spraying granularity   | Per-packet                                      | Per-chunk, per-packet for UD/AF_XDP   |
-| Verb surface           | `WRITE` + `WRITE_WITH_IMM` only                 | All verbs the underlying NIC exposes (incl. `READ`, `ATOMIC`, `SEND/RECV`) |
-| Congestion control     | UET NSCC (ECN + RTT, window-based)       | Pluggable: Cubic, EQDS receiver-driven, Swift, custom |
-| Loss recovery          | SACK + packet trimming, in-NIC                  | SACK + selective retransmit, in software           |
-| PFC                    | Off (lossy by design)                           | Off (lossy by design)                              |
-| Path selection         | EV → ECMP hash *or* SRv6 uSID source-route      | EV → ECMP hash; SRv6 not yet plumbed               |
-| Topology assumption    | Co-designed with multi-plane port-breakout fabric | Works on whatever fabric you already have (single-plane, rail, multi-plane) |
-| Time to ship a new idea | New silicon tape-out + spec revision + limited programmability          | Code change                                        |
-| Observation  | Limited by hardware interface       | Highly observable in software    |
+MRC, AWS SRD, and UCCL-Tran / UCCL-P2P all answer the same question — "how do we move ML traffic across a large GPU fabric reliably, with multipath, no PFC, and graceful loss recovery?" — but they make very different bets on *where* the transport lives and *how open* it is. MRC pushes the answer into a new generation of merchant silicon under an open OCP spec; AWS SRD bakes a similar answer into the closed Nitro / EFA data plane, tightly co-designed with the AWS VPC fabric [7]; UCCL-Tran / UCCL-P2P keeps the answer in CPU software, so it can ride on the legacy RDMA NICs already deployed in the field. The table below lines up the design choices side by side so the tradeoffs — performance ceiling, hardware dependency, openness, programmability, observability, and time-to-ship — are easy to compare.
+
+<p align="center"><em>Table2: Comparison of different transports</em></p>
+
+|                        | **MRC (hardware)**                              | **AWS SRD (hardware)**                          | **UCCL-Tran / UCCL-P2P (software)**                |
+|------------------------|-------------------------------------------------|-------------------------------------------------|----------------------------------------------------|
+| **Where transport runs**   | NIC ASIC data plane                             | Nitro / EFA NIC data plane                       | Host CPU control path + RDMA UC/RC/UD or `AF_XDP` data path |
+| **Hardware requirement**   | CX-8 / Pollara·Vulcano / Thor Ultra only        | AWS EFA-enabled instances only (Nitro)           | Runs on legacy NICs: CX-5/6/7, BlueField, EFA, Thor 1/2 |
+| **Wire format**            | Open, OCP MRC 1.0 spec                      | Closed, AWS-proprietary                           | Open                  |
+| **Spraying granularity**   | Per-packet                                      | Per-packet                                       | Per-chunk for UC/RC, per-packet for UD/AF_XDP   |
+| **Ordering model**         | OOO packet delivery, OOO message delivery, `WRITE_WITH_IMM` enforces order| OOO packet delivery, OOO message delivery | OOO packet/chunk delivery, In-order/OOO message delivery are both supported |
+| **Verb surface**           | `libibverbs`, `WRITE` + `WRITE_WITH_IMM` only                 | `libfabric`; `SEND/RECV` + `WRITE` + `READ`, no `ATOMIC` | All verbs the underlying NIC exposes (incl. `WRITE`, `READ`, `ATOMIC`, `SEND/RECV`) |
+| **Congestion control**     | UET NSCC (ECN + RTT, window-based)              | AWS-proprietary, Cubic-like, designed for VPC fabric | RTT-based, pluggable |
+| **Loss recovery**          | SACK + packet trimming, in-NIC                  | Selective retransmit, in-NIC    | SACK + selective retransmit, in software           |
+| **PFC**                    | Off (lossy by design)                           | Off (lossy by design, VPC fabric)                 | Off (lossy by design)                              |
+| **Packet spray**         | EV → ECMP hash, Structed EV, SRv6 uSID source-route      | Multi-path over AWS VPC (hash-based, fabric-managed) | EV → ECMP hash              |
+| **Path selection**         | Programmable      | Unprogrammable | Programmable              |
+| **Topology assumption**    | Co-designed with multi-plane port-breakout fabric | Co-designed with AWS VPC / Nitro fabric           | Works on whatever fabric you already have (single-plane, rail, multi-plane) |
+| **Time to ship a new idea** | New silicon tape-out + spec revision + limited programmability          | New Nitro firmware/silicon under AWS control     | Code change                                        |
+| **Openness / portability** | Open spec (OCP), multiple vendors                | AWS-only, not portable off AWS                    | Open, runs on any commodity RDMA/Ethernet NIC      |
+| **Observation**  | Limited by hardware interface       | Limited by hardware interface, AWS-controlled telemetry only   | Highly observable in software    |
+
 
 ## References
 
@@ -106,6 +169,8 @@ MRC is genuinely impressive engineering but it still has some limitations that w
 3. Y. Zhou, Z. Chen, Z. Mao, C. Lao, S. Yang, P. G. Kannan, J. Gao, Y. Zhao, Y. Wu, K. You, F. Ren, Z. Xu, C. Raiciu, I. Stoica. *UCCL-Tran: An Extensible Software Transport Layer for Machine Learning Workloads.* USENIX OSDI, 2026. <https://arxiv.org/pdf/2504.17307>
 4. Ultra Ethernet Consortium. *Ultra Ethernet Specification v1.0.* 2025. <https://ultraethernet.org/wp-content/uploads/sites/20/2025/06/UE-Specification-6.11.25.pdf>
 5. DeepSeek-AI. *DeepEP — An efficient expert-parallel communication library.* GitHub, 2025–2026. <https://github.com/deepseek-ai/DeepEP>
+6. NVIDIA. *ConnectX-8 SuperNIC.* Hot Chips 2025. <https://hc2025.hotchips.org/assets/program/conference/day1/CX8%20HotChips%20Aug25v2.pdf>
+7. L. Shalev, H. Ayoub, N. Bshara, E. Sabbag. *A Cloud-Optimized Transport Protocol for Elastic and Scalable HPC.* IEEE Micro, vol. 40, no. 6, 2020. <https://ieeexplore.ieee.org/document/9189994>
 
 
 
