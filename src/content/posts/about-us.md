@@ -9,7 +9,7 @@ tags:
   - AI
   - Sky Computing
 pubDate: 2025-05-26
-cover: https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/images/uccl_logo.png
+cover: /logos/uccl_logo.png
 coverAlt: About
 author: UCCL Team
 ---
@@ -23,7 +23,7 @@ We envision the next-generation AI/ML networking to have efficient CCL architect
   <tr>
     <td style="width: 25%; text-align: center; vertical-align: middle; height: 150px;">
       <img 
-        src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-us/yang_profile.png" 
+        src="/about-us/yang_profile.png" 
         width="100" 
         style="display: block; margin: 0 auto; border-radius:50%;" 
       /><br>
@@ -31,7 +31,7 @@ We envision the next-generation AI/ML networking to have efficient CCL architect
     </td>
     <td style="width: 25%; text-align: center; vertical-align: middle; height: 150px;">
       <img
-        src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-us/ziming_profile.jpeg"
+        src="/about-us/ziming_profile.jpeg"
         width="100"
         style="display: block; margin: 0 auto; border-radius:50%;"
       /><br>
@@ -39,7 +39,7 @@ We envision the next-generation AI/ML networking to have efficient CCL architect
     </td>
     <td style="width: 25%; text-align: center; vertical-align: middle; height: 150px;">
       <img 
-        src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-us/zhongjie_profile.png" 
+        src="/about-us/zhongjie_profile.png" 
         width="100" 
         style="display: block; margin: 0 auto; border-radius:50%;" 
       /><br>
@@ -47,7 +47,7 @@ We envision the next-generation AI/ML networking to have efficient CCL architect
     </td>
     <td style="width: 25%; text-align: center; vertical-align: middle; height: 150px;">
       <img
-        src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-us/yihan_profile.jpeg"
+        src="/about-us/yihan_profile.jpeg"
         width="100"
         style="display: block; margin: 0 auto; border-radius:50%;"
       /><br>
@@ -57,7 +57,7 @@ We envision the next-generation AI/ML networking to have efficient CCL architect
   <tr>
     <td style="width: 25%; text-align: center; vertical-align: middle; height: 150px;">
       <img
-        src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-us/chihan_profile.png"
+        src="/about-us/chihan_profile.png"
         width="100"
         style="display: block; margin: 0 auto; border-radius:50%;"
       /><br>
@@ -65,7 +65,7 @@ We envision the next-generation AI/ML networking to have efficient CCL architect
     </td>
     <td style="width: 25%; text-align: center; vertical-align: middle; height: 150px;">
       <img
-        src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-us/jinyao_profile.png"
+        src="/about-us/jinyao_profile.png"
         width="100"
         style="display: block; margin: 0 auto; border-radius:50%;"
       /><br>
@@ -73,7 +73,7 @@ We envision the next-generation AI/ML networking to have efficient CCL architect
     </td>
     <td style="width: 25%; text-align: center; vertical-align: middle; height: 150px;">
       <img
-        src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-us/shuang_profile.jpeg"
+        src="/about-us/shuang_profile.jpeg"
         width="100"
         style="display: block; margin: 0 auto; border-radius:50%;"
       /><br>
@@ -81,7 +81,7 @@ We envision the next-generation AI/ML networking to have efficient CCL architect
     </td>
     <td style="width: 25%; text-align: center; vertical-align: middle; height: 150px;">
       <img
-        src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/about-us/ion_profile.png"
+        src="/about-us/ion_profile.png"
         width="100"
         style="display: block; margin: 0 auto; border-radius:50%;"
       /><br>

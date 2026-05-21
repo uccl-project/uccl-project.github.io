@@ -6,4 +6,4 @@ dayjs.extend(utc);
 const { date, format = "YYYY-MM-DD" } = Astro.props;
 ---
 
-<span>{dayjs(date).format(format)}</span>
+<span>{dayjs.utc(date).format(format)}</span>

@@ -8,7 +8,7 @@ tags:
   - RDMA
   - EFA
 pubDate: 2026-04-13
-cover: https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/efa-programming/efa-programming.png
+cover: /efa-programming/efa-programming.png
 coverAlt: UCCL-EP
 author: UCCL Team
 ---
@@ -36,8 +36,8 @@ Code: <a href="https://github.com/uccl-project/uccl/blob/main/experimental/misc/
 AWS uses customized RDMA NICs called **EFA** (Elastic Fabric Adapter) across their GPU instances: Hopper-based p5, p5e, p5en VMs and Blackwell-based p6 VMs. Under the hood, EFA runs a proprietary multi-path transport protocol called **SRD** (Scalable Reliable Datagram), described in the [SRD paper](https://assets.amazon.science/a6/34/41496f64421faafa1cbe301c007c/a-cloud-optimized-transport-protocol-for-elastic-and-scalable-hpc.pdf). SRD supports efficient multi-pathing to avoid single-path network congestion in datacenter networks, without relying on PFC (Priority Flow Control) which is notoriously hard to manage at large scale.
 
 <div class="not-prose my-6 grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-start [&>img:first-child]:col-start-2 [&>img:last-child]:col-start-4 [&>img]:!my-0 [&>img]:h-auto [&>img]:max-w-[450px] [&>img]:min-w-0 [&>img]:w-full">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/efa-programming/single_path.png" alt="Single-path transport" width="450"/>
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/efa-programming/multi_path.png" alt="Multi-path transport" width="450"/>
+  <img src="/efa-programming/single_path.png" alt="Single-path transport" width="450"/>
+  <img src="/efa-programming/multi_path.png" alt="Multi-path transport" width="450"/>
 </div>
 <p align="center"><em>Left: Traditional single-path transport sends all packets along one fixed route, which is vulnerable to congestion at any single hop. Right: EFA's SRD multi-path transport dynamically sprays packets across multiple paths, balancing load and avoiding hotspots without PFC.</em></p>
 
@@ -278,7 +278,7 @@ An alternative approach is **sender-side ordering**: the sender holds the atomic
 The receiver-driven approach pipelines the atomic with the writes: the sender fires the atomic immediately after the writes without waiting, and the receiver reorders as needed. This results in measurably lower end-to-end latency:
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/efa-programming/sender_vs_receiver_latency.png" alt="Sender-side vs Receiver-side ordering latency" width="300"/>
+  <img src="/efa-programming/sender_vs_receiver_latency.png" alt="Sender-side vs Receiver-side ordering latency" width="300"/>
   <br>
   <em>Latency comparison between sender-side ordering (hold atomic until all write completions) vs. receiver-side reordering approach.</em>
 </p>
