@@ -25,7 +25,7 @@ Date: May 21, 2026
 
 <div class="tldr">
 <p>
-<strong>MRC</strong> (Multipath Reliable Connection) [1] is a new RDMA transport from OpenAI/Microsoft/AMD/Broadcom/NVIDIA. Based on RoCEv2 RC, it adds <strong>per-QP packet spraying, out-of-order delivery, and selective retransmission, UET's congestion control</strong>, together with <strong> multi-plane topology and static SRv6 source routing</strong>. The OCP MRC 1.0 spec [2] is out, and CX-8, AMD Pollara, and Broadcom Thor Ultra already ship it.
+<strong><a href="https://cdn.openai.com/pdf/resilient-ai-supercomputer-networking-using-mrc-and-srv6.pdf">MRC</a></strong> (Multipath Reliable Connection) is a new RDMA transport from OpenAI, Microsoft, AMD, Broadcom, and NVIDIA. Based on RoCEv2 RC, it adds <strong>per-QP packet spraying, out-of-order delivery, and selective retransmission, UET's congestion control</strong>, together with <strong> multi-plane topology and static SRv6 source routing</strong>. Thir <a href="https://www.opencompute.org/documents/ocp-mrc-1-0-pdf">OCP MRC 1.0 spec</a> is out, and CX-8, AMD Pollara, and Broadcom Thor Ultra already ship it. This blog aims to understand the MRC protocol in depth and compare it with other alternative solutions IB/RoCEv2, UEC, AWS SRD, and UCCL-Tran. 
 </p>
 </div>
 
@@ -42,7 +42,7 @@ Date: May 21, 2026
 
 &nbsp;&nbsp;&nbsp;&nbsp;🔧 **Fixes RC pain point — *single-path-per-QP*.** RC QP pins all its traffic to one 5-tuple, so a single ECMP hash collision or one bad link silently bottlenecks (or kills) the QP and leaves the rest of the fabric unused.
 
-- **Congestion control: UET NSCC.** MRC uses NSCC — UET's Network-Signalled Congestion Control [4]. It's a **sender-driven, SACK-clocked, window-based** algorithm that uses both ECN and RTT to keep queueing delay within a configured target without sacrificing throughput. RTT provides quantitative congestion information, but it is a lagging signal; ECN is leading but coarser, giving a coarse one-bit signal of congestion.  Combining the two gives NSCC both faster reaction and more precise control.
+- **Congestion control: UET NSCC.** MRC uses NSCC — UET's Network-Signalled Congestion Control [^1]. It's a **sender-driven, SACK-clocked, window-based** algorithm that uses both ECN and RTT to keep queueing delay within a configured target without sacrificing throughput. RTT provides quantitative congestion information, but it is a lagging signal; ECN is leading but coarser, giving a coarse one-bit signal of congestion.  Combining the two gives NSCC both faster reaction and more precise control.
 
 <p align="center">
   <img src="/openai-mrc/cc.png" alt="MRC congestion control: NSCC uses both ECN and RTT to keep queueing delay within a target without sacrificing throughput" width="530"/>
@@ -72,7 +72,7 @@ Date: May 21, 2026
 
 - **Implemented on the latest generation of smart RDMA NICs.** MRC is not a software protocol — it is baked into the data plane of three vendors' newest silicon: **NVIDIA ConnectX-8** (800 Gb/s), **AMD Pollara / Vulcano** (400/800 Gb/s), and **Broadcom Thor Ultra** (800 Gb/s). The host-side API is **`libibverbs`-compatible**: applications continue to use the standard verbs surface (QPs, MRs, work-request posting, CQ polling), so existing RDMA stacks like NCCL/RCCL plug in without a new user-space library.
 
-> *UCCL-Tran lens.* Many protocol-level bet here mirrors decisions UCCL-Tran made in software: per-packet (or per-chunk) spraying across hundreds of logical paths, PFC-off lossy operation, out-of-order DMA placement, and selective retransmission instead of go-back-N. The MRC paper is, in many ways, a hardware realization of the same architectural answer — and that is exactly why we find it interesting. UCCL-Tran keeps that same surface in CPU software, so a new CC profile (e.g., receiver-driven EQDS for MoE incast), a new LB policy, or a new loss-tolerance scheme is a code change, not a new tape-out. We see MRC as raising the floor; UCCL-Tran keeps the ceiling open. **And just as importantly: MRC only runs on the very latest silicon (CX-8 / Pollara / Thor Ultra), while UCCL-Tran brings the same multipath, OoO, selective-retransmit power to the *legacy* RDMA NICs already deployed in the field — CX-5/6/7, BlueField, EFA, Thor 1/2 — without a hardware refresh, albeit with some design tradeoffs.** 
+> *UCCL-Tran lens.* Many protocol-level bet here mirrors decisions UCCL-Tran [^3] made in software: per-packet (or per-chunk) spraying across hundreds of logical paths, PFC-off lossy operation, out-of-order DMA placement, and selective retransmission instead of go-back-N. The MRC paper is, in many ways, a hardware realization of the same architectural answer — and that is exactly why we find it interesting. UCCL-Tran keeps that same surface in CPU software, so a new CC profile (e.g., receiver-driven EQDS for MoE incast), a new LB policy, or a new loss-tolerance scheme is a code change, not a new tape-out. We see MRC as raising the floor; UCCL-Tran keeps the ceiling open. **And just as importantly: MRC only runs on the very latest silicon (CX-8 / Pollara / Thor Ultra), while UCCL-Tran brings the same multipath, OoO, selective-retransmit power to the *legacy* RDMA NICs already deployed in the field — CX-5/6/7, BlueField, EFA, Thor 1/2 — without a hardware refresh, albeit with some design tradeoffs.** 
 
 ## 1.2 Multi-plane Topology
 The topology piece is just as important as the transport piece. MRC leans on a key capability of modern NICs — **per-lane port breakout** — to turn one 800 Gb/s NIC port into 4×200 or 8×100 Gb/s independent network ports, and then builds **one Clos plane per lane**. This is the crucial distinction from the more familiar **multi-rail** design (e.g., Alibaba HPN, Meta's rail-optimized fabrics), where each NIC has a single port that lives in a single rail.
@@ -80,7 +80,7 @@ The topology piece is just as important as the transport piece. MRC leans on a k
 <p align="center">
   <img src="/openai-mrc/cx8-multiplane.png" alt="ConnectX-8 multi-plane vs. standard single-port NIC connectivity: on the left, each CX-8 NIC's 800 Gb/s port is split into 4 independent lanes that fan out into 4 separate Spectrum-X Ethernet planes, scaling a two-tier non-blocking fat-tree to 256×512 = 128K GPUs; on the right, a standard 1-port-4-lane NIC stays inside a single plane and tops out at 64×32 = 2K GPUs at the same switch radix" width="900"/>
 </p>
-<p align="center"><em>Figure 5: NIC port breakout in action — on the left, each ConnectX-8 NIC's 800 Gb/s port is split into 4 independent lanes that feed 4 separate Spectrum-X Ethernet planes, scaling a two-tier non-blocking fat-tree to <strong>128K GPUs</strong> at switch radix 512; on the right, a standard 1-port-4-lane NIC lives in a single plane and tops out at <strong>2K GPUs</strong> at the same radix. (Source: NVIDIA Hot Chips 2025, ConnectX-8 talk [6].)</em></p>
+<p align="center"><em>Figure 5: NIC port breakout in action — on the left, each ConnectX-8 NIC's 800 Gb/s port is split into 4 independent lanes that feed 4 separate Spectrum-X Ethernet planes, scaling a two-tier non-blocking fat-tree to <strong>128K GPUs</strong> at switch radix 512; on the right, a standard 1-port-4-lane NIC lives in a single plane and tops out at <strong>2K GPUs</strong> at the same radix. (Source: NVIDIA Hot Chips 2025, ConnectX-8 talk [^4].)</em></p>
 
 Multi-plane via NIC breakout gets you:
 
@@ -137,7 +137,7 @@ MRC is genuinely impressive engineering but it still has some limitations that w
 
   This matters more than it sounds. The "WRITE-only" pattern is fine for synchronous pretraining collectives, but it is awkward for several important newer workloads:
 
-  - **MoE dispatch / combine** (e.g., DeepEP [5]) increasingly relies on **`ATOMIC` fetch-and-add** for fast, lock-free token-count exchange between senders and experts. Earlier DeepEP versions did use `WRITE_WITH_IMM`, but that forced the receiver GPU to poll the CQ and re-post RQ entries on the critical path — extra GPU work that competes with the dispatch kernel and is generally regarded as a worse design. The switch to the atomic-based path landed in commit [2d0cf41](https://github.com/deepseek-ai/DeepEP/commit/2d0cf41).
+  - **MoE dispatch / combine** (e.g., DeepEP [^2]) increasingly relies on **`ATOMIC` fetch-and-add** for fast, lock-free token-count exchange between senders and experts. Earlier DeepEP versions did use `WRITE_WITH_IMM`, but that forced the receiver GPU to poll the CQ and re-post RQ entries on the critical path — extra GPU work that competes with the dispatch kernel and is generally regarded as a worse design. The switch to the atomic-based path landed in commit [2d0cf41](https://github.com/deepseek-ai/DeepEP/commit/2d0cf41).
   - **KV transfer for PD disaggregation** wants `READ` so that the decode side pulls KV on demand without a coordination round-trip.
 
 - **`WRITE_WITH_IMM` has a small in-flight cap.** The immediate-data CQE must be delivered to the responder **in order with respect to all prior WRITEs on the QP** — i.e., a `WRITE_WITH_IMM` cannot complete until every preceding WRITE has landed. In a sprayed, out-of-order data plane that means the NIC has to track per-QP barrier state and hold completion resources for every outstanding `WRITE_WITH_IMM`, which is exactly the kind of bookkeeping that does not scale on-chip. As a result MRC implementations cap the number of in-flight `WRITE_WITH_IMM` operations per QP (the spec calls this out and adds a dedicated "Inflight WriteImm limit exceeded" NACK code). Workloads that try to use `WRITE_WITH_IMM` as a fine-grained signaling primitive — one immediate per chunk — will hit this cap before they hit bandwidth.
@@ -146,7 +146,7 @@ MRC is genuinely impressive engineering but it still has some limitations that w
 
 ## 3. Tradeoff summary: MRC vs. AWS SRD vs. UCCL-Tran / UCCL-P2P
 
-MRC, AWS SRD, and UCCL-Tran / UCCL-P2P all answer the same question — "how do we move ML traffic across a large GPU fabric reliably, with multipath, no PFC, and graceful loss recovery?" — but they make very different bets on *where* the transport lives and *how open* it is. MRC pushes the answer into a new generation of merchant silicon under an open OCP spec; AWS SRD bakes a similar answer into the closed Nitro / EFA data plane, tightly co-designed with the AWS VPC fabric [7]; UCCL-Tran / UCCL-P2P keeps the answer in CPU software, so it can ride on the legacy RDMA NICs already deployed in the field. The table below lines up the design choices side by side so the tradeoffs — performance ceiling, hardware dependency, openness, programmability, observability, and time-to-ship — are easy to compare.
+MRC, AWS SRD, and UCCL-Tran / UCCL-P2P all answer the same question — "how do we move ML traffic across a large GPU fabric reliably, with multipath, no PFC, and graceful loss recovery?" — but they make very different bets on *where* the transport lives and *how open* it is. MRC pushes the answer into a new generation of merchant silicon under an open OCP spec; AWS SRD bakes a similar answer into the closed Nitro / EFA data plane, tightly co-designed with the AWS VPC fabric [^5]; UCCL-Tran / UCCL-P2P keeps the answer in CPU software, so it can ride on the legacy RDMA NICs already deployed in the field. The table below lines up the design choices side by side so the tradeoffs — performance ceiling, hardware dependency, openness, programmability, observability, and time-to-ship — are easy to compare.
 
 <p align="center"><em>Table 2: Comparison of different transports</em></p>
 
@@ -171,13 +171,8 @@ MRC, AWS SRD, and UCCL-Tran / UCCL-P2P all answer the same question — "how do 
 
 ## References
 
-1. J. Araujo, S. Anantharamu, K. Doddapaneni, E. Davis, A. Barnea, M. Handley, J. Padhye, J. Jose, R. Sohan, S. Sur, et al. *Resilient AI Supercomputer Networking using MRC and SRv6.* OpenAI / Microsoft / AMD / Broadcom / NVIDIA, 2026. <https://cdn.openai.com/pdf/resilient-ai-supercomputer-networking-using-mrc-and-srv6.pdf>
-2. R. Sohan, E. Spada, E. Davis, M. Handley, I. Burstein, T. Hurson, J. Jose, V. Kashyap, R. Pan, S. Sur. *Multipath Reliable Connection (MRC) Specification, v1.0.* Open Compute Project, 2026. <https://www.opencompute.org/documents/ocp-mrc-1-0-pdf>
-3. Y. Zhou, Z. Chen, Z. Mao, C. Lao, S. Yang, P. G. Kannan, J. Gao, Y. Zhao, Y. Wu, K. You, F. Ren, Z. Xu, C. Raiciu, I. Stoica. *UCCL-Tran: An Extensible Software Transport Layer for Machine Learning Workloads.* USENIX OSDI, 2026. <https://arxiv.org/pdf/2504.17307>
-4. Ultra Ethernet Consortium. *Ultra Ethernet Specification v1.0.* 2025. <https://ultraethernet.org/wp-content/uploads/sites/20/2025/06/UE-Specification-6.11.25.pdf>
-5. DeepSeek-AI. *DeepEP — An efficient expert-parallel communication library.* GitHub, 2025–2026. <https://github.com/deepseek-ai/DeepEP>
-6. NVIDIA. *ConnectX-8 SuperNIC.* Hot Chips 2025. <https://hc2025.hotchips.org/assets/program/conference/day1/CX8%20HotChips%20Aug25v2.pdf>
-7. L. Shalev, H. Ayoub, N. Bshara, E. Sabbag. *A Cloud-Optimized Transport Protocol for Elastic and Scalable HPC.* IEEE Micro, vol. 40, no. 6, 2020. <https://ieeexplore.ieee.org/document/9189994>
-
-
-
+[^1]: Ultra Ethernet Consortium. *Ultra Ethernet Specification v1.0.* 2025. <https://ultraethernet.org/wp-content/uploads/sites/20/2025/06/UE-Specification-6.11.25.pdf>
+[^2]: DeepSeek-AI. *DeepEP — An efficient expert-parallel communication library.* GitHub, 2025–2026. <https://github.com/deepseek-ai/DeepEP>
+[^3]: Y. Zhou, Z. Chen, Z. Mao, C. Lao, S. Yang, P. G. Kannan, J. Gao, Y. Zhao, Y. Wu, K. You, F. Ren, Z. Xu, C. Raiciu, I. Stoica. *UCCL-Tran: An Extensible Software Transport Layer for Machine Learning Workloads.* USENIX OSDI, 2026. <https://arxiv.org/pdf/2504.17307>
+[^4]: NVIDIA. *ConnectX-8 SuperNIC.* Hot Chips 2025. <https://hc2025.hotchips.org/assets/program/conference/day1/CX8%20HotChips%20Aug25v2.pdf>
+[^5]: L. Shalev, H. Ayoub, N. Bshara, E. Sabbag. *A Cloud-Optimized Transport Protocol for Elastic and Scalable HPC.* IEEE Micro, vol. 40, no. 6, 2020. <https://ieeexplore.ieee.org/document/9189994>
