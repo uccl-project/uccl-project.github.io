@@ -25,7 +25,7 @@ Date: May 21, 2026
 
 <div class="tldr">
 <p>
-<strong><a href="https://cdn.openai.com/pdf/resilient-ai-supercomputer-networking-using-mrc-and-srv6.pdf">MRC</a></strong> (Multipath Reliable Connection) is a new RDMA transport from OpenAI, Microsoft, AMD, Broadcom, and NVIDIA. Based on RoCEv2 RC, it adds <strong>per-QP packet spraying, out-of-order delivery, and selective retransmission, UET's congestion control</strong>, together with <strong> multi-plane topology and static SRv6 source routing</strong>. Thir <a href="https://www.opencompute.org/documents/ocp-mrc-1-0-pdf">OCP MRC 1.0 spec</a> is out, and CX-8, AMD Pollara, and Broadcom Thor Ultra already ship it. This blog aims to understand the MRC protocol in depth and compare it with other alternative solutions IB/RoCEv2, UEC, AWS SRD, and UCCL-Tran. 
+<strong><a href="https://cdn.openai.com/pdf/resilient-ai-supercomputer-networking-using-mrc-and-srv6.pdf">MRC</a></strong> (Multipath Reliable Connection) is a new RDMA transport from OpenAI, Microsoft, AMD, Broadcom, and NVIDIA. Based on RoCEv2 RC, it adds <strong>per-QP packet spraying, out-of-order delivery, and selective retransmission, UET's congestion control</strong>, together with <strong> multi-plane topology and static SRv6 source routing</strong>. MRC also releases an <a href="https://www.opencompute.org/documents/ocp-mrc-1-0-pdf">OCP spec</a>, and CX-8, AMD Pollara, and Broadcom Thor Ultra already ship it. This blog aims to understand the MRC protocol in depth and compare it with other alternative solutions IB/RoCEv2, UEC, AWS SRD, and UCCL-Tran. 
 </p>
 </div>
 
