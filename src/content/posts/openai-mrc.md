@@ -42,15 +42,22 @@ Date: May 12, 2026
 
 &nbsp;&nbsp;&nbsp;&nbsp;🔧 **Fixes RC pain point — *single-path-per-QP*.** RC QP pins all its traffic to one 5-tuple, so a single ECMP hash collision or one bad link silently bottlenecks (or kills) the QP and leaves the rest of the fabric unused.
 
-- **Congestion control: UET NSCC.** MRC uses NSCC — UET's Network-Signalled Congestion Control [4]. It is a **sender-side, SACK-clocked, window-based, ECN + RTT** algorithm whose goal is to keep the requestor→responder queueing delay under a configured target queuing delay.  
-  &nbsp;&nbsp;&nbsp;&nbsp;🔧 **Fixes RC pain point — *PFC or DCQCN*.** RoCEv2 relies on lossless Ethernet (PFC) plus a rate-based CC (DCQCN) that reacts slowly to ECN, suffers from head-of-line blocking, PFC storms, and victim flows. NSCC is window-based and clocked by SACK/ECN/RTT, so it converges in O(RTT) without needing a lossless fabric underneath.
+- **Congestion control: UET NSCC.** MRC uses NSCC — UET's Network-Signalled Congestion Control [4]. It's a **sender-driven, SACK-clocked, window-based** algorithm that uses both ECN and RTT to keep queueing delay within a configured target without sacrificing throughput. RTT provides quantitative congestion information, but it is a lagging signal; ECN is leading but coarser, giving a coarse one-bit signal of congestion.  Combining the two gives NSCC both faster reaction and more precise control.
+
+<p align="center">
+  <img src="/assets/openai-mrc/cc.png" alt="MRC congestion control: NSCC uses both ECN and RTT to keep queueing delay within a target without sacrificing throughput" width="530"/>
+</p>
+<p align="center"><em>Figure 2: NSCC uses ECN and RTT to adjust the window. When ECN=0, it increases the window at different speeds depending on the delay. When ECN=1 and delay is high, the network is congested and NSCC decreases the congestion window. When ECN=1 but delay is low, congestion may occurs in a single path, so NSCC neither increases nor decreases the window and leaves it to the load balance mechanism.</em></p>
+
+&nbsp;&nbsp;&nbsp;&nbsp;🔧 **Fixes RC pain point — *DCQCN*.** RoCEv2 relies on DCQCN, a rate-based congestion control scheme driven by ECN feedback, which suffers from slow convergence and throughput loss. In comparison, NSCC converges faster because of its window-based control and the combination of RTT and ECN. More importantly, NSCC also tackles a multipath-specific question: when should the sender switch paths, and when should it reduce the congestion window? NSCC leaves mild, single-path congestion to load balancing, and reduces the congestion window only when congestion is severe or widespread.
+
 - **Selective retransmission + packet trimming.** MRC disables Priority Flow Control (PFC) and embraces lossy network with efficient selective retransmission. SACKs are used to identify exactly which packets were lost; trimmed packets (header-only, priority-forwarded under congestion) trigger fast NACKs and let MRC distinguish congestion loss from link-failure loss.  
 
 
 <p align="center">
   <img src="/assets/openai-mrc/sack-trim.png" alt="Selective retransmission + packet trimming: the SRC NIC sprays DATA across two switch paths; the DST NIC reports gaps via a SACK bitmap so SRC retransmits only the missing PSNs (RTX DATA); when a switch drops a payload due to congestion, packet trimming forwards a header-only stub that fires a fast NACK, so SRC retransmits exactly that packet without Go-Back-N" width="520"/>
 </p>
-<p align="center"><em>Figure 2: The destination NIC reports gaps to the source via a SACK bitmap, so the source retransmits only the missing PSNs instead of Go-Back-N. When a switch decides to drop a payload due to congestion, the switch forwards a header-only stub that elicits an immediate NACK, letting the source patch the loss.</em></p>
+<p align="center"><em>Figure 3: The destination NIC reports gaps to the source via a SACK bitmap, so the source retransmits only the missing PSNs instead of Go-Back-N. When a switch decides to drop a payload due to congestion, the switch forwards a header-only stub that elicits an immediate NACK, letting the source patch the loss.</em></p>
 
   &nbsp;&nbsp;&nbsp;&nbsp;🔧 **Fixes RC pain point — *Go-Back-N retransmission*.** RC drops everything after a single lost PSN and replays the entire window, which is catastrophic under spraying and lossy operation.
 
@@ -59,7 +66,7 @@ Date: May 12, 2026
 <p align="center">
   <img src="/assets/openai-mrc/ooo-placement.png" alt="Out-of-order placement: every WRITE FIRST/MIDDLE/LAST packet carries its own RETH (VA, rkey, len) so the receiver NIC DMAs each payload directly to its final memory slot regardless of arrival order; a trailing WRITE_WITH_IMM is staged until all preceding WRITEs on the QP land, then generates a CQE to the CPU/GPU" width="520"/>
 </p>
-<p align="center"><em>Figure 3: Every <code>WRITE packet (FIRST/MIDDLE/LAST/LAST with IMM/ONLY/ONLY with IMM)</code> packet carries its own RETH (<code>VA</code>, <code>rkey</code>, <code>len</code>), so the receiver NIC can DMA each payload directly into its final memory slot in any arrival order. <code>WRITE_WITH_IMM</code> is always staged inside the NIC until every preceding WRITE on the QP has landed, then generates a CQE to the CPU/GPU.</em></p>
+<p align="center"><em>Figure 4: Every <code>WRITE packet (FIRST/MIDDLE/LAST/LAST with IMM/ONLY/ONLY with IMM)</code> packet carries its own RETH (<code>VA</code>, <code>rkey</code>, <code>len</code>), so the receiver NIC can DMA each payload directly into its final memory slot in any arrival order. <code>WRITE_WITH_IMM</code> is always staged inside the NIC until every preceding WRITE on the QP has landed, then generates a CQE to the CPU/GPU.</em></p>
 
 &nbsp;&nbsp;&nbsp;&nbsp;🔧 **Fixes RC pain point — *strict in-order delivery*.** RC requires Packet Sequence Numbers (PSNs) to land in order on the wire, which is fundamentally incompatible with spraying — any reordering becomes a loss event.
 
@@ -73,7 +80,7 @@ The topology piece is just as important as the transport piece. MRC leans on a k
 <p align="center">
   <img src="/assets/openai-mrc/cx8-multiplane.png" alt="ConnectX-8 multi-plane vs. standard single-port NIC connectivity: on the left, each CX-8 NIC's 800 Gb/s port is split into 4 independent lanes that fan out into 4 separate Spectrum-X Ethernet planes, scaling a two-tier non-blocking fat-tree to 256×512 = 128K GPUs; on the right, a standard 1-port-4-lane NIC stays inside a single plane and tops out at 64×32 = 2K GPUs at the same switch radix" width="900"/>
 </p>
-<p align="center"><em>Figure 4: NIC port breakout in action — on the left, each ConnectX-8 NIC's 800 Gb/s port is split into 4 independent lanes that feed 4 separate Spectrum-X Ethernet planes, scaling a two-tier non-blocking fat-tree to <strong>128K GPUs</strong> at switch radix 512; on the right, a standard 1-port-4-lane NIC lives in a single plane and tops out at <strong>2K GPUs</strong> at the same radix. (Source: NVIDIA Hot Chips 2025, ConnectX-8 talk [6].)</em></p>
+<p align="center"><em>Figure 5: NIC port breakout in action — on the left, each ConnectX-8 NIC's 800 Gb/s port is split into 4 independent lanes that feed 4 separate Spectrum-X Ethernet planes, scaling a two-tier non-blocking fat-tree to <strong>128K GPUs</strong> at switch radix 512; on the right, a standard 1-port-4-lane NIC lives in a single plane and tops out at <strong>2K GPUs</strong> at the same radix. (Source: NVIDIA Hot Chips 2025, ConnectX-8 talk [6].)</em></p>
 
 Multi-plane via NIC breakout gets you:
 
@@ -87,14 +94,14 @@ Multi-plane is also what makes MRC's **per-EV failure detection and recovery** p
 <p align="center">
   <img src="/assets/openai-mrc/topo-fail.png" alt="Per-EV failure detection: a link drop in one plane causes packet EV 42 to time out at the source NIC, which marks EV 42 as BAD in its local EV state table and stops spraying onto that path while the other EVs continue to deliver traffic through the surviving planes" width="900"/>
 </p>
-<p align="center"><em>Figure 5: When a link fails, only the EV (path) traversing it is timed out and marked <code>BAD</code>; the other EVs continue to drain traffic through the remaining planes.</em></p>
+<p align="center"><em>Figure 6: When a link fails, only the EV (path) traversing it is timed out and marked <code>BAD</code>; the other EVs continue to drain traffic through the remaining planes.</em></p>
 
 Recovery is the symmetric operation (figure below). The source NIC periodically emits tiny **probe packets** on its `BAD` EVs; as soon as a probe round-trips successfully, the corresponding entry flips back to `GOOD` and the EV rejoins the active spraying set. There is no fabric-wide reconvergence event, no controller in the loop, and no need to renegotiate the QP — the data plane self-heals at EV granularity, on the order of an RTT after the link comes back.
 
 <p align="center">
   <img src="/assets/openai-mrc/topo-recover.png" alt="Per-EV failure recovery: the source NIC sends probe packets on BAD EVs, and once a probe on EV 42 returns successfully it flips the EV state back to GOOD and resumes spraying onto that path, all without any control-plane coordination" width="900"/>
 </p>
-<p align="center"><em>Figure 6: Probe packets on a <code>BAD</code> EV elicit a response once the link is back; the entry flips to <code>GOOD</code> and is re-added to the spraying set within an RTT, with no control-plane involvement.</em></p>
+<p align="center"><em>Figure 7: Probe packets on a <code>BAD</code> EV elicit a response once the link is back; the entry flips to <code>GOOD</code> and is re-added to the spraying set within an RTT, with no control-plane involvement.</em></p>
 
 > *UCCL-Tran lens.* We think multi-plane via NIC port breakout is **the right direction** — it gets you two-tier 100K-GPU reach, an order-of-magnitude smaller failure blast radius, and a topology that composes naturally with packet-level spraying. UCCL-Tran is fully on board with this destination. That said, the UCCL paper makes the equally important practical point that **rebuilding the fabric is slow and expensive**: new hardware, physical cabling, switch SKUs, optics inventory, and operator playbooks all have to change in lockstep. Most clusters today are single-plane or rail-optimized, and they will remain so for years. Software multipath transports like UCCL-Tran exist precisely to deliver most of the collision-avoidance benefit *on the fabric you already have*, while operators plan the longer multi-plane refresh. The two efforts are sequential, not competing.
 
