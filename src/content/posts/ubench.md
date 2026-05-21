@@ -1,7 +1,7 @@
 ---
 title: "CommBench: Can LLMs Write Efficient GPU Communication code?"
 slug: llm-gpu-comm-kernels
-description: 
+description: "CommBench evaluates how well frontier LLMs write multi-device GPU communication code across CUDA, NCCL, mscclpp, RDMA verbs, and compute-communication fusion kernels."
 category:
   - One
 tags:
@@ -11,16 +11,16 @@ tags:
   - mscclpp
   - LLM
   - Benchmark
-pubDate: 2026-05-13
-cover: https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/blog-placeholder-1.avif
+pubDate: 2026-05-21
+cover: /ubench/all2all_ref_vs_generated_latency_throughput.png
 coverAlt: LLM GPU Comm Kernels Benchmark
-author: Shuang Ma, xx, xx, xx, Yang Zhou, and the UCCL Team.
+author: Shuang Ma, Yuyi Li, xx, xx, Yang Zhou, and the UCCL Team.
 ---
 
 <p>
 <strong>By: Shuang Ma, xx, xx, xx, Yang Zhou, and the UCCL Team.
 <br>
-Date: May 13, 2026
+Date: May 21, 2026
 </strong>
 </p>
 
@@ -106,7 +106,11 @@ Taken together, these patches reveal that the LLM failed at four distinct levels
 
 #### Performance
 
-![alt text](../graphs/all2all_ref_vs_generated_latency_throughput.png)
+<p align="center">
+  <img src="/ubench/all2all_ref_vs_generated_latency_throughput.png" alt="All2All" width="600"/>
+  <em>Figure 1: xx.</em>
+</p>
+
 
 The DeepSeek-generated kernel (after 5 rounds of compiler-feedback prompting, 2 rounds of GPT-5.5 triage and human in the loop) passes correctness but is catastrophically slower than the reference across all message sizes. 
 
