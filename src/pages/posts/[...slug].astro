@@ -42,10 +42,22 @@ const { Content } = await post.render();
             ))
           }
         </div>
-        <div class="flex justify-between mt-4">
-          <small
-            >Publish on <FormattedDate date={post.data.pubDate} /></small
-          >
+        <div class="mt-4">
+          <small>Publish on <FormattedDate date={post.data.pubDate} /></small>
+          <small class="mt-2 flex items-center gap-2">
+            <span>Enjoy the blog? Give UCCL a star</span>
+            <a
+              href="https://github.com/uccl-project/uccl"
+              class="no-github-icon"
+              aria-label="UCCL GitHub repository"
+            >
+              <img
+                src="https://img.shields.io/github/stars/uccl-project/uccl?style=social"
+                alt="GitHub Repo stars"
+                class="relative -top-0.5 m-0 inline-block"
+              />
+            </a>
+          </small>
         </div>
     </article>
     <div class="mt-4">

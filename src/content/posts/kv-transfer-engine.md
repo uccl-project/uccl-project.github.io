@@ -11,7 +11,7 @@ tags:
   - Mooncake
   - RDMA
 pubDate: 2025-08-13
-cover: https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/kv-transfer-engine/kv-transfer-engine.png
+cover: /kv-transfer-engine/kv-transfer-engine.png
 coverAlt: KV transfer engine
 author: UCCL Team
 ---
@@ -42,7 +42,7 @@ For Mooncake, we use its official C++ benchmark [`transfer_engine_bench.cpp`](ht
 ## Benchmarking results
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/kv-transfer-engine/p2p-single-direction.png" alt="P2P single direction" width="600"/>
+  <img src="/kv-transfer-engine/p2p-single-direction.png" alt="P2P single direction" width="600"/>
   <em>Figure 1: Throughput comparison of different KV cache transfer engines.</em>
 </p>
 
@@ -51,7 +51,7 @@ The above figure shows the benchmarking results with NIXL and UCCL P2P achieving
 Surprisingly, we find Mooncake TE performs the worst, not able to saturate 50GB/s network link even at 100MB. We failed to find a architecture-level issues for it, but can only attribute it to the potentially buggy implementation. One thing to note is that we find by tuning the number of task submission threads in the Mooncake `transfer_engine_bench.cpp`, it can achieve 50GB/s line rate, but this is in contrast to other engine’s ability of reaching line rate with only one task submission thread. 
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/kv-transfer-engine/p2p-dual-direction.png" alt="P2P dual direction" width="600"/>
+  <img src="/kv-transfer-engine/p2p-dual-direction.png" alt="P2P dual direction" width="600"/>
   <em>Figure 1: Throughput comparison for dual-direction transfers.</em>
 </p>
 

@@ -9,7 +9,7 @@ tags:
   - RCCL
   - RDMA
 pubDate: 2025-06-30
-cover: https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/nccl-debug/uccl-debug.png
+cover: /nccl-debug/uccl-debug.png
 coverAlt: About
 author: UCCL Team
 ---
@@ -32,7 +32,7 @@ So what happens? Our next guess is that NCCL would require a larger number of SM
 What could be the possible cause of this low performance and bus bandwidth (busbw) drop at large messages? We finally guess it could be the RoCE network congestion in a typical datacenter networking topology Fattree [^2]. When multiple network flows come out of a rack switch to another rack switch, these flows may map to the same upper switch port and cause network congestion. Recall that each of the two flows could have up to 400Gbps traffic rate in ML workload, while a single switch port only has 400Gbps. If so, how are we gonna resolve this? Especially, we do not have any control over the NIC and switch settings in the public cloud.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/nccl-debug/ecmp_collision.png" alt="ECMP hash collision" width="600"/>
+  <img src="/nccl-debug/ecmp_collision.png" alt="ECMP hash collision" width="600"/>
   <em>Figure 1: Network congestion could happen as each RDMA flow only goes through a single and fixed network path in RoCE, and two flows could collide on the same switch port.</em>
 </p>
 
@@ -41,7 +41,7 @@ The final solution is that we leverage UCCL by simply setting another environmen
 Finally, with UCCL, we are able to avoid the NCCL performance drop at large messages and further improve its maximum throughput. 
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/nccl-debug/nccl_vs_uccl.png" alt="NCCL vs UCCL" width="600"/>
+  <img src="/nccl-debug/nccl_vs_uccl.png" alt="NCCL vs UCCL" width="600"/>
   <em>Figure 2: All-reduce performance across six machines, each with 8 H100 GPUs and 8 400G Nvidia NICs across two racks. Note that this measurement only uses 8 GPU SMs for NCCL/UCCL to leave enough SMs for ML applications; the measurement has NVLS off because of the GPU VM’s configuration issues on nv-fabricmanager.</em>
 </p>
 
@@ -64,7 +64,7 @@ Based on UCCL team's experience, here we summarize a list of highly relevant NCC
 Last week, we got access to a production cluster with AMD MI300X GPU + Broadcom 400G NICs, **without** any root privileges. We observe a similar performance drop for RCCL (AMD’s collective communication library) at large messages. We tried the UCCL plugin, and it effectively brought performance back. 
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uccl-project/uccl-project.github.io/main/assets/nccl-debug/rccl_vs_uccl.png" alt="RCCL vs NCCL" width="600"/>
+  <img src="/nccl-debug/rccl_vs_uccl.png" alt="RCCL vs NCCL" width="600"/>
   <em>Figure 3: All-to-all performance across two machines, each with 4 AMD MI300X GPUs and 4 400G Broadcom NICs.</em>
 </p>
 
