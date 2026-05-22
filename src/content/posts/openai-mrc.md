@@ -80,7 +80,7 @@ The topology piece is just as important as the transport piece. MRC leans on a k
 <p align="center">
   <img src="/openai-mrc/cx8-multiplane.png" alt="ConnectX-8 multi-plane vs. standard single-port NIC connectivity: on the left, each CX-8 NIC's 800 Gb/s port is split into 4 independent lanes that fan out into 4 separate Spectrum-X Ethernet planes, scaling a two-tier non-blocking fat-tree to 256×512 = 128K GPUs; on the right, a standard 1-port-4-lane NIC stays inside a single plane and tops out at 64×32 = 2K GPUs at the same switch radix" width="900"/>
 </p>
-<p align="center"><em>Figure 5: NIC port breakout in action — on the left, each ConnectX-8 NIC's 800 Gb/s port is split into 4 independent lanes that feed 4 separate Spectrum-X Ethernet planes, scaling a two-tier non-blocking fat-tree to <strong>128K GPUs</strong> at switch radix 512; on the right, a standard 1-port-4-lane NIC lives in a single plane and tops out at <strong>2K GPUs</strong> at the same radix. (Source: NVIDIA Hot Chips 2025, ConnectX-8 talk [^4].)</em></p>
+<p align="center"><em>Figure 5: NIC port breakout in action — on the left, each ConnectX-8 NIC's 800 Gb/s port is split into 4 independent lanes that feed 4 separate Spectrum-X Ethernet planes, scaling a two-tier non-blocking fat-tree to <strong>128K GPUs</strong> at switch radix 512; on the right, a standard 1-port-4-lane NIC lives in a single plane and tops out at <strong>2K GPUs</strong> at the same radix. (Source: NVIDIA Hot Chips 2025, ConnectX-8 talk.)</em></p>
 
 Multi-plane via NIC breakout gets you:
 
