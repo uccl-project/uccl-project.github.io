@@ -126,26 +126,37 @@ This is the area where MRC has a clear advantage over a pure software transport 
 
 ## Is MRC a Penacena to GPU Networking?
 
-MRC is genuinely impressive engineering but it still has some limitations that worth noting:
+MRC is genuinely impressive engineering but it still has some limitations that worth noting, especially when dealing with the **GPU-initiated communication** commonly used in MoE workloads.
 
-* **WRITE(w/ IMM) only verbs.** Only `RDMA WRITE` and `RDMA WRITE_WITH_IMM` are on the wire — and this is not just a packaging decision, it falls out of how MRC sprays packets. To allow out-of-order placement, MRC carries an **RETH header (remote virtual address + rkey) on *every* data packet**, so each packet is self-contained and can DMA directly into its final memory location. That trick is specific to one-sided WRITEs; it has no natural analog for `READ` (the responder, not the requestor, would need to spray), for `ATOMIC` (single-target, serialized), or for two-sided `SEND/RECV` (no remote address to begin with — the receiver picks the buffer via posted RQ entries). So the verb restriction is a direct consequence of the multipath data plane, not a temporary scoping choice.
+### WRITE(w/ IMM) Only Verbs
 
-  This matters more than it sounds. The "WRITE-only" pattern is fine for synchronous pretraining collectives, but it is awkward for several important newer workloads:
+Only `RDMA WRITE` and `RDMA WRITE_WITH_IMM` are on the wire — and this is not just a packaging decision, it falls out of how MRC sprays packets. To allow out-of-order placement, MRC carries an **RETH header (remote virtual address + rkey) on *every* data packet**, so each packet is self-contained and can DMA directly into its final memory location. That trick is specific to one-sided WRITEs; it has no natural analog for `READ` (the responder, not the requestor, would need to spray), for `ATOMIC` (single-target, serialized), or for two-sided `SEND/RECV` (no remote address to begin with — the receiver picks the buffer via posted RQ entries).
 
-  * **MoE dispatch / combine** (e.g., DeepEP [^3]) increasingly relies on **`ATOMIC` fetch-and-add** for fast, lock-free token-count exchange between senders and experts. Earlier DeepEP versions did use `WRITE_WITH_IMM`, but that forced the receiver GPU to poll the CQ and re-post RQ entries on the critical path — extra GPU work that competes with the dispatch kernel and is generally regarded as a worse design. The switch to the atomic-based path landed in commit [2d0cf41](https://github.com/deepseek-ai/DeepEP/commit/2d0cf41).
-  * **KV transfer for PD disaggregation** wants `READ` so that the decode side pulls KV on demand without a coordination round-trip.
+This matters more than it sounds. The "WRITE-only" pattern is fine for traditional pretraining collectives, but it is awkward for several important newer workloads:
+* **MoE dispatch / combine** (e.g., DeepEP [^3]) increasingly relies on **`ATOMIC` fetch-and-add** for fast, lock-free token-count exchange between senders and experts. Earlier DeepEP versions did use `WRITE_WITH_IMM`, but that forced the receiver GPU to poll the CQ and re-post RQ entries on the critical path — extra GPU work that competes with the dispatch kernel and is generally regarded as a worse design. The switch to the atomic-based path was landed in commit [2d0cf41](https://github.com/deepseek-ai/DeepEP/commit/2d0cf41) one year ago.
+* **KV transfer for PD disaggregation** wants `READ` so that the decode side pulls KV on demand without a coordination round-trip.
 
-* **`WRITE_WITH_IMM` has a small in-flight cap.** The immediate-data CQE must be delivered to the responder **in order with respect to all prior WRITEs on the QP** — i.e., a `WRITE_WITH_IMM` cannot complete until every preceding WRITE has landed. In a sprayed, out-of-order data plane that means the NIC has to track per-QP barrier state and hold completion resources for every outstanding `WRITE_WITH_IMM`, which is exactly the kind of bookkeeping that does not scale on-chip. As a result MRC implementations cap the number of in-flight `WRITE_WITH_IMM` operations per QP (the spec calls this out and adds a dedicated "Inflight WriteImm limit exceeded" NACK code). Workloads that try to use `WRITE_WITH_IMM` as a fine-grained signaling primitive — one immediate per chunk — will hit this cap before they hit bandwidth.
-* **Built into the newest silicon only.** MRC ships on CX-8, AMD Pollara/Vulcano, and Broadcom Thor Ultra. The very large installed base of CX-5/6/7, BlueField, EFA, and Thor 1/2 cannot run MRC at all — a fleet-wide upgrade is on the order of years and many billions of dollars.
-* **Last-hop incast.** NSCC is solid, but in practice MRC leans on packet trimming + selective retransmit + receiver-side backpressure to absorb receiver-side bursts. For workloads with very skewed receiver-side hot spots (MoE serving with hot experts, PD disaggregation, irregular all-to-all), a receiver-driven scheduler (EQDS-style) is a strictly better answer — and it's unclear whether MRC can support this.
+### `WRITE_WITH_IMM` With Small In-Flight Cap
+
+The immediate-data CQE must be delivered to the responder **in order with respect to all prior WRITEs on the QP** — i.e., a `WRITE_WITH_IMM` cannot complete until every preceding WRITE has landed. 
+In a sprayed, out-of-order data plane that means the NIC has to track per-QP barrier state and hold completion resources for every outstanding `WRITE_WITH_IMM`, which is exactly the kind of bookkeeping that does not scale on-chip. 
+As a result MRC implementations cap the number of in-flight `WRITE_WITH_IMM` operations per QP (the spec calls this out and adds a dedicated "Inflight WriteImm limit exceeded" NACK code). 
+Workloads that try to use `WRITE_WITH_IMM` as a fine-grained signaling primitive — one immediate per chunk — will hit this cap before they hit bandwidth.
+
+### Built into the Newest Silicon Only
+MRC ships on CX-8, AMD Pollara/Vulcano, and Broadcom Thor Ultra. The very large installed base of CX-5/6/7, BlueField, EFA, and Thor 1/2 cannot run MRC at all — a fleet-wide upgrade is on the order of years and many billions of dollars.
+
+### Last-Hop Incast
+NSCC is solid, but in practice MRC leans on packet trimming + selective retransmit + receiver-side backpressure to absorb receiver-side bursts. 
+For workloads with very skewed receiver-side hot spots (MoE serving with hot experts, PD disaggregation, irregular all-to-all), a receiver-driven scheduler (e.g., EQDS-style [^5]) is a strictly better answer — and it's unclear whether MRC can support this.
 
 
-## Tradeoff summary: MRC vs. UEC vs. AWS SRD vs. UCCL-Tran
+## Tradeoff Summary: MRC vs. UEC vs. AWS SRD vs. UCCL-Tran
 
 MRC, UET, AWS SRD, and UCCL-Tran all answer the same question — "how do we move ML traffic across a large GPU fabric reliably, with multipath, no PFC, and graceful loss recovery?" — but they make very different bets on *where* the transport lives and *how open* it is. 
 MRC pushes the answer into a new generation of merchant silicon under an open OCP spec; 
 UET standardizes a broader Ethernet transport direction through an open multi-vendor specification [^2];
-AWS SRD bakes a similar answer into the closed Nitro / EFA data plane, tightly co-designed with the AWS VPC fabric [^5]; 
+AWS SRD bakes a similar answer into the closed Nitro / EFA data plane, tightly co-designed with the AWS VPC fabric [^6]; 
 UCCL-Tran keeps the answer in CPU software, so it can ride on the legacy RDMA NICs already deployed in the field. 
 
 The table below lines up the design choices side by side so the tradeoffs — performance ceiling, hardware dependency, openness, programmability, observability, and time-to-ship — are easy to compare.
@@ -158,7 +169,7 @@ The table below lines up the design choices side by side so the tradeoffs — pe
 | **Spraying granularity**    | Per-packet                                      | Per-packet            | Per-packet                                       | Per-chunk for UC/RC, per-packet for UD  |
 | **Ordering model**          | OOO packet delivery, OOO message delivery, `WRITE_WITH_IMM` enforces order| OOO packet delivery with transport-level recovery | OOO packet delivery, OOO message delivery | OOO packet/chunk delivery, In-order/OOO message delivery are both supported |
 | **Verb surface**            | `libibverbs`, `WRITE` + `WRITE_WITH_IMM` only                 | UEC transport / ULP APIs, not necessarily drop-in RC verbs | `libfabric`; `SEND/RECV` + `WRITE` + `READ`, no `ATOMIC` | All verbs the underlying NIC exposes (incl. `WRITE`, `READ`, `ATOMIC`, `SEND/RECV`) |
-| **Congestion control**      | UET NSCC (ECN + RTT, window-based)              | UET NSCC (ECN + RTT, window-based)                 | AWS-proprietary, Cubic-like, designed for VPC fabric | RTT-based, pluggable |
+| **Congestion control**      | UET NSCC (ECN + RTT, window-based)              | UET NSCC, RCCC, and hybrid                 | AWS-proprietary, Cubic-like, designed for VPC fabric | RTT-based, pluggable |
 | **Loss recovery**           | SACK + packet trimming, in-NIC                  | SACK + packet trimming, in-NIC                     | Selective retransmit, in-NIC    | SACK + selective retransmit, in software           |
 | **PFC**                     | Off (lossy by design)                           | Off (lossy by design)                              | Off (lossy by design, VPC fabric)                 | Off (lossy by design)                              |
 | **Packet spray**            | SRv6 uSID source-route      | Entropy-based multipath over Ethernet              | Multi-path over AWS VPC (hash-based, fabric-managed) | EV → ECMP hash              |
@@ -172,8 +183,9 @@ The table below lines up the design choices side by side so the tradeoffs — pe
 
 ## References
 
-[^1]: Y. Zhou, Z. Chen, Z. Mao, C. Lao, S. Yang, P. G. Kannan, J. Gao, Y. Zhao, Y. Wu, K. You, F. Ren, Z. Xu, C. Raiciu, I. Stoica. *UCCL-Tran: An Extensible Software Transport Layer for GPU Networking.* USENIX OSDI, 2026. <https://arxiv.org/pdf/2504.17307>
+[^1]: Yang Zhou, Zhongjie Chen, Ziming Mao, ChonLam Lao, Shuo Yang, Pravein Govindan Kannan, Xizhi Zhang, Jiaqi Gao, Yilong Zhao, Yongji Wu, Kaichao You, Fengyuan Ren, Zhiying Xu, Costin Raiciu, Ion Stoica. *UCCL-Tran: An Extensible Software Transport Layer for GPU Networking.* USENIX OSDI, 2026. <https://arxiv.org/pdf/2504.17307>
 [^2]: Ultra Ethernet Consortium. *Ultra Ethernet Specification v1.0.* 2025. <https://ultraethernet.org/wp-content/uploads/sites/20/2025/06/UE-Specification-6.11.25.pdf>
 [^3]: DeepSeek-AI. *DeepEP — An efficient expert-parallel communication library.* GitHub, 2025–2026. <https://github.com/deepseek-ai/DeepEP>
 [^4]: NVIDIA. *ConnectX-8 SuperNIC.* Hot Chips 2025. <https://hc2025.hotchips.org/assets/program/conference/day1/CX8%20HotChips%20Aug25v2.pdf>
-[^5]: L. Shalev, H. Ayoub, N. Bshara, E. Sabbag. *A Cloud-Optimized Transport Protocol for Elastic and Scalable HPC.* IEEE Micro, vol. 40, no. 6, 2020. <https://ieeexplore.ieee.org/document/9189994>
+[^5]: Olteanu, Vladimir, Haggai Eran, Dragos Dumitrescu, Adrian Popa, Cristi Baciu, Mark Silberstein, Georgios Nikolaidis, Mark Handley, and Costin Raiciu. *An edge-queued datagram service for all datacenter traffic.* USENIX OSDI, 2022. <https://www.usenix.org/system/files/nsdi22-paper-olteanu.pdf>.
+[^6]: Leah Shalev, Hani Ayoub, Nafea Bshara, and Erez Sabbag. *A Cloud-Optimized Transport Protocol for Elastic and Scalable HPC.* IEEE Micro, 2020. <https://ieeexplore.ieee.org/document/9189994>
