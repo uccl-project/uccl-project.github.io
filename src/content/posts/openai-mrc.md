@@ -46,6 +46,7 @@ The RDMA network can hit many problems, in particular,
 
 The MRC protocol and system design nicely address these problems with massive NIC-managed multipathing, multi-plane network topology, and static SRv6 source routing, achieving stable and performant production training in OpenAI and Microsoft.
 
+---
 
 ## Problem #1: Network Flow Collision
 
@@ -77,6 +78,7 @@ Many protocol-level bet here mirrors decisions UCCL-Tran [^1] made in software: 
 
 Importantly, MRC only runs on the very latest silicon (CX-8 / Pollara / Thor Ultra), while UCCL-Tran brings the same multipath, OoO, selective-retransmit power to the **legacy** RDMA NICs already deployed in the field — CX-5/6/7, BlueField, EFA, Thor 1/2 — without a hardware refresh, albeit with some design tradeoffs.
 
+---
 
 ## Problem #2: Failure Blast Radius
 
@@ -106,8 +108,9 @@ Recovery is the symmetric operation. The source NIC periodically emits tiny **pr
 
 We think multi-plane via NIC port breakout is **the right direction** — it gets you two-tier 100K-GPU reach, an order-of-magnitude smaller failure blast radius, and a topology that composes naturally with packet-level spraying. UCCL-Tran is fully on board with this destination. That said, the UCCL paper makes the equally important practical point that **rebuilding the fabric is slow and expensive**: new hardware, physical cabling, switch SKUs, optics inventory, and operator playbooks all have to change in lockstep. Most clusters today are single-plane or rail-optimized, and they will remain so for years. Software multipath transports like UCCL-Tran exist precisely to deliver most of the collision-avoidance benefit *on the fabric you already have*, while operators plan the longer multi-plane refresh. The two efforts are sequential, not competing.
 
+---
 
-## Problem #3: visiability and debuggability
+## Problem #3: Visiability and Debuggability
 
 The transport story gets most of the airtime, but the operational story is just as important — and arguably the harder thing to replicate. 
 In the conventional RDMA deployment with switch-based in-network adaptive routing, a single flow can traverse different switches and links depending on the real-time congestion level. 
@@ -123,6 +126,7 @@ With MRC, in the OpenAI production deployments, dynamic routing is *disabled* an
 
 This is the area where MRC has a clear advantage over a pure software transport over commodity ECMP fabrics: source routing gives you *deterministic path ↔ EV mapping* that we cannot get from hash-based ECMP today. We see this as complementary rather than competitive — a software transport like UCCL-Tran would benefit enormously from being able to carry SRv6 segments on outgoing packets. The MRC OCP spec being open is genuinely good news here.
 
+---
 
 ## Is MRC a Penacena to GPU Networking?
 
@@ -143,13 +147,14 @@ In a sprayed, out-of-order data plane that means the NIC has to track per-QP bar
 As a result MRC implementations cap the number of in-flight `WRITE_WITH_IMM` operations per QP (the spec calls this out and adds a dedicated "Inflight WriteImm limit exceeded" NACK code). 
 Workloads that try to use `WRITE_WITH_IMM` as a fine-grained signaling primitive — one immediate per chunk — will hit this cap before they hit bandwidth.
 
-### Built into the Newest Silicon Only
-MRC ships on CX-8, AMD Pollara/Vulcano, and Broadcom Thor Ultra. The very large installed base of CX-5/6/7, BlueField, EFA, and Thor 1/2 cannot run MRC at all — a fleet-wide upgrade is on the order of years and many billions of dollars.
-
 ### Last-Hop Incast
 NSCC is solid, but in practice MRC leans on packet trimming + selective retransmit + receiver-side backpressure to absorb receiver-side bursts. 
 For workloads with very skewed receiver-side hot spots (MoE serving with hot experts, PD disaggregation, irregular all-to-all), a receiver-driven scheduler (e.g., EQDS-style [^5]) is a strictly better answer — and it's unclear whether MRC can support this.
 
+### Built into the Newest Silicon Only
+MRC ships on CX-8, AMD Pollara/Vulcano, and Broadcom Thor Ultra. The very large installed base of CX-5/6/7, BlueField, EFA, and Thor 1/2 cannot run MRC at all — a fleet-wide upgrade is on the order of years and many billions of dollars.
+
+---
 
 ## Tradeoff Summary: MRC vs. UEC vs. AWS SRD vs. UCCL-Tran
 
