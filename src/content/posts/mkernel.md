@@ -31,7 +31,7 @@ Code: <a href="https://github.com/uccl-project/mKernel">github.com/uccl-project/
 
 ## Host-driven GPU communication is increasingly the bottleneck.
 
-AI training and serving are limited by GPU communication. In production, communication can consume **43.6% of the forward pass and 32% of end-to-end training time** on GPUs [1], and inter-device communication can account for **up to 47% of total execution time** across popular MoE models and frameworks [2]. 
+AI training and serving are limited by GPU communication. In production, GPU communication can consume **43.6% of the forward pass and 32% of end-to-end training time** on GPUs [1], and inter-device communication can account for **up to 47% of total execution time** across popular MoE models and frameworks [2]. 
 
 The traditional approach is **host-driven**: the CPU runs the control path, calls into a library (NCCL/NVSHMEM), and the library issues the collective. It increasingly does not align with modern AI workloads for two reasons:
 
