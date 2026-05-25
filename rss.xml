@@ -52,7 +52,7 @@ mKernel is a small, focused library of persistent CUDA kernels — each of which
 We evaluate mKernel on two 2-node × 8-H200 clusters that differ only in the inter-node fabric (CX7, EFA). 
 
 | Testbed | Nodes × GPUs | Intra-node | Inter-node transport | NIC | 
-|---|---|---|---|---|---|
+|---|---|---|---|---|
 | **AWS EFA** | 2 × 8 H200 | NVLink | AWS EFA / SRD | 16 × 200 Gb/s EFA per node | 
 | **ConnectX-7** | 2 × 8 H200 | NVLink | InfiniBand | 8 × 400 Gb/s NVIDIA ConnectX-7 per node | 
 

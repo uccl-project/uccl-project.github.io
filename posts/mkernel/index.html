@@ -77,10 +77,33 @@ Code: <a href="https://github.com/uccl-project/mKernel">github.com/uccl-project/
 <table><thead><tr><th>Kernels</th><th>What it fuses</th><th>Description</th></tr></thead><tbody><tr><td><strong>AllGather + GEMM</strong></td><td>AllGather → GEMM</td><td>Each rank holds a shard of <code>A</code>. While ranks gather peers’ shards over NVLink/RDMA, the local GEMM consumes tiles as soon as they arrive.</td></tr><tr><td><strong>GEMM + AllReduce</strong></td><td>GEMM → AllReduce</td><td>Computes <code>C = A @ B</code> and reduces partial outputs across all ranks in one launch.</td></tr><tr><td><strong>MoE Dispatch + GEMM</strong></td><td>All-to-All dispatch → grouped GEMM</td><td>Routes MoE tokens to their expert ranks (intra-node NVLink + inter-node all-to-all) and runs the per-expert grouped GEMM in the same kernel.</td></tr><tr><td><strong>Ring Attention</strong></td><td>Ring KV exchange → FlashAttention</td><td>Sequence-parallel attention across ranks: each step rotates a KV chunk around the ring while the local FlashAttention consumes the previously-received chunk.</td></tr><tr><td><strong>GEMM + ReduceScatter</strong></td><td>GEMM → ReduceScatter</td><td>Computes <code>C = A @ B</code> and reduce-scatters the output across ranks. Each output tile is reduced and forwarded to its owning rank as soon as it’s produced</td></tr></tbody></table>
 <h2 id="evaluation-setup"><a class="heading-anchor" href="#evaluation-setup">Evaluation setup</a></h2>
 <p>We evaluate mKernel on two 2-node × 8-H200 clusters that differ only in the inter-node fabric (CX7, EFA).</p>
-<p>| Testbed | Nodes × GPUs | Intra-node | Inter-node transport | NIC |
-|---|---|---|---|---|---|
-| <strong>AWS EFA</strong> | 2 × 8 H200 | NVLink | AWS EFA / SRD | 16 × 200 Gb/s EFA per node |
-| <strong>ConnectX-7</strong> | 2 × 8 H200 | NVLink | InfiniBand | 8 × 400 Gb/s NVIDIA ConnectX-7 per node |</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Testbed</th><th>Nodes × GPUs</th><th>Intra-node</th><th>Inter-node transport</th><th>NIC</th></tr></thead><tbody><tr><td><strong>AWS EFA</strong></td><td>2 × 8 H200</td><td>NVLink</td><td>AWS EFA / SRD</td><td>16 × 200 Gb/s EFA per node</td></tr><tr><td><strong>ConnectX-7</strong></td><td>2 × 8 H200</td><td>NVLink</td><td>InfiniBand</td><td>8 × 400 Gb/s NVIDIA ConnectX-7 per node</td></tr></tbody></table>
 <p>mKernel is benchmarked against several baselines for each workload, including: NCCL, Triton-distributed, Flux, Mercury, MagiAttention, Transformer-Engine, and ring-flash-attention. We are still doing further benchmarking on larger scale.</p>
 <h2 id="results-on-aws-efa"><a class="heading-anchor" href="#results-on-aws-efa">Results on AWS EFA</a></h2>
 <p align="center">
