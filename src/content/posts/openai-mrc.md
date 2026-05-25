@@ -30,8 +30,9 @@ It is based on the widely used RoCEv2 RC, but addresses many of RC's limitations
 it also leverages <strong>multi-plane network topology and static SRv6 source routing</strong>. 
 An <a href="https://www.opencompute.org/documents/ocp-mrc-1-0-pdf">OCP spec</a> has been released for MRC, with NVIDIA CX-8, AMD Pollara, and Broadcom Thor Ultra RDMA NICs already shipping it. 
 <br><br>
-However, the UCCL team thinks MRC is not a panacea and cannot effectively support recent MoE communication out of the box because of its lack of support for RDMA atomics. 
-In addition, this blog compares MRC with alternative solutions including UET, AWS SRD, and our own UCCL-Tran, highlighting the strong similarities among them. 
+Through the UCCL lens, we think MRC is not a panacea and cannot effectively support recent MoE communication out of the box because of its lack of support for RDMA atomics. 
+This blog further compares MRC with alternative solutions including UET, AWS SRD, and our own UCCL-Tran, highlighting the differences among them. 
+For example, MRC only runs on the very latest silicon (CX-8 / Pollara / Thor Ultra), while UCCL-Tran brings the same multipath, out-of-order delivery, and selective-retransmission power to legacy RDMA NICs. 
 </p>
 </div>
 
