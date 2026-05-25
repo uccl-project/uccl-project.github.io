@@ -1,13 +1,13 @@
 ---
 title: "mKernel: Fast Multi-GPU, Multi-Node\nFused Kernels"
 slug: mkernel
-description: "mKernel is a collection of multi-GPU, multi-node fused kernels that put intra-node NVLink communication, inter-node RDMA, and compute inside a single persistent  kernel."
+description: "mKernel is a collection of multi-GPU, multi-node fused kernels that fuse intra-node NVLink communication, inter-node RDMA, and compute into a single persistent kernel."
 category:
   - One
 tags:
   - Fused Kernels
   - RDMA
-pubDate: 2026-05-08
+pubDate: 2026-05-25
 cover: /mkernel/mkernel.png
 coverAlt: mKernel
 author: UCCL Team
@@ -35,10 +35,10 @@ AI training and serving are limited by GPU communication. In production, communi
 
 The traditional approach is **host-driven**: the CPU runs the control path, calls into a library (NCCL/NVSHMEM), and the library issues the collective. It increasingly does not align with modern AI workloads for two reasons:
 
-1. **CPU-mediated control creates more visible pipeline bubbles as GPUs get faster.** Accelerators are getting faster, but not the CPU. Per-chip throughput is now multi-PFLOP-scale (e.g., Google TPU7x/Ironwood at 4.614 PFLOP/s FP8 per chip [3]), and rack-scale GPU systems now expose hundreds of PFLOP/s to exaFLOP/s-class compute: a GB300 NVL72 rack integrates 72 Blackwell Ultra GPUs and 36 Grace CPUs, delivering 720 PFLOP/s FP8/FP6, 1.44 EFLOP/s FP4 Tensor Core performance, 37 TB of fast memory, and 130 TB/s of all-to-all intra-rack NVLink bandwidth [4]. At these speeds, even microsecond-scale host orchestration overhead — a cudaLaunchKernel, a CPU-side "all writes done" check, an inter-stream event — shows up directly as pipeline bubbles.
+1. **CPU-mediated control creates more visible pipeline bubbles as GPUs get faster.** Accelerators are getting faster, but not the CPU. Rack-scale GPU systems now expose hundreds of PFLOP/s to exaFLOP/s-class compute: a GB300 NVL72 rack integrates 72 Blackwell Ultra GPUs and 36 Grace CPUs, delivering 720 PFLOP/s FP8/FP6, 1.44 EFLOP/s FP4 Tensor Core performance, and 130 TB/s of all-to-all intra-rack NVLink bandwidth [4]. At these speeds, even microsecond-scale host orchestration overhead — a cudaLaunchKernel, a CPU-side "all writes done" check, an inter-stream event — shows up directly as pipeline bubbles.
 2. **Fine-grained overlap is needed to maximize performance.** Host-driven systems overlap by launching compute and communication kernels on separate streams, but their decisions are still made at coarse *kernel boundaries* — leaving more finer-grained overlap on the table.
 
-The natural answer is **GPU-driven communication**: let the GPU itself trigger fine-grained transfers, fused into the same kernel as the compute. **However, most existing kernel libraries operate under a single node, if not, a single GPU.** 
+The natural answer is **GPU-driven communication**: let the GPU itself trigger fine-grained transfers, where communication is fused into the same kernel as the compute. **However, most existing fused kernel libraries operate under a single node, if not, a single GPU.** 
 
 mKernel is our attempt at the missing piece: **GPU-driven**, **fused** kernels that deliver fine-grained compute–communication overlap across both **intra-node NVLink** and **inter-node RDMA**, while staying portable across various networking backends (ConnectX-7, AWS EFA, and more on the way).
 
