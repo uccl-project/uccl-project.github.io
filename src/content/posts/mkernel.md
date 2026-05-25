@@ -16,7 +16,7 @@ author: UCCL Team
 <p>
 <strong>By: Ziming Mao, and the UCCL team
 <br>
-Date: May 8, 2026
+Date: May 25, 2026
 </strong>
 </p>
 
@@ -29,16 +29,16 @@ Code: <a href="https://github.com/uccl-project/mKernel">github.com/uccl-project/
 </p>
 </div>
 
-## The problem: host-driven GPU communication is increasingly the bottleneck.
+## Host-driven GPU communication is increasingly the bottleneck.
 
-AI training and serving are increasingly limited by communication at scale. In production, communication can consume **43.6% of the forward pass and 32% of end-to-end training time** on GPUs [1], and inter-device communication can account for **up to 47% of total execution time** across popular MoE models and frameworks [2]. 
+AI training and serving are limited by GPU communication. In production, communication can consume **43.6% of the forward pass and 32% of end-to-end training time** on GPUs [1], and inter-device communication can account for **up to 47% of total execution time** across popular MoE models and frameworks [2]. 
 
-The traditional model is **host-driven**: the CPU runs the control path, calls into a library (NCCL/NVSHMEM), and the library issues the collective. It is increasingly misaligned with modern AI workloads for two reasons:
+The traditional approach is **host-driven**: the CPU runs the control path, calls into a library (NCCL/NVSHMEM), and the library issues the collective. It increasingly does not align with modern AI workloads for two reasons:
 
-1. **Fine-grained overlap is needed to maximize performance.** Host-driven systems overlap by launching compute and communication kernels on separate streams, but their decisions are still made at coarse *kernel boundaries* — leaving more finer-grained overlap on the table.
-2. **CPU-mediated control creates more visible pipeline bubbles as GPUs get faster.** Per-chip throughput is now multi-PFLOP-scale (e.g., Google TPU7x/Ironwood at 4.614 PFLOP/s FP8 per chip [3]) and intra-rack bandwidth is hundreds of TB/s (e.g., GB300 NVL72 at 130 TB/s NVLink [4]). At these speeds, even microsecond-scale host orchestration overhead — a cudaLaunchKernel, a CPU-side "all writes done" check, an inter-stream event — shows up directly as pipeline bubbles.
+1. **CPU-mediated control creates more visible pipeline bubbles as GPUs get faster.** Accelerators are getting faster, but not the CPU. Per-chip throughput is now multi-PFLOP-scale (e.g., Google TPU7x/Ironwood at 4.614 PFLOP/s FP8 per chip [3]), and rack-scale GPU systems now expose hundreds of PFLOP/s to exaFLOP/s-class compute: a GB300 NVL72 rack integrates 72 Blackwell Ultra GPUs and 36 Grace CPUs, delivering 720 PFLOP/s FP8/FP6, 1.44 EFLOP/s FP4 Tensor Core performance, 37 TB of fast memory, and 130 TB/s of all-to-all intra-rack NVLink bandwidth [4]. At these speeds, even microsecond-scale host orchestration overhead — a cudaLaunchKernel, a CPU-side "all writes done" check, an inter-stream event — shows up directly as pipeline bubbles.
+2. **Fine-grained overlap is needed to maximize performance.** Host-driven systems overlap by launching compute and communication kernels on separate streams, but their decisions are still made at coarse *kernel boundaries* — leaving more finer-grained overlap on the table.
 
-The natural answer is **GPU-driven communication**: let the GPU itself trigger fine-grained transfers, fused into the same kernel as the compute. **However, most existing kernel libraries stop at a single node, if not, a single GPU.** 
+The natural answer is **GPU-driven communication**: let the GPU itself trigger fine-grained transfers, fused into the same kernel as the compute. **However, most existing kernel libraries operate under a single node, if not, a single GPU.** 
 
 mKernel is our attempt at the missing piece: **GPU-driven**, **fused** kernels that deliver fine-grained compute–communication overlap across both **intra-node NVLink** and **inter-node RDMA**, while staying portable across various networking backends (ConnectX-7, AWS EFA, and more on the way).
 
@@ -48,7 +48,7 @@ mKernel is a small, focused library of persistent CUDA kernels — each of which
 
 - **Multi-GPU + multi-node, in one kernel.** Intra-node NVLink and inter-node RDMA both live inside the same persistent kernel. 
 - **Fine-grained intra-kernel overlap.** Compute and communication overlap at *tile/chunk* granularity, covering both the intra-node and inter-node GPU communication. 
-- **Persistent kernel with SM specialization.** CTAs self-assign roles, such as `compute`, `intra-comm`, `inter-send`, `inter-reduce`. The split (e.g. number of CTAs dedicated to each role) is tunable per shape.
+- **Persistent kernel with SM specialization.** CTAs self-assign roles, such as `compute`, `intra-comm`, `inter-send`, `inter-reduce`. The split (e.g. number of SMs dedicated to each role) is tunable per shape.
 - **GPU-driven networking, built on `libibverbs`.** mKernel uses GPU-initiated RDMA writes without depending on NCCL or NVSHMEM. We find that writing the communication backend from scratch is helpful to maximize performance as well as cater to heterogenous networking devices. 
 
 ## The five fused kernels
@@ -65,41 +65,14 @@ mKernel is a small, focused library of persistent CUDA kernels — each of which
 
 We evaluate mKernel on two 2-node × 8-H200 clusters that differ only in the inter-node fabric (CX7, EFA). 
 
-| Testbed | Nodes × GPUs | Intra-node | Inter-node transport | NIC | Backend macro |
+| Testbed | Nodes × GPUs | Intra-node | Inter-node transport | NIC | 
 |---|---|---|---|---|---|
-| **AWS EFA** | 2 × 8 H200 | NVLink | AWS EFA / SRD | 16 × 200 Gb/s EFA per node (3.2 Tbps/node) | `-DINTERNODE_BACKEND_EFA` |
-| **ConnectX-7** | 2 × 8 H200 | NVLink | InfiniBand | 8 × 400 Gb/s NVIDIA ConnectX-7 per node | `-DINTERNODE_BACKEND_IBVERBS` |
-
-Both clusters give 50 GB/s of inter-node bandwidth per GPU; the difference is in the transport semantics — EFA's SRD is multi-pathed but gives no per-QP ordering and no native RDMA atomics, while CX-7 RC is in-order with hardware atomics. 
-
-## Results on ConnectX-7
+| **AWS EFA** | 2 × 8 H200 | NVLink | AWS EFA / SRD | 16 × 200 Gb/s EFA per node (3.2 Tbps/node) | 
+| **ConnectX-7** | 2 × 8 H200 | NVLink | InfiniBand | 8 × 400 Gb/s NVIDIA ConnectX-7 per node | 
 
 mKernel is benchmarked against several baselines for each workload: NCCL, Triton-distributed, Flux, Mercury, MagiAttention, Transformer-Engine, and ring-flash-attention. We are still doing further benchmarking on larger scale.
 
-<p align="center">
-  <img src="/mkernel/gemm_ar_cx7.png" alt="GEMM + AllReduce on ConnectX-7" width="700" style="margin-bottom:0;"/>
-  <em style="display:block;margin-top:0.5rem;">GEMM + AllReduce</em>
-</p>
-
-<p align="center">
-  <img src="/mkernel/ring_attn_cx7.png" alt="Ring Attention on ConnectX-7" width="700" style="margin-bottom:0;"/>
-  <em style="display:block;margin-top:0.5rem;">Ring Attention</em>
-</p>
-
-<p align="center">
-  <img src="/mkernel/gemm_rs_cx7.png" alt="GEMM + ReduceScatter on ConnectX-7" width="700" style="margin-bottom:0;"/>
-  <em style="display:block;margin-top:0.5rem;">GEMM + ReduceScatter</em>
-</p>
-
-<p align="center">
-  <img src="/mkernel/ag_gemm_cx7.png" alt="AllGather + GEMM on ConnectX-7" width="700" style="margin-bottom:0;"/>
-  <em style="display:block;margin-top:0.5rem;">AllGather + GEMM</em>
-</p>
-
-
 ## Results on AWS EFA
-
-We also run on the AWS EFA cluster against the same set of baselines.
 
 <p align="center">
   <img src="/mkernel/ag_gemm_efa.png" alt="AllGather + GEMM on EFA" width="700" style="margin-bottom:0;"/>
@@ -126,12 +99,35 @@ We also run on the AWS EFA cluster against the same set of baselines.
   <em style="display:block;margin-top:0.5rem;">GEMM + ReduceScatter</em>
 </p>
 
+## Results on ConnectX-7
+
+<p align="center">
+  <img src="/mkernel/gemm_ar_cx7.png" alt="GEMM + AllReduce on ConnectX-7" width="700" style="margin-bottom:0;"/>
+  <em style="display:block;margin-top:0.5rem;">GEMM + AllReduce</em>
+</p>
+
+<p align="center">
+  <img src="/mkernel/ring_attn_cx7.png" alt="Ring Attention on ConnectX-7" width="700" style="margin-bottom:0;"/>
+  <em style="display:block;margin-top:0.5rem;">Ring Attention</em>
+</p>
+
+<p align="center">
+  <img src="/mkernel/gemm_rs_cx7.png" alt="GEMM + ReduceScatter on ConnectX-7" width="700" style="margin-bottom:0;"/>
+  <em style="display:block;margin-top:0.5rem;">GEMM + ReduceScatter</em>
+</p>
+
+<p align="center">
+  <img src="/mkernel/ag_gemm_cx7.png" alt="AllGather + GEMM on ConnectX-7" width="700" style="margin-bottom:0;"/>
+  <em style="display:block;margin-top:0.5rem;">AllGather + GEMM</em>
+</p>
+
+
 ## Roadmap
 
 - ✅ Fused, GPU-driven multi-node kernels (AG+GEMM, GEMM+AR, dispatch+GEMM, ring attention, GEMM+RS).
-- ✅ ConnectX-7 and AWS EFA backends behind a single surface.
+- ✅ ConnectX-7 and AWS EFA backends.
 - 🚧 Full support for heterogeneous accelerators and NICs, with topology-aware accelerator/NIC discovery, placement, and routing.
-- 🚧 Inter-node *megakernels*: collapsing several fused steps into a single persistent kernel that spans an entire transformer layer.
+- 🚧 Inter-node *megakernels*: collapsing several fused steps into a single megakernel that spans an entire transformer layer.
 - 🚧 Blackwell GPU support.
 
 ## References
