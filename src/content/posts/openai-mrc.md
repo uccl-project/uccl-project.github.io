@@ -10,7 +10,7 @@ tags:
   - SRD
   - Multi-plane
   - UCCL-Tran
-pubDate: 2026-05-21
+pubDate: 2026-05-26
 cover: /openai-mrc/openai-mrc.png
 coverAlt: OpenAI MRC
 author: Zhongjie Chen, Xizhi Zhang, Yang Zhou, and the UCCL Team
@@ -19,7 +19,7 @@ author: Zhongjie Chen, Xizhi Zhang, Yang Zhou, and the UCCL Team
 <p>
 <strong>By: Zhongjie Chen, Xizhi Zhang, Yang Zhou, and the UCCL team
 <br>
-Date: May 21, 2026
+Date: May 26, 2026
 </strong>
 </p>
 
