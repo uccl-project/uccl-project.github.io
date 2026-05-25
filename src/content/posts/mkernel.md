@@ -61,16 +61,16 @@ mKernel is a small, focused library of persistent CUDA kernels — each of which
 | **Ring Attention** | Ring KV exchange → FlashAttention | Sequence-parallel attention across ranks: each step rotates a KV chunk around the ring while the local FlashAttention consumes the previously-received chunk. |
 | **GEMM + ReduceScatter** | GEMM → ReduceScatter | Computes `C = A @ B` and reduce-scatters the output across ranks. Each output tile is reduced and forwarded to its owning rank as soon as it's produced |
 
-## Testbeds
+## Evaluation setup
 
 We evaluate mKernel on two 2-node × 8-H200 clusters that differ only in the inter-node fabric (CX7, EFA). 
 
 | Testbed | Nodes × GPUs | Intra-node | Inter-node transport | NIC | 
 |---|---|---|---|---|---|
-| **AWS EFA** | 2 × 8 H200 | NVLink | AWS EFA / SRD | 16 × 200 Gb/s EFA per node (3.2 Tbps/node) | 
+| **AWS EFA** | 2 × 8 H200 | NVLink | AWS EFA / SRD | 16 × 200 Gb/s EFA per node | 
 | **ConnectX-7** | 2 × 8 H200 | NVLink | InfiniBand | 8 × 400 Gb/s NVIDIA ConnectX-7 per node | 
 
-mKernel is benchmarked against several baselines for each workload: NCCL, Triton-distributed, Flux, Mercury, MagiAttention, Transformer-Engine, and ring-flash-attention. We are still doing further benchmarking on larger scale.
+mKernel is benchmarked against several baselines for each workload, including: NCCL, Triton-distributed, Flux, Mercury, MagiAttention, Transformer-Engine, and ring-flash-attention. We are still doing further benchmarking on larger scale.
 
 ## Results on AWS EFA
 
