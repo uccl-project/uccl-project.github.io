@@ -1,0 +1,259 @@
+<!DOCTYPE html><html lang="en"> <head><!-- Global Metadata --><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/svg+xml" href="/logos/uccl_logo.png"><meta name="generator" content="Astro v5.1.1"><!-- Canonical URL --><link rel="canonical" href="https://uccl-project.github.io/posts/openai-mrc/"><!-- Sitemap --><link rel="sitemap" href="/sitemap-index.xml"><!-- Primary Meta Tags --><title>Reading OpenAI&#39;s MRC Through a UCCL Lens</title><meta name="title" content="Reading OpenAI's MRC Through a UCCL Lens"><meta name="description" content="A close reading of OpenAI/Microsoft/AMD/Broadcom/NVIDIA's MRC + SRv6 paper and the MRC OCP specification, viewed from the UCCL perspective: a real step forward over traditional RoCE v2 RC, but with constraints that validate why a software-extensible transport still matters."><!-- Open Graph / Facebook --><meta property="og:type" content="website"><meta property="og:url" content="https://uccl-project.github.io/posts/openai-mrc/"><meta property="og:title" content="Reading OpenAI's MRC Through a UCCL Lens"><meta property="og:description" content="A close reading of OpenAI/Microsoft/AMD/Broadcom/NVIDIA's MRC + SRv6 paper and the MRC OCP specification, viewed from the UCCL perspective: a real step forward over traditional RoCE v2 RC, but with constraints that validate why a software-extensible transport still matters."><meta property="og:image" content="https://uccl-project.github.io/blog-placeholder-1.avif"><!-- Twitter --><meta property="twitter:card" content="summary_large_image"><meta property="twitter:url" content="https://uccl-project.github.io/posts/openai-mrc/"><meta property="twitter:title" content="Reading OpenAI's MRC Through a UCCL Lens"><meta property="twitter:description" content="A close reading of OpenAI/Microsoft/AMD/Broadcom/NVIDIA's MRC + SRv6 paper and the MRC OCP specification, viewed from the UCCL perspective: a real step forward over traditional RoCE v2 RC, but with constraints that validate why a software-extensible transport still matters."><meta property="twitter:image" content="https://uccl-project.github.io/blog-placeholder-1.avif"><!-- Preline CSS --><script type="module" src="/_astro/BaseHead.astro_astro_type_script_index_0_lang.BtT675nX.js"></script><!-- Prism syntax highlighting --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-3wzg3yUeG6mXQz0YIZxZOKhHvJ3C0cI85FhF38sZ4N2VNivXzXcX4Jt9I7H5PHeTtNKgHdwNwp0UrEG3iu8IRw==" crossorigin="anonymous" referrerpolicy="no-referrer"><!-- Custom CSS for table borders --><link rel="stylesheet" href="/_astro/_page_.CihA94b9.css">
+<style>[data-astro-image]{width:100%;height:auto;-o-object-fit:var(--fit);object-fit:var(--fit);-o-object-position:var(--pos);object-position:var(--pos);aspect-ratio:var(--w) / var(--h)}[data-astro-image=responsive]{max-width:calc(var(--w) * 1px);max-height:calc(var(--h) * 1px)}[data-astro-image=fixed]{width:calc(var(--w) * 1px);height:calc(var(--h) * 1px)}
+</style><script type="module" src="/_astro/page.DTIbhfSr.js"></script>
+<script>!(function(w,p,f,c){if(!window.crossOriginIsolated && !navigator.serviceWorker) return;c=w[p]=Object.assign(w[p]||{},{"lib":"/~partytown/","debug":false});c[f]=(c[f]||[]).concat(["dataLayer.push"])})(window,'partytown','forward');/* Partytown 0.10.2 - MIT builder.io */
+const t={preserveBehavior:!1},e=e=>{if("string"==typeof e)return[e,t];const[n,r=t]=e;return[n,{...t,...r}]},n=Object.freeze((t=>{const e=new Set;let n=[];do{Object.getOwnPropertyNames(n).forEach((t=>{"function"==typeof n[t]&&e.add(t)}))}while((n=Object.getPrototypeOf(n))!==Object.prototype);return Array.from(e)})());!function(t,r,o,i,a,s,c,d,l,p,u=t,f){function h(){f||(f=1,"/"==(c=(s.lib||"/~partytown/")+(s.debug?"debug/":""))[0]&&(l=r.querySelectorAll('script[type="text/partytown"]'),i!=t?i.dispatchEvent(new CustomEvent("pt1",{detail:t})):(d=setTimeout(v,1e4),r.addEventListener("pt0",w),a?y(1):o.serviceWorker?o.serviceWorker.register(c+(s.swPath||"partytown-sw.js"),{scope:c}).then((function(t){t.active?y():t.installing&&t.installing.addEventListener("statechange",(function(t){"activated"==t.target.state&&y()}))}),console.error):v())))}function y(e){p=r.createElement(e?"script":"iframe"),t._pttab=Date.now(),e||(p.style.display="block",p.style.width="0",p.style.height="0",p.style.border="0",p.style.visibility="hidden",p.setAttribute("aria-hidden",!0)),p.src=c+"partytown-"+(e?"atomics.js?v=0.10.2":"sandbox-sw.html?"+t._pttab),r.querySelector(s.sandboxParent||"body").appendChild(p)}function v(n,o){for(w(),i==t&&(s.forward||[]).map((function(n){const[r]=e(n);delete t[r.split(".")[0]]})),n=0;n<l.length;n++)(o=r.createElement("script")).innerHTML=l[n].innerHTML,o.nonce=s.nonce,r.head.appendChild(o);p&&p.parentNode.removeChild(p)}function w(){clearTimeout(d)}s=t.partytown||{},i==t&&(s.forward||[]).map((function(r){const[o,{preserveBehavior:i}]=e(r);u=t,o.split(".").map((function(e,r,o){var a;u=u[o[r]]=r+1<o.length?u[o[r]]||(a=o[r+1],n.includes(a)?[]:{}):(()=>{let e=null;if(i){const{methodOrProperty:n,thisObject:r}=((t,e)=>{let n=t;for(let t=0;t<e.length-1;t+=1)n=n[e[t]];return{thisObject:n,methodOrProperty:e.length>0?n[e[e.length-1]]:void 0}})(t,o);"function"==typeof n&&(e=(...t)=>n.apply(r,...t))}return function(){let n;return e&&(n=e(arguments)),(t._ptf=t._ptf||[]).push(o,arguments),n}})()}))})),"complete"==r.readyState?h():(t.addEventListener("DOMContentLoaded",h),t.addEventListener("load",h))}(window,document,navigator,top,window.crossOriginIsolated);;(e=>{e.addEventListener("astro:before-swap",e=>{let r=document.body.querySelector("iframe[src*='/~partytown/']");if(r)e.newDocument.body.append(r)})})(document);</script></head> <body class="flex flex-col min-h-screen mx-auto max-w-4xl px-4 dark:prose-invert sm:px-6 lg:px-8 dark:bg-neutral-900"> <header class="flex flex-wrap md:justify-start md:flex-nowrap z-50 w-full py-7"> <nav class="relative max-w-7xl w-full flex flex-wrap md:grid md:grid-cols-12 basis-full items-center px-4 mx-auto" aria-label="Global"> <div class="md:col-span-3"> <a class="flex-none flex items-center" href="https://github.com/uccl-project/uccl" aria-label="UCCL GitHub repository"> <img src="/logos/uccl_logo_side.png" alt="UCCL Logo" class="h-12 w-auto"> </a> </div> <div class="flex items-center gap-x-2 ms-auto py-1 md:ps-6 md:order-3 md:col-span-3"> <button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-xl border border-transparent text-black hover:bg-neutral-100 dark:text-white dark:hover:bg-neutral-700 transition disabled:opacity-50 disabled:pointer-events-none" onclick="window.location.href='/search/'"> <svg width="1em" height="1em" class="icon-base" data-icon="tabler:search">   <symbol id="ai:tabler:search" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10a7 7 0 1 0 14 0a7 7 0 1 0-14 0m18 11l-6-6"/></symbol><use href="#ai:tabler:search"></use>  </svg> </button> <button type="button" class="hs-dark-mode hs-dark-mode-active:hidden inline-flex items-center gap-x-2 py-2 px-3 rounded-full text-sm text-black hover:bg-white/20" data-hs-theme-click-value="dark"> <svg width="1em" height="1em" class="icon-base" data-icon="tabler:sun-filled">   <symbol id="ai:tabler:sun-filled" viewBox="0 0 24 24"><path fill="currentColor" d="M12 19a1 1 0 0 1 .993.883L13 20v1a1 1 0 0 1-1.993.117L11 21v-1a1 1 0 0 1 1-1m6.313-2.09l.094.083l.7.7a1 1 0 0 1-1.32 1.497l-.094-.083l-.7-.7a1 1 0 0 1 1.218-1.567zm-11.306.083a1 1 0 0 1 .083 1.32l-.083.094l-.7.7a1 1 0 0 1-1.497-1.32l.083-.094l.7-.7a1 1 0 0 1 1.414 0M4 11a1 1 0 0 1 .117 1.993L4 13H3a1 1 0 0 1-.117-1.993L3 11zm17 0a1 1 0 0 1 .117 1.993L21 13h-1a1 1 0 0 1-.117-1.993L20 11zM6.213 4.81l.094.083l.7.7a1 1 0 0 1-1.32 1.497l-.094-.083l-.7-.7A1 1 0 0 1 6.11 4.74zm12.894.083a1 1 0 0 1 .083 1.32l-.083.094l-.7.7a1 1 0 0 1-1.497-1.32l.083-.094l.7-.7a1 1 0 0 1 1.414 0M12 2a1 1 0 0 1 .993.883L13 3v1a1 1 0 0 1-1.993.117L11 4V3a1 1 0 0 1 1-1m0 5a5 5 0 1 1-4.995 5.217L7 12l.005-.217A5 5 0 0 1 12 7"/></symbol><use href="#ai:tabler:sun-filled"></use>  </svg> </button> <button type="button" class="hs-dark-mode hs-dark-mode-active:inline-flex hidden items-center gap-x-2 py-2 px-3 rounded-full text-sm text-white hover:bg-white/20" data-hs-theme-click-value="light"> <svg width="1em" height="1em" class="icon-base" data-icon="tabler:moon-filled">   <symbol id="ai:tabler:moon-filled" viewBox="0 0 24 24"><path fill="currentColor" d="M12 1.992a10 10 0 1 0 9.236 13.838c.341-.82-.476-1.644-1.298-1.31a6.5 6.5 0 0 1-6.864-10.787l.077-.08c.551-.63.113-1.653-.758-1.653h-.266l-.068-.006z"/></symbol><use href="#ai:tabler:moon-filled"></use>  </svg> </button> <div class="md:hidden"> <button type="button" class="hs-collapse-toggle size-[38px] flex justify-center items-center text-sm font-semibold rounded-xl text-black hover:bg-neutral-100 disabled:opacity-50 disabled:pointer-events-none dark:text-white dark:hover:bg-neutral-700" data-hs-collapse="#navbar-collapse-with-animation" aria-controls="navbar-collapse-with-animation" aria-label="Toggle navigation"> <svg width="1em" height="1em" class="hs-collapse-open:hidden flex-shrink-0 size-4" data-icon="tabler:menu-2">   <symbol id="ai:tabler:menu-2" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></symbol><use href="#ai:tabler:menu-2"></use>  </svg> <svg width="1em" height="1em" class="hs-collapse-open:block hidden flex-shrink-0 size-4" data-icon="tabler:menu-order">   <symbol id="ai:tabler:menu-order" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 10h16M4 14h16M9 18l3 3l3-3M9 6l3-3l3 3"/></symbol><use href="#ai:tabler:menu-order"></use>  </svg> </button> </div> </div> <div id="navbar-collapse-with-animation" class="hs-collapse hidden overflow-hidden transition-all duration-300 basis-full grow md:block md:w-auto md:basis-auto md:order-2 md:col-span-6"> <div class="flex flex-col gap-y-4 gap-x-0 mt-5 md:flex-row md:justify-center md:items-center md:gap-y-0 md:gap-x-7 md:mt-0"> <a href="/posts/about-us/" class="px-4 py-3 font-medium text-neutral-900 hover:text-neutral-600 dark:text-neutral-400 dark:hover:text-neutral-200"> About Us </a><a href="/" class="px-4 py-3 font-medium text-neutral-900 hover:text-neutral-600 dark:text-neutral-400 dark:hover:text-neutral-200"> Blog Posts </a><a href="/tags/" class="px-4 py-3 font-medium text-neutral-900 hover:text-neutral-600 dark:text-neutral-400 dark:hover:text-neutral-200"> Sort by Tags </a> </div> </div> </nav> </header> <main class="flex-grow">  <main> <article class="prose mx-auto dark:prose-invert"> <div class="prose-h1 text-center"> <h1 class="whitespace-pre-line">Reading OpenAI&#39;s MRC Through a UCCL Lens</h1> </div> <div> <img src="/openai-mrc/openai-mrc.png" alt="OpenAI MRC" class="mx-auto w-full max-w-full rounded-lg"> </div> <div> <p>
+<strong>By: Zhongjie Chen, Xizhi Zhang, Yang Zhou, and the UCCL team
+<br>
+Date: May 26, 2026
+</strong>
+</p>
+<div class="tldr">
+<p>
+<strong><a href="https://cdn.openai.com/pdf/resilient-ai-supercomputer-networking-using-mrc-and-srv6.pdf">MRC</a></strong> (Multipath Reliable Connection) is a new RDMA transport for LLM pretraining from OpenAI, Microsoft, AMD, Broadcom, and NVIDIA. 
+It is based on the widely used RoCEv2 RC, but addresses many of RC's limitations with <strong>per-QP packet spraying, out-of-order delivery, selective retransmission, and multipath congestion control</strong>; 
+it also leverages <strong>multi-plane network topology and static SRv6 source routing</strong>. 
+An <a href="https://www.opencompute.org/documents/ocp-mrc-1-0-pdf">OCP spec</a> has been released for MRC, with NVIDIA CX-8, AMD Pollara, and Broadcom Thor Ultra RDMA NICs already shipping it. 
+<br><br>
+Through the UCCL lens, we think MRC is not a panacea and cannot effectively support recent MoE communication out of the box because of its lack of support for RDMA atomics. 
+This blog further compares MRC with alternative solutions including UET, AWS SRD, and our own UCCL-Tran, highlighting the differences among them. 
+For example, MRC only runs on the very latest silicon (CX-8 / Pollara / Thor Ultra), while UCCL-Tran brings the same multipath, out-of-order delivery, and selective-retransmission power to legacy RDMA NICs. 
+</p>
+</div>
+<h2 id="what-problems-does-mrc-address"><a class="heading-anchor" href="#what-problems-does-mrc-address">What Problems Does MRC Address?</a></h2>
+<p>LLM training workloads are communication-heavy, and a key bottleneck is scale-out RDMA network performance.
+The RDMA network can run into many problems, including:</p>
+<ol>
+<li>Flow collisions significantly reduce achievable bandwidth.</li>
+<li>Any switch/link/port failure causes a large blast radius.</li>
+<li>Poor visibility and debuggability with conventional in-network adaptive routing.</li>
+</ol>
+<p>The MRC protocol and system design nicely address these problems with massive NIC-managed multipathing, multi-plane network topology, and static SRv6 source routing, achieving stable and performant production training at OpenAI and Microsoft.</p>
+<hr>
+<h2 id="problem-1-network-flow-collision"><a class="heading-anchor" href="#problem-1-network-flow-collision">Problem #1: Network Flow Collision</a></h2>
+<p>As shown in Figure 1, the problem is that two RDMA flows can collide on the same egress switch port, causing bandwidth degradation. It is rooted in the single-path nature of the widely used RDMA RC QPs (Queue Pairs).
+We note that our UCCL-Tran <sup><a href="#user-content-fn-1" id="user-content-fnref-1" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup> paper also studied this problem one year ago.</p>
+<p align="center">
+  <img src="/nccl-debug/ecmp_collision.png" alt="ECMP hash collision" width="600">
+  <em>Figure 1: Network congestion can happen because each RDMA flow only goes through a single fixed network path in RoCE, and two flows can collide on the same egress switch port.</em>
+</p>
+<p>To address this issue, MRC adopts a suite of techniques:</p>
+<ul>
+<li><strong>Packet spraying.</strong> Each MRC QP keeps an active EV set (EV stands for Entropy Value, e.g., src/dst port number), and the NIC picks an EV for each packet so traffic is sprayed across many paths instead of being pinned to one ECMP hash. This directly attacks RC’s single-path-per-QP collision problem. Figure 2 visualizes the process.</li>
+<li><strong>Multipath congestion control.</strong> MRC uses UET’s NSCC <sup><a href="#user-content-fn-2" id="user-content-fnref-2" data-footnote-ref="" aria-describedby="footnote-label">2</a></sup>, a sender-driven, SACK-clocked, window-based controller that combines ECN and RTT. It can leave mild single-path congestion to path switching while reducing the congestion window for severe or widespread congestion.</li>
+<li><strong>Selective retransmission + packet trimming.</strong> MRC runs without PFC and uses SACK/NACK feedback to retransmit only missing packets. Header-only trimmed packets (generated by switches) trigger fast recovery and help distinguish congestion loss from link-failure loss, avoiding RC’s expensive Go-Back-N behavior.</li>
+<li><strong>Out-of-order placement.</strong> Each data packet carries enough RETH information for the receiver NIC to DMA it directly into its final memory location, so reordered sprayed packets can still land correctly. <code>WRITE_WITH_IMM</code> remains the ordering barrier for completion signaling.</li>
+</ul>
+<p align="center">
+  <img src="/openai-mrc/mrc-multipath.png" alt="MRC multipath data path: ibv_post_send hands a message to the MRC QP, Path Selection sprays packets across multiple EV-defined paths, and per-path SACK/NACK feedback (with ECN or TRIMMED signals) flips EV entries to SKIP in the EV Profile table to avoid congested or lossy paths" width="430">
+</p>
+<p align="center"><em>Figure 2: After the message is handed to the MRC QP, the Path Selection stage picks an EV from the QP's active EV set for every packet, then packets get sprayed across network paths in parallel. Feedback from ECN, trimming, SACK, and NACK updates EV state so later packets avoid bad or congested paths.</em></p>
+<p>MRC is not a software protocol — it is implemented in the programmable data plane of three RDMA vendors’ newest silicon: <strong>NVIDIA ConnectX-8</strong> (800 Gb/s), <strong>AMD Pollara / Vulcano</strong> (400/800 Gb/s), and <strong>Broadcom Thor Ultra</strong> (800 Gb/s).
+The host-side API is <strong><code>libibverbs</code>-compatible</strong>: applications continue to use the standard verbs surface (QPs, MRs, work-request posting, CQ polling), so existing RDMA stacks like NCCL/RCCL plug in without a new user-space library.</p>
+<h3 id="uccls-lens"><a class="heading-anchor" href="#uccls-lens">UCCL’s Lens</a></h3>
+<p>Many protocol-level bets here mirror decisions UCCL-Tran <sup><a href="#user-content-fn-1" id="user-content-fnref-1-2" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup> made in software: per-packet (or per-chunk) spraying across hundreds of logical paths, PFC-off lossy operation, out-of-order DMA placement, and selective retransmission instead of Go-Back-N. The MRC paper is, in many ways, a hardware realization of the same architectural answer — and that is exactly why we find it interesting. UCCL-Tran keeps that same surface in CPU software, so a new CC profile (e.g., receiver-driven EQDS for MoE incast), a new load-balancing policy, or a new loss-tolerance scheme is a code change, not a new tape-out. We see MRC as raising the floor; UCCL-Tran keeps the ceiling open.</p>
+<p>Importantly, MRC only runs on the very latest silicon (CX-8 / Pollara / Thor Ultra), while UCCL-Tran brings the same multipath, OoO, selective-retransmit power to the <strong>legacy</strong> RDMA NICs already deployed in the field — CX-5/6/7, BlueField, EFA, Thor 1/2 — without a hardware refresh, albeit with some design tradeoffs.</p>
+<hr>
+<h2 id="problem-2-failure-blast-radius"><a class="heading-anchor" href="#problem-2-failure-blast-radius">Problem #2: Failure Blast Radius</a></h2>
+<p>The topology piece is just as important as the transport piece. MRC leans on a key capability of modern NICs — <strong>per-lane port breakout</strong> — to turn one 800 Gb/s NIC port into 4×200 or 8×100 Gb/s independent network ports, and then builds <strong>one Clos plane per lane</strong>. This is the crucial distinction from the more familiar <strong>multi-rail</strong> design (e.g., Alibaba HPN, Meta’s rail-optimized fabrics), where each NIC has a single port that lives in a single rail. Figure 3 compares these two designs.</p>
+<p align="center">
+  <img src="/openai-mrc/topo.png" alt="topology" width="500">
+</p>
+<p align="center"><em>Figure 3: Two ways to wire 100K+ GPUs at full bisection bandwidth. (a) A conventional <strong>3-tier single-plane</strong> 800 Gb/s Clos: 64 pods × 32 T0s × 32 NICs = <strong>65,536 NICs</strong>, with the longest path crossing 5 switch hops. (b) MRC's <strong>2-tier 8×100 Gb/s multi-plane</strong> design: each NIC's 800 Gb/s port is broken into 8 lanes that feed 8 parallel Clos planes built from the same 51.2 Tb/s switches (now seen as 512-port at 100G), reaching <strong>131,072 NICs</strong> with the longest path crossing only 3 switch hops, ~2/3 the optics and ~3/5 the switches, and a ~10× smaller blast radius per T0–T1 link loss.</em></p>
+<p>Multi-plane via NIC breakout gets you:</p>
+<ul>
+<li><strong>Two switch tiers for 100K+ GPUs.</strong> Each switch effectively has 8× the port count, so a 51.2 Tb/s switch alone can fan out to 512 NICs per tier. Two tiers cover 131,072 GPUs (vs. needing three tiers, oversubscription, or rails for a single-plane design). Two tiers means fewer hops, lower tail latency, fewer optics (~2/3), fewer switches (~3/5), and fewer places for partial failures to hide.</li>
+<li><strong>Failure blast radius shrinks by an order of magnitude.</strong> Losing one T0–T1 link removes 1/256 ≈ <strong>0.4%</strong> of a NIC’s capacity in an 8-plane network, versus ~3% in a single-plane 800 Gb/s design. Losing one <em>NIC-side</em> port costs 12% of NIC bandwidth, which is survivable: the job keeps running on the remaining planes.</li>
+<li><strong>Locality is much easier.</strong> A T0 switch reaches 256 NICs in one hop instead of 32, so collectives like all-gather and ring-attention can exploit T0-local placement far more often, cutting load on the T1 layer.</li>
+<li><strong>Built-in load-balancing leverage.</strong> MRC’s per-packet EV spraying directly fills all planes equally; the topology and the transport are co-designed for this.</li>
+</ul>
+<p>Multi-plane is also what makes MRC’s <strong>per-EV failure detection and recovery</strong> practical. Because every EV maps to a specific path through a specific plane, the sender NIC can keep a small EV state table and treat path health as a per-entry property rather than a fabric-wide event. When a packet on EV 42 times out (see the left part of Figure 4 below), that EV is locally marked <code>BAD</code> and immediately removed from the spraying set — the other EVs keep flowing through the remaining planes, so the QP never stalls and the blast radius of a single link fault stays at one entry out of hundreds.</p>
+<p align="center">
+  <img src="/openai-mrc/topo-fail.png" alt="fail" width="900">
+</p>
+<p align="center"><em>Figure 4: When a link fails, only the EV (path) traversing it is timed out and marked <code>BAD</code>; the other EVs continue to drain traffic through the remaining planes.</em></p>
+<p>Recovery is the symmetric operation. The source NIC periodically emits tiny <strong>probe packets</strong> on its <code>BAD</code> EVs; as soon as a probe round-trips successfully, the corresponding entry flips back to <code>GOOD</code> and the EV rejoins the active spraying set. There is no fabric-wide reconvergence event, no controller in the loop, and no need to renegotiate the QP — the data plane self-heals at EV granularity, on the order of an RTT after the link comes back.</p>
+<h3 id="uccls-lens-1"><a class="heading-anchor" href="#uccls-lens-1">UCCL’s Lens</a></h3>
+<p>We think multi-plane via NIC port breakout is <strong>the right direction</strong> — it gets you two-tier 100K-GPU reach, an order-of-magnitude smaller failure blast radius, and a topology that composes naturally with packet-level spraying. UCCL-Tran is fully on board with this destination. That said, the UCCL paper makes the equally important practical point that <strong>rebuilding the fabric is slow and expensive</strong>: new hardware, physical cabling, switch SKUs, optics inventory, and operator playbooks all have to change in lockstep. Most clusters today are single-plane or rail-optimized, and they will remain so for years. Software multipath transports like UCCL-Tran exist precisely to deliver most of the collision-avoidance benefit <em>on the fabric you already have</em>, while operators plan the longer multi-plane refresh. The two efforts are sequential, not competing.</p>
+<hr>
+<h2 id="problem-3-visibility-and-debuggability"><a class="heading-anchor" href="#problem-3-visibility-and-debuggability">Problem #3: Visibility and Debuggability</a></h2>
+<p>The transport story gets most of the airtime, but the operational story is just as important — and arguably the harder thing to replicate.
+In conventional RDMA deployments with switch-based in-network adaptive routing, a single flow can traverse different switches and links depending on the real-time congestion level.
+When the step time of a training job doubles, operators cannot easily figure out which switch is the culprit and remove that slow switch.</p>
+<p>In OpenAI’s production MRC deployments, dynamic routing is <em>disabled</em> and each EV instead maps algorithmically (via SRv6 uSID templates) to a deterministic physical path. With SRv6 uSID source routing:</p>
+<ul>
+<li><strong>Every EV deterministically encodes a physical path.</strong> Probes from a per-node MRC clustermapper agent take <em>exactly</em> the same path an MRC data packet would. There is no dynamic-routing layer in between to lie to you.</li>
+<li><strong>Switches forward SRv6 in the data plane at line rate.</strong> This lets every host probe every directly attached T0 (and a sample of T1s) every millisecond. This gives ground truth about forwarding-plane health, independent of the switch control plane.</li>
+<li><strong>Localizing a failure becomes trivial:</strong> if T0-loopback probes succeed but T1-loopback probes fail, the bad component is the T0–T1 link.</li>
+<li><strong>Bad-path avoidance becomes more precise and controllable.</strong> With SRv6, changing to a replacement EV can deterministically move traffic onto a different physical path, while it cannot make the same guarantee with hash-based ECMP forwarding. With help from MRC clustermapper, SRv6 also lets bad-path avoidance extend beyond a single QP: the denylist can exclude bad EVs from a shared EV Profile, or exclude a failed NIC port so traffic is sprayed across the remaining planes.</li>
+</ul>
+<h3 id="uccls-lens-2"><a class="heading-anchor" href="#uccls-lens-2">UCCL’s Lens</a></h3>
+<p>This is the area where MRC has a clear advantage over a pure software transport over commodity ECMP fabrics: source routing gives you <em>deterministic path ↔ EV mapping</em> that we cannot get from hash-based ECMP today. We see this as complementary rather than competitive — a software transport like UCCL-Tran would benefit enormously from being able to carry SRv6 segments on outgoing packets. The OCP MRC spec being open is genuinely good news here.</p>
+<hr>
+<h2 id="is-mrc-a-panacea-for-gpu-networking"><a class="heading-anchor" href="#is-mrc-a-panacea-for-gpu-networking">Is MRC a Panacea for GPU Networking?</a></h2>
+<p>MRC is genuinely impressive engineering, but it still has some limitations worth noting, especially when dealing with the <strong>GPU-initiated communication</strong> commonly used in MoE workloads.</p>
+<h3 id="writew-imm-only-verbs"><a class="heading-anchor" href="#writew-imm-only-verbs">WRITE(w/ IMM) Only Verbs</a></h3>
+<p>Only <code>RDMA WRITE</code> and <code>RDMA WRITE_WITH_IMM</code> are on the wire — and this is not just a packaging decision, it falls out of how MRC sprays packets. To allow out-of-order placement, MRC carries an <strong>RETH header (remote virtual address + rkey) on <em>every</em> data packet</strong>, so each packet is self-contained and can DMA directly into its final memory location. That trick is specific to one-sided WRITEs; it has no natural analog for <code>READ</code> (the responder, not the requestor, would need to spray), for <code>ATOMIC</code> (single-target, serialized), or for two-sided <code>SEND/RECV</code> (no remote address to begin with — the receiver picks the buffer via posted RQ entries).</p>
+<p>This matters more than it sounds. The “WRITE-only” pattern is fine for traditional pretraining collectives, but it is awkward for several important newer workloads:</p>
+<ul>
+<li><strong>MoE dispatch / combine</strong> (e.g., DeepEP <sup><a href="#user-content-fn-3" id="user-content-fnref-3" data-footnote-ref="" aria-describedby="footnote-label">3</a></sup>) increasingly relies on <strong><code>ATOMIC</code> fetch-and-add</strong> for fast, lock-free token-count exchange between senders and experts. Earlier DeepEP versions did use <code>WRITE_WITH_IMM</code>, but that forced the receiver GPU to poll the CQ and re-post RQ entries on the critical path — extra GPU work that competes with the dispatch kernel and is generally regarded as a worse design. The switch to the atomic-based path landed in commit <a href="https://github.com/deepseek-ai/DeepEP/commit/2d0cf41">2d0cf41</a> one year ago.</li>
+<li><strong>KV transfer for PD disaggregation</strong> wants <code>READ</code> so that the decode side pulls KV on demand without a coordination round-trip.</li>
+</ul>
+<h3 id="write_with_imm-with-a-small-in-flight-cap"><a class="heading-anchor" href="#write_with_imm-with-a-small-in-flight-cap"><code>WRITE_WITH_IMM</code> With a Small In-Flight Cap</a></h3>
+<p>The immediate-data CQE must be delivered to the responder <strong>in order with respect to all prior WRITEs on the QP</strong> — i.e., a <code>WRITE_WITH_IMM</code> cannot complete until every preceding WRITE has landed.
+In a sprayed, out-of-order data plane that means the NIC has to track per-QP barrier state and hold completion resources for every outstanding <code>WRITE_WITH_IMM</code>, which is exactly the kind of bookkeeping that does not scale on-chip.
+As a result MRC implementations cap the number of in-flight <code>WRITE_WITH_IMM</code> operations per QP (the spec calls this out and adds a dedicated “Inflight WriteImm limit exceeded” NACK code).
+Workloads that try to use <code>WRITE_WITH_IMM</code> as a fine-grained signaling primitive — one immediate per chunk — will hit this cap before they hit bandwidth.</p>
+<h3 id="last-hop-incast"><a class="heading-anchor" href="#last-hop-incast">Last-Hop Incast</a></h3>
+<p>NSCC is solid, but in practice MRC leans on packet trimming + selective retransmit + receiver-side backpressure to absorb receiver-side bursts.
+For workloads with very skewed receiver-side hot spots (MoE serving with hot experts, PD disaggregation, irregular all-to-all), a receiver-driven scheduler (e.g., EQDS-style <sup><a href="#user-content-fn-5" id="user-content-fnref-5" data-footnote-ref="" aria-describedby="footnote-label">4</a></sup>) is a strictly better answer — and it’s unclear whether MRC can support this.</p>
+<h3 id="built-into-the-newest-silicon-only"><a class="heading-anchor" href="#built-into-the-newest-silicon-only">Built into the Newest Silicon Only</a></h3>
+<p>MRC ships on CX-8, AMD Pollara/Vulcano, and Broadcom Thor Ultra. The very large installed base of CX-5/6/7, BlueField, EFA, and Thor 1/2 cannot run MRC at all — a fleet-wide upgrade is on the order of years and many billions of dollars.</p>
+<hr>
+<h2 id="tradeoff-summary-mrc-vs-uecuet-vs-aws-srd-vs-uccl-tran"><a class="heading-anchor" href="#tradeoff-summary-mrc-vs-uecuet-vs-aws-srd-vs-uccl-tran">Tradeoff Summary: MRC vs. UEC/UET vs. AWS SRD vs. UCCL-Tran</a></h2>
+<p>MRC, UEC/UET, AWS SRD, and UCCL-Tran all answer the same question — “how do we move ML traffic across a large GPU fabric reliably, with multipath, no PFC, and graceful loss recovery?” — but they make very different bets on <em>where</em> the transport lives and <em>how open</em> it is.
+MRC pushes the answer into a new generation of merchant silicon under an open OCP spec;
+UEC standardizes a broader Ethernet transport through an open multi-vendor specification <sup><a href="#user-content-fn-2" id="user-content-fnref-2-2" data-footnote-ref="" aria-describedby="footnote-label">2</a></sup>;
+AWS SRD bakes a similar answer into the closed Nitro / EFA data plane, tightly co-designed with the AWS VPC fabric <sup><a href="#user-content-fn-6" id="user-content-fnref-6" data-footnote-ref="" aria-describedby="footnote-label">5</a></sup>;
+UCCL-Tran keeps the answer in CPU software, so it can ride on the legacy RDMA NICs already deployed in the field.</p>
+<p>The table below lines up the design choices side by side so the tradeoffs — performance ceiling, hardware dependency, openness, programmability, observability, and time-to-ship — are easy to compare.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th></th><th><strong>MRC</strong></th><th><strong>UEC/UET</strong></th><th><strong>AWS SRD</strong></th><th><strong>UCCL-Tran</strong></th></tr></thead><tbody><tr><td><strong>Where transport runs</strong></td><td>NIC ASIC/firmware data plane</td><td>NIC ASIC/firmware data plane</td><td>Nitro/EFA NIC data plane</td><td>Host CPU control path + RDMA UC/RC/UD data path</td></tr><tr><td><strong>Hardware requirement</strong></td><td>CX-8 / Pollara·Vulcano / Thor Ultra only</td><td>UET-capable NICs</td><td>AWS EFA-enabled instances only (Nitro)</td><td>Runs on legacy NICs: CX-5/6/7, BlueField, EFA, Thor 1/2</td></tr><tr><td><strong>Wire format</strong></td><td>Open OCP MRC spec</td><td>Open UET specification</td><td>Closed, AWS-proprietary</td><td>Open</td></tr><tr><td><strong>Spraying granularity</strong></td><td>Per-packet</td><td>Per-packet</td><td>Per-packet</td><td>Per-chunk for UC/RC, per-packet for UD</td></tr><tr><td><strong>Ordering model</strong></td><td>OOO packet delivery, OOO message delivery, <code>WRITE_WITH_IMM</code> enforces order</td><td>OOO packet delivery with transport-level recovery</td><td>OOO packet delivery, OOO message delivery</td><td>OOO packet/chunk delivery, In-order/OOO message delivery are both supported</td></tr><tr><td><strong>Verb surface</strong></td><td><code>libibverbs</code>, <code>WRITE</code> + <code>WRITE_WITH_IMM</code> only</td><td>UET transport / ULP APIs, not necessarily drop-in RC verbs</td><td><code>libfabric</code>; <code>SEND/RECV</code> + <code>WRITE</code> + <code>READ</code>, no <code>ATOMIC</code></td><td>All verbs the underlying NIC exposes (incl. <code>WRITE</code>, <code>READ</code>, <code>ATOMIC</code>, <code>SEND/RECV</code>)</td></tr><tr><td><strong>Congestion control</strong></td><td>UET NSCC (ECN + RTT, window-based)</td><td>UET NSCC, RCCC, and hybrid modes</td><td>AWS-proprietary, Cubic-like, designed for VPC fabric</td><td>RTT-based, pluggable</td></tr><tr><td><strong>Loss recovery</strong></td><td>SACK + packet trimming, in-NIC</td><td>SACK + packet trimming, in-NIC</td><td>Selective retransmit, in-NIC</td><td>SACK + selective retransmit, in software</td></tr><tr><td><strong>PFC</strong></td><td>Off (lossy by design)</td><td>Off (lossy by design)</td><td>Off (lossy by design, VPC fabric)</td><td>Off (lossy by design)</td></tr><tr><td><strong>Packet spray</strong></td><td>SRv6 uSID source routing</td><td>Entropy-based multipath over Ethernet</td><td>Multi-path over AWS VPC (hash-based, fabric-managed)</td><td>EV → ECMP hash</td></tr><tr><td><strong>Path selection</strong></td><td>Programmable</td><td>Standardized hooks, implementation-dependent</td><td>Programmable</td><td>Programmable</td></tr><tr><td><strong>Topology assumption</strong></td><td>Co-designed with multi-plane port-breakout fabric</td><td>Ethernet fabric, potentially multi-rail or multi-plane</td><td>Co-designed with AWS VPC / Nitro fabric</td><td>Works on whatever fabric you already have (single-plane, rail, multi-plane)</td></tr><tr><td><strong>Time to ship a new idea</strong></td><td>New silicon tape-out + spec revision + limited programmability</td><td>Spec revision + vendor NIC implementation</td><td>New Nitro firmware/silicon under AWS control</td><td>Code change</td></tr><tr><td><strong>Openness / portability</strong></td><td>Open spec (OCP), multiple vendors</td><td>Open standard, multi-vendor target</td><td>AWS-only, not portable off AWS</td><td>Open, runs on any commodity RDMA/Ethernet NIC</td></tr><tr><td><strong>Observability</strong></td><td>Limited by hardware interface</td><td>Open standard, but hardware telemetry remains vendor-dependent</td><td>Limited by hardware interface, AWS-controlled telemetry only</td><td>Highly observable in software</td></tr></tbody></table>
+<hr>
+<h2 id="references"><a class="heading-anchor" href="#references">References</a></h2>
+<section data-footnotes="" class="footnotes"><h2 class="sr-only" id="footnote-label"><a class="heading-anchor" href="#footnote-label">Footnotes</a></h2>
+<ol>
+<li id="user-content-fn-1">
+<p>Yang Zhou, Zhongjie Chen, Ziming Mao, ChonLam Lao, Shuo Yang, Pravein Govindan Kannan, Xizhi Zhang, Jiaqi Gao, Yilong Zhao, Yongji Wu, Kaichao You, Fengyuan Ren, Zhiying Xu, Costin Raiciu, Ion Stoica. <em>UCCL-Tran: An Extensible Software Transport Layer for GPU Networking.</em> USENIX OSDI, 2026. <a href="https://arxiv.org/pdf/2504.17307">https://arxiv.org/pdf/2504.17307</a> <a href="#user-content-fnref-1" data-footnote-backref="" aria-label="Back to reference 1" class="data-footnote-backref">↩</a> <a href="#user-content-fnref-1-2" data-footnote-backref="" aria-label="Back to reference 1-2" class="data-footnote-backref">↩<sup>2</sup></a></p>
+</li>
+<li id="user-content-fn-2">
+<p>Ultra Ethernet Consortium. <em>Ultra Ethernet Specification v1.0.</em> 2025. <a href="https://ultraethernet.org/wp-content/uploads/sites/20/2025/06/UE-Specification-6.11.25.pdf">https://ultraethernet.org/wp-content/uploads/sites/20/2025/06/UE-Specification-6.11.25.pdf</a> <a href="#user-content-fnref-2" data-footnote-backref="" aria-label="Back to reference 2" class="data-footnote-backref">↩</a> <a href="#user-content-fnref-2-2" data-footnote-backref="" aria-label="Back to reference 2-2" class="data-footnote-backref">↩<sup>2</sup></a></p>
+</li>
+<li id="user-content-fn-3">
+<p>DeepSeek-AI. <em>DeepEP — An efficient expert-parallel communication library.</em> GitHub, 2025–2026. <a href="https://github.com/deepseek-ai/DeepEP">https://github.com/deepseek-ai/DeepEP</a> <a href="#user-content-fnref-3" data-footnote-backref="" aria-label="Back to reference 3" class="data-footnote-backref">↩</a></p>
+</li>
+<li id="user-content-fn-5">
+<p>Olteanu, Vladimir, Haggai Eran, Dragos Dumitrescu, Adrian Popa, Cristi Baciu, Mark Silberstein, Georgios Nikolaidis, Mark Handley, and Costin Raiciu. <em>An edge-queued datagram service for all datacenter traffic.</em> USENIX OSDI, 2022. <a href="https://www.usenix.org/system/files/nsdi22-paper-olteanu.pdf">https://www.usenix.org/system/files/nsdi22-paper-olteanu.pdf</a>. <a href="#user-content-fnref-5" data-footnote-backref="" aria-label="Back to reference 4" class="data-footnote-backref">↩</a></p>
+</li>
+<li id="user-content-fn-6">
+<p>Leah Shalev, Hani Ayoub, Nafea Bshara, and Erez Sabbag. <em>A Cloud-Optimized Transport Protocol for Elastic and Scalable HPC.</em> IEEE Micro, 2020. <a href="https://ieeexplore.ieee.org/document/9189994">https://ieeexplore.ieee.org/document/9189994</a> <a href="#user-content-fnref-6" data-footnote-backref="" aria-label="Back to reference 5" class="data-footnote-backref">↩</a></p>
+</li>
+</ol>
+</section> </div> <div class="prose-a:no-underline"> <span class="mb-2 mr-2 inline-block rounded-full bg-neutral-200 px-3 py-1 text-sm hover:bg-neutral-500 dark:bg-neutral-600"> <a href="/tags/MRC/1/">MRC</a> </span><span class="mb-2 mr-2 inline-block rounded-full bg-neutral-200 px-3 py-1 text-sm hover:bg-neutral-500 dark:bg-neutral-600"> <a href="/tags/SRv6/1/">SRv6</a> </span><span class="mb-2 mr-2 inline-block rounded-full bg-neutral-200 px-3 py-1 text-sm hover:bg-neutral-500 dark:bg-neutral-600"> <a href="/tags/SRD/1/">SRD</a> </span><span class="mb-2 mr-2 inline-block rounded-full bg-neutral-200 px-3 py-1 text-sm hover:bg-neutral-500 dark:bg-neutral-600"> <a href="/tags/Multi-plane/1/">Multi-plane</a> </span><span class="mb-2 mr-2 inline-block rounded-full bg-neutral-200 px-3 py-1 text-sm hover:bg-neutral-500 dark:bg-neutral-600"> <a href="/tags/UCCL-Tran/1/">UCCL-Tran</a> </span> </div> <div class="mt-4"> <small>Publish on <span>2026-05-26</span></small> <small class="mt-2 flex items-center gap-2"> <span>Enjoy the blog? Give UCCL a star</span> <a href="https://github.com/uccl-project/uccl" class="no-github-icon" aria-label="UCCL GitHub repository"> <img src="https://img.shields.io/github/stars/uccl-project/uccl?style=social" alt="GitHub Repo stars" class="relative -top-0.5 m-0 inline-block"> </a> </small> </div> </article> <div class="mt-4"> <div class="grid grid-cols-1 gap-4 md:grid-cols-3"> <div class="relative mb-4 overflow-hidden rounded-xl bg-white transition-transform duration-500 hover:-translate-y-1 hover:scale-105 dark:bg-neutral-900"> <a href="/posts/mkernel/"> <img src="/mkernel/mkernel.png" alt="mKernel" class="mx-auto w-full max-w-full rounded-lg"> <div class="absolute bottom-0 end-0 start-0 bg-gradient-to-t p-4 md:p-5"> <div class="mt-16 flex items-center gap-4 text-xs text-white"> <span>Fused Kernels RDMA</span> <span>2026-05-25</span> </div> <h2 class="mt-2 text-lg font-bold text-white">mKernel: Fast Multi-GPU, Multi-Node
+Fused Kernels</h2> </div> </a> </div><div class="relative mb-4 overflow-hidden rounded-xl bg-white transition-transform duration-500 hover:-translate-y-1 hover:scale-105 dark:bg-neutral-900"> <a href="/posts/continuum-blog/"> <img src="/continuum-blog/datacenter.png" alt="TrainMover Overview — Two-phase machine migration design" class="mx-auto w-full max-w-full rounded-lg"> <div class="absolute bottom-0 end-0 start-0 bg-gradient-to-t p-4 md:p-5"> <div class="mt-16 flex items-center gap-4 text-xs text-white"> <span>LLM Training Fault Tolerance Systems OSDI</span> <span>2026-05-18</span> </div> <h2 class="mt-2 text-lg font-bold text-white">When Your AI Training Cluster Crashes at 3 AM: How TrainMover Cuts Recovery Time to 20 Seconds</h2> </div> </a> </div><div class="relative mb-4 overflow-hidden rounded-xl bg-white transition-transform duration-500 hover:-translate-y-1 hover:scale-105 dark:bg-neutral-900"> <a href="/posts/efa-programming/"> <img src="/efa-programming/efa-programming.png" alt="UCCL-EP" class="mx-auto w-full max-w-full rounded-lg"> <div class="absolute bottom-0 end-0 start-0 bg-gradient-to-t p-4 md:p-5"> <div class="mt-16 flex items-center gap-4 text-xs text-white"> <span>RDMA EFA</span> <span>2026-04-13</span> </div> <h2 class="mt-2 text-lg font-bold text-white">A Practitioner Guide to AWS EFA Programming</h2> </div> </a> </div> </div> </div> </main>  </main> <footer class="mt-auto w-full max-w-[85rem] py-10 mx-auto" data-astro-cid-sz7xmlte> <nav class="mx-auto w-full max-w-[85rem] px-4" aria-label="Footer" data-astro-cid-sz7xmlte> <div class="footer-wrapper" style="display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 2rem;" data-astro-cid-sz7xmlte> <!-- Left: Brand --> <div class="footer-left" style="text-align: left; justify-self: start;" data-astro-cid-sz7xmlte> <a class="flex-none text-sm text-neutral-500 hover:text-neutral-800 dark:text-neutral-500 dark:hover:text-neutral-200" href="/" aria-label="Brand" data-astro-cid-sz7xmlte>UCCL &copy; 2026</a> </div> <!-- Center: Footer Links --> <div class="footer-center" style="text-align: center; justify-self: center;" data-astro-cid-sz7xmlte> <div class="flex flex-row gap-5 items-center flex-wrap justify-center" data-astro-cid-sz7xmlte> <a href="https://sky.cs.berkeley.edu/" class="inline-flex gap-x-2 text-sm text-neutral-500 hover:text-neutral-800 dark:text-neutral-500 dark:hover:text-neutral-200" data-astro-cid-sz7xmlte="true"> UC Berkeley Sky Lab </a><a href="https://github.com/artsy-lab" class="inline-flex gap-x-2 text-sm text-neutral-500 hover:text-neutral-800 dark:text-neutral-500 dark:hover:text-neutral-200" data-astro-cid-sz7xmlte="true"> UC Davis ArtSy Lab </a> </div> </div> <!-- Right: Social Links --> <div class="footer-right" style="text-align: right; justify-self: end;" data-astro-cid-sz7xmlte> <button type="button" class="relative inline-flex h-12 w-12 items-center gap-x-2 bg-white px-4 py-3 text-neutral-500 hover:text-neutral-800 disabled:pointer-events-none disabled:opacity-50  dark:text-neutral-500 dark:hover:text-neutral-200 dark:bg-neutral-900 dark:hover:bg-neutral-900" data-astro-cid-sz7xmlte> <a href="https://github.com/uccl-project/uccl" class="absolute inset-0 z-10" aria-label="GitHub" data-astro-cid-sz7xmlte></a> <svg width="1em" height="1em" class="icon-base" data-astro-cid-sz7xmlte="true" data-icon="tabler:brand-github">   <symbol id="ai:tabler:brand-github" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2c2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2a4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3 0 0 0-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 9.5c0 4.6 2.7 5.7 5.5 6c-.6.6-.6 1.2-.5 2V21"/></symbol><use href="#ai:tabler:brand-github"></use>  </svg> </button> </div> </div> </nav> </footer> </body></html>
