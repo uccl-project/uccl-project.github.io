@@ -92,13 +92,13 @@ We built a framework that automatically evaluates different models on the datase
 
 | Rank | Model | Price | Pass×GM | Pass Rate | PASS+Good | GM‑Speedup |
 |:----:|:------|:-----:|:-------:|:---------:|:---------:|:----------:|
-| 🥇 | **gpt-5.5** |  | 🟢 **0.539** `▓▓▓▓▓▓▓▓` | 🟢 59.4% `▓▓▓▓▓▓▓▓` | 🟢 **32.7%** `▓▓▓▓▓▓▓▓` | 🟡 0.908 `▓▓▓░░░░░` |
-| 🥈 | **gemini-3.1-pro-preview** |  | 🟡 0.305 `▓▓▓▓▓░░░` | 🟡 36.6% `▓▓▓▓▓░░░` | 🟢 **25.7%** `▓▓▓▓▓▓░░` | 🔴 0.832 `░░░░░░░░` |
-| 🥉 | **claude-opus-4-7** |  | 🟡 0.282 `▓▓▓▓▓░░░` | 🟡 33.7% `▓▓▓▓▓░░░` | 🟡 **20.8%** `▓▓▓▓▓░░░` | 🔴 0.836 `░░░░░░░░` |
-| 4️⃣ | **glm-5.1** |  | 🟡 0.281 `▓▓▓▓░░░░` | 🟡 29.7% `▓▓▓▓░░░░` | 🟡 **17.8%** `▓▓▓▓░░░░` | 🟢 0.947 `▓▓▓▓▓░░░` |
-| 5️⃣ | **kimi-k2.6** |  | 🟡 0.275 `▓▓▓▓░░░░` | 🟡 30.7% `▓▓▓▓░░░░` | 🟡 **18.8%** `▓▓▓▓▓░░░` | 🟡 0.895 `▓▓▓░░░░░` |
-| 6️⃣ | **qwen3.7-max** |  | 🟡 0.269 `▓▓▓▓░░░░` | 🟡 26.7% `▓▓▓▓░░░░` | 🟡 **15.8%** `▓▓▓▓░░░░` | 🟢 1.008 `▓▓▓▓▓▓▓▓` |
-| 7️⃣ | **deepseek-v4-pro** |  | 🔴 0.197 `▓▓▓░░░░░` | 🔴 19.8% `▓▓▓░░░░░` | 🔴 **12.9%** `▓▓▓░░░░░` | 🟢 0.995 `▓▓▓▓▓▓▓░` |
+| 🥇 | **gpt-5.5** | $1.91 | 🟢 **0.539** `▓▓▓▓▓▓▓▓` | 🟢 59.4% `▓▓▓▓▓▓▓▓` | 🟢 **32.7%** `▓▓▓▓▓▓▓▓` | 🟡 0.908 `▓▓▓░░░░░` |
+| 🥈 | **gemini-3.1-pro-preview** | $0.26 | 🟡 0.305 `▓▓▓▓▓░░░` | 🟡 36.6% `▓▓▓▓▓░░░` | 🟢 **25.7%** `▓▓▓▓▓▓░░` | 🔴 0.832 `░░░░░░░░` |
+| 🥉 | **claude-opus-4-7** | $0.21 | 🟡 0.282 `▓▓▓▓▓░░░` | 🟡 33.7% `▓▓▓▓▓░░░` | 🟡 **20.8%** `▓▓▓▓▓░░░` | 🔴 0.836 `░░░░░░░░` |
+| 4️⃣ | **glm-5.1** | $0.63 | 🟡 0.281 `▓▓▓▓░░░░` | 🟡 29.7% `▓▓▓▓░░░░` | 🟡 **17.8%** `▓▓▓▓░░░░` | 🟢 0.947 `▓▓▓▓▓░░░` |
+| 5️⃣ | **kimi-k2.6** | $0.10 | 🟡 0.275 `▓▓▓▓░░░░` | 🟡 30.7% `▓▓▓▓░░░░` | 🟡 **18.8%** `▓▓▓▓▓░░░` | 🟡 0.895 `▓▓▓░░░░░` |
+| 6️⃣ | **qwen3.7-max** | $0.03 | 🟡 0.269 `▓▓▓▓░░░░` | 🟡 26.7% `▓▓▓▓░░░░` | 🟡 **15.8%** `▓▓▓▓░░░░` | 🟢 1.008 `▓▓▓▓▓▓▓▓` |
+| 7️⃣ | **deepseek-v4-pro** | $0.02 | 🔴 0.197 `▓▓▓░░░░░` | 🔴 19.8% `▓▓▓░░░░░` | 🔴 **12.9%** `▓▓▓░░░░░` | 🟢 0.995 `▓▓▓▓▓▓▓░` |
 
 **Color:** 🟢 top tier &nbsp;·&nbsp; 🟡 mid tier &nbsp;·&nbsp; 🔴 bottom tier &nbsp;&nbsp;|&nbsp;&nbsp; GM‑Speedup bar scaled to [0.832, 1.008] range (not from zero).
 
@@ -168,7 +168,7 @@ gpt-5.5 dominates on Collective (72% vs 22%) and is the **only** model with mean
 
 ### DeepSeek with max_rounds = 5
 
-Due to budget constraints, gpt-5.5 was evaluated with a single generation round. Despite deepseek's weaker first-round performance, its API cost is only xx of gpt-5.5's, which makes multi-round self-correction economically viable. Allowing deepseek up to 5 self-correction rounds substantially changes its profile.
+Due to budget constraints, gpt-5.5 was evaluated with a single generation round. Despite deepseek's weaker first-round performance, its API cost is only ~1% of gpt-5.5's ($0.02 vs $1.91 per example), which makes multi-round self-correction economically viable. Allowing deepseek up to 5 self-correction rounds substantially changes its profile.
 
 #### Cumulative PASS by Round
 
@@ -177,7 +177,7 @@ Round 1:  16 PASS  (15.8%)
 Round 2:  28 PASS  (27.7%)   +12  ← largest single gain
 Round 3:  32 PASS  (31.7%)   +4
 Round 4:  34 PASS  (33.7%)   +2
-Round 5:  41 PASS  (40.6%)   +7
+Round 5:  42 PASS  (41.6%)   +8
 ```
 
 #### Difficulty Breakdown: max=1 vs max=5
@@ -225,76 +225,82 @@ Multi-round self-correction doubles deepseek's overall pass rate and unlocks Med
 
 ## Case Studies
 
-### NCCL
+### Case 1: Partial Pass — ThunderKittens AllToAll
 
-*[TBD]*
+##### [Example 049 — ThunderKittens AllToAll ↗](https://github.com/uccl-project/llm-for-gpu-comm/tree/main/datasets/example049_thunderkitten_alltoall_easy)
 
-### RDMA Verbs
+**Level** 🟢 `Easy` &nbsp;·&nbsp; **Tag** `Collective` &nbsp;·&nbsp; **Library** `thunderkittens`
 
-*[TBD]*
+**Task:** Implement a BF16 multi-GPU AllToAll kernel using the ThunderKittens library, using TMA (Tensor Memory Accelerator) for tile-level data movement between GPU shards over NVLink.
 
-### ThunderKitten
+**What to implement:** Two small device-side kernels: `all_to_all::kernel` (TMA-load one tile from local input, TMA-store to destination device's output shard) and `all_to_all_barrier::kernel` (one-line `barrier_all` synchronization). All host scaffolding is provided.
 
-*[TBD]*
+**Why most models failed:** Both kernels are under 10 lines and only require calling existing ThunderKittens interfaces, with no custom algorithm needed. The failure root is ThunderKittens-specific API knowledge: type scoping (`all_to_all::globals::shared_tile` vs bare `shared_tile`), the correct `tma::load_async` argument signature, and the `shared_allocator::allocate` template usage. ThunderKittens is a niche research library with minimal training-data coverage, causing models to mis-scope types, hallucinate non-existent APIs, or use wrong argument forms.
 
-### MSCCLPP All-to-All
+#### Per-Model Summary
 
-<a href="https://github.com/microsoft/mscclpp">Mscclpp</a> is Microsoft's low-level GPU communication library designed for fine-grained control over RDMA and NVLink transfers. Mscclpp has very elegant and efficient abstraction like memorychannels and portchannels.
+| Model | Rounds | Outcome | Perf vs Ref | Failure Pattern |
+|-------|--------|---------|-------------|-----------------|
+| gpt-5.5 | 1 | PASS | on_par (−0.23%) | — |
+| claude-opus-4-7 | 1 | PASS | on_par (+0.17%) | — |
+| deepseek-v4-pro | 5 | Compile error (r1–r2, r4–r5) / Link error (r3) | — | r1: hallucinated ThunderKittens API (`tma::semaphore`, `tma::init_semaphore`, `tma::wait`, wrong `barrier_all` form — none exist); r2: structural C++ errors (`__global__` written as member function, duplicate class definition, wrong CUDA driver API types); r3: compiled but no `main()` → linker `undefined reference to 'main'`; r4: used `CUDA_CHECK` macro without defining it; r5: early type/template error triggered 43 cascading STL errors |
+| gemini-3.1-pro-preview | 1 | Compile error | — | `shared_tile` used without `all_to_all::globals::` namespace qualifier |
+| kimi-k2.6 | 1 | Compile error | — | Same unqualified `shared_tile` reference |
+| glm-5.1 | 1 | Compile error | — | Wrong type passed to `shared_allocator::allocate` |
+| qwen3.7-max | 1 | Compile error | — | Wrong argument types for `tma::load_async` |
 
-First, here is a brief overview of what **all-to-all** fulfills: every rank simultaneously sends a distinct data chunk to every other rank. This is among the most demanding collectives, requiring coordination of N×(N-1) concurrent transfers, each with its own buffer offset, channel handle, and synchronization barrier.
+### Case 2: A Case All LLMs Failed
 
-#### DeepSeek V4 Pro: five rounds, zero compilations
+##### [Example 072 — GPU Barrier Within CTA ↗](https://github.com/uccl-project/llm-for-gpu-comm/tree/main/datasets/example072_GPU_barrier_within_CTA)
 
-Over five rounds of prompting, with full compiler feedback provided after each attempt, DeepSeek V4 Pro failed to produce a single compilable kernel. The generated code repeatedly hallucinated APIs, relied on nonexistent abstractions, and assumed outdated MSCCL++ interfaces that no longer matched the installed runtime. Even after iterative correction attempts, the model never converged to a buildable implementation.
+**Level** 🟡 `Medium` &nbsp;·&nbsp; **Tag** `Utilities` &nbsp;·&nbsp; **Library** `cuda-runtime`
 
-#### GPT-5.5 triage, Human in the loop
+**Task:** Implement intra-CTA producer/consumer synchronization using a Hopper/Blackwell shared-memory `mbarrier` with a non-blocking `try_wait` probe, a pattern used in persistent-kernel tile pipelines (e.g., CUTLASS, Mirage [[1]](https://github.com/mirage-project/mirage)) to overlap data arrival with computation without stalling the warp scheduler.
 
-To recover a working baseline, we switched to GPT-5.5 through Codex. Getting from a broken build to a compiling one took under three minutes; getting all the way to correct took another seventeen. A human stayed in the loop mainly to relay whether builds and correctness checks passed — the model handled the rest.
+**What to implement:** Three inline-PTX device helpers (`initialize_barrier`, `arrive`, `try_wait_barrier`) and a benchmark kernel body, lifted from Mirage [[1]](https://github.com/mirage-project/mirage).
 
-The bulk of the work was untangling how thoroughly the original generated code had hallucinated the MSCCL++ API. A header hallucinated by DeepSeek, broken bootstrap initialization, and a fundamental misunderstanding of ```mscclpp::Communicator``` kicked off a cascade of bad calls: wrong memory registration paths, invented pack/unpack routines, fabricated semaphore tables, and channel construction methods that simply don't exist. Each fix exposed the next.
+**Why all models failed:** This task only requires using a small set of well-defined `mbarrier` interfaces, which is the kind of API memorization LLMs are expected to excel at. However, `mbarrier` is Hopper-specific PTX introduced in sm_90, and models may lack sufficient training data for these instructions, making them prone to mis-remembering argument counts, ordering, or address-space requirements.
 
-Compilation passing turned out to be only the beginning. The kernel ran but produced wrong results, requiring six more patches. The deepest ones stemmed from the same conceptual gap: the model knew all-to-all requires synchronization, but didn't know where MSCCL++ puts it. Others were more mundane: every thread copying the full local slice instead of a strided subset, and a verification harness that silently rounded BF16 fill values to clean multiples, making it blind to an entire class of data corruption until the pattern was changed.
+#### Per-Model Failure Summary
 
-Taken together, these patches reveal that the LLM failed at four distinct levels simultaneously: Mscclpp API semantics, collective communication logic, basic GPU parallelism, and numerical precision of the test harness. Compiler feedback alone, however many rounds, cannot surface any of them.
-
-#### Performance
-
-<p align="center">
-  <img src="/ubench/all2all_ref_vs_generated_latency_throughput.png" alt="All2All" width="600"/>
-  <em>Figure 1: xx.</em>
-</p>
-
-
-The DeepSeek-generated kernel (after 5 rounds of compiler-feedback prompting, 2 rounds of GPT-5.5 triage and human in the loop) passes correctness but is catastrophically slower than the reference across all message sizes. 
-
-At 1 MiB, the reference achieves 22.5 GB/s while the LLM kernel achieves 0.067 GB/s. This is a 336× gap. At 1536 MiB the gap narrows to 15× (680 GB/s vs. 46 GB/s), but never closes. 
-
-#### Why does this happen?
-
-The generated kernel is conceptually clean: split each peer's slice into channel-sized tasks, let blocks walk the (peer, channel) assignments, and use MemoryChannel::put() to write directly into the remote rank's output buffer. The problem isn't the data movement — it's the synchronization. The kernel bolts it on as a global phase boundary: bulk transfer everything, then grid.sync(), then one single thread serially signals and waits for every peer, then grid.sync() again. That design incurs a fixed ~15ms overhead on every launch regardless of message size, and even at large messages where that cost amortizes, throughput plateaus because the serialized fence can't keep up with what the hardware can actually move.
+| Model | Rounds | Outcome | Failure Pattern |
+|-------|--------|---------|-----------------|
+| deepseek-v4-pro | 5 | Compile error | Wrong PTX register constraint (r1); missing `mbarrier.arrive` destination operand (r2–r5) |
+| gpt-5.5 | 1 | Deadlock | Deadlock: consumer runs before producers due to warp branch ordering; no `kProbeBound` guard so kernel hangs forever |
+| gemini-3.1-pro-preview | 1 | Correctness FAIL | Deadlock: consumer runs before producers; exits via `kProbeBound` and reads uninitialized tile |
+| claude-opus-4-7 | 1 | Correctness FAIL | Deadlock: consumer runs before producers; also incorrect `phase ^= 1` since `mbarrier.init` resets parity to 0 each iteration |
+| glm-5.1 | 1 | Runtime error | Inline-asm operand index confusion |
+| kimi-k2.6 | 1 | Compile error | Hallucinated CUDA intrinsic name |
+| qwen3.7-max | 1 | Correctness FAIL | Wrong PTX register constraint (`"l"` instead of `"r"`) |
 
 
-The reference kernel is organized around the lower-level motif MSCCL++ actually expects: not "copy everything, then synchronize," but "pipeline chunk movement and synchronization together at warp granularity." It splits each block into 16 put-warps and 16 copy-warps, chooses a 256 KiB pipeline unit, and rotates through peers in steps — put-warps copy a chunk and immediately signal(), while copy-warps wait() for the corresponding incoming chunk and move it onward. Named barriers (bar.sync IDs 14 and 15) synchronize only the relevant warp groups rather than stalling the whole grid.
-The generated kernel understood that all-to-all requires synchronization. It didn't know where MSCCL++ expects that synchronization to live — not as a global fence, but woven into the data movement itself, at warp granularity, chunk by chunk.
+### Case 3: All LLMs Failed — Niche Library API with No Algorithmic Hints
 
-```
-// generated: global phase boundary
-grid.sync();  // ~15ms fixed tax, every launch
+##### [Example 086 — mscclpp AllToAll (Hard) ↗](https://github.com/uccl-project/llm-for-gpu-comm/tree/main/datasets/example086_mscclpp_alltoall_hard)
 
-// reference: warp-local, per-chunk
-bar.sync 15, 512;  // only the put-warps, per chunk
-```
+**Level** 🔴 `Hard` &nbsp;·&nbsp; **Tag** `Collective` &nbsp;·&nbsp; **Library** `mscclpp`
 
----
+**Task:** Implement the fastest intra-node AllToAll kernel using MSCCL++ [[2]](https://github.com/microsoft/mscclpp) `MemoryChannel` primitives. The template provides no algorithmic description — only a minimal comment "implement the fastest All to All CUDA kernel" and a set of empty `// TODO` stubs.
 
-## Next Steps: Post-Training with RL
-*[TBD]*
+**What to implement:** One GPU kernel (`alltoall2`) using `MemoryChannel` for direct peer writes, and the full host-side `All2All` class (constructor, buffer allocation, channel setup, launch, correctness verification, barrier).
 
----
+**Why all models failed:** The task requires models to implement a functionally complete, semantically correct intra-node AllToAll from scratch (device kernel, host class, channel setup, buffer management, and correctness verification), all consistent with MSCCL++'s `MemoryChannel` interface contract, with no algorithmic hints provided. This is hard even for an expert programmer unfamiliar with mscclpp. Every model failed at compile time: mscclpp headers and class interfaces are largely absent from training data, causing models to hallucinate non-existent header paths and method signatures before reaching any algorithmic logic.
+
+### Per-Model Failure Summary
+
+| Model | Rounds | Outcome | Failure Pattern |
+|-------|--------|---------|-----------------|
+| deepseek-v4-pro | 5 | Compile error | r1: used mscclpp types with no includes (namespace undefined); r2–r5: each round invented a different non-existent mscclpp header |
+| gpt-5.5 | 1 | Compile error | Included some mscclpp headers but missed the one for `MemoryChannel`; also hallucinated a wrong class name |
+| gemini-3.1-pro-preview | 1 | Compile error | Hallucinated mscclpp API |
+| claude-opus-4-7 | 1 | Compile error | Hallucinated mscclpp API |
+| glm-5.1 | 1 | Compile error | Hallucinated mscclpp API |
+| kimi-k2.6 | 1 | Compile error | Hallucinated mscclpp API |
+| qwen3.7-max | 1 | Compile error | Hallucinated mscclpp API |
 
 ## Conclusion
-*[TBD]*
 
+CommBench shows that multi-device GPU communication remains a clear blind spot for today's frontier LLMs. Even the strongest model passes under 60% of examples and produces performant code on only a third, while every model collapses to near-zero coverage on specialized libraries such as Mscclpp, ThunderKittens, and the NCCL device API. The failures are not superficial: models hallucinate APIs, misplace synchronization, and ship kernels orders of magnitude slower than reference — gaps that compiler feedback and multi-round retries alone cannot close. Multi-round self-correction helps only on commodity libraries and easier tasks; closing the remaining gap will require targeted post-training on the kind of data CommBench provides. We open-source the dataset and harness to support that effort.
 
 ---
 
