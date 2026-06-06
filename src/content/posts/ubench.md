@@ -17,11 +17,11 @@ tags:
 pubDate: 2026-05-21
 cover: /ubench/commbench-logo.png
 coverAlt: CommBench logo
-author: Shuang Ma, Yuyi Li, xx, xx, Yang Zhou, and the UCCL Team.
+author: Shuang Ma, Yuyi Li, Yihan Zhang, Danyang Chen, Shuyang Ji, Ziming Zhao, Cheng Ji, Ansha Prashanth, Wenting Yang, Chihan Cui, Peiyu Lin, Amanda Raybuck, Ion Stoica, Yang Zhou, and the UCCL Team.
 ---
 
 <p>
-<strong>By: Shuang Ma, Yuyi Li, xx, xx, Yang Zhou, and the UCCL Team.
+<strong>By: Shuang Ma, Yuyi Li, Yihan Zhang, Danyang Chen, Shuyang Ji, Ziming Zhao, Cheng Ji, Ansha Prashanth, Wenting Yang, Chihan Cui, Peiyu Lin, Amanda Raybuck, Ion Stoica, Yang Zhou, and the UCCL Team.
 <br>
 Date: May 21, 2026
 </strong>
