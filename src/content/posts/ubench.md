@@ -1,6 +1,6 @@
 ---
 title: "CommBench: Can LLMs Write Correct and Efficient GPU Communication code?"
-slug: llm-gpu-comm-kernels
+slug: commbench
 description: "CommBench evaluates how effectively frontier LLMs generate multi-device GPU communication code, covering diverse communication functionalities and compute–communication fusion kernels."
 category:
   - One
@@ -14,7 +14,7 @@ tags:
   - CUDA
   - NCCL
   - MSCCLPP
-pubDate: 2026-05-21
+pubDate: 2026-06-08
 cover: /ubench/commbench-logo.png
 coverAlt: CommBench logo
 author: Shuang Ma, Yuyi Li, Yihan Zhang, Danyang Chen, Shuyang Ji, Ziming Zhao, Cheng Ji, Ansha Prashanth, Wenting Yang, Chihan Cui, Peiyu Lin, Amanda Raybuck, Ion Stoica, Yang Zhou, and the UCCL Team.
@@ -23,16 +23,16 @@ author: Shuang Ma, Yuyi Li, Yihan Zhang, Danyang Chen, Shuyang Ji, Ziming Zhao, 
 <p>
 <strong>By: Shuang Ma, Yuyi Li, Yihan Zhang, Danyang Chen, Shuyang Ji, Ziming Zhao, Cheng Ji, Ansha Prashanth, Wenting Yang, Chihan Cui, Peiyu Lin, Amanda Raybuck, Ion Stoica, Yang Zhou, and the UCCL Team.
 <br>
-Date: May 21, 2026
+Date: June 8, 2026
 </strong>
 </p>
 
 <div class="tldr">
 <p>
-Today's frontier LLMs write excellent single-device code yet consistently fail on multi-device GPU communication, precisely the code that bottlenecks large-scale LLM training and inference. We present CommBench, a benchmark spanning <strong>point-to-point</strong>, <strong>collective</strong>, <strong>expert-parallel</strong>, <strong>compute and communication fusion</strong>, and <strong>utilities</strong> (building blocks for GPU communication interfaces, such as a GPU–CPU FIFO queue), drawn from hand-written implementations and production codebases including Mscclpp, NCCL, NVSHMEM, DeepEP, ThunderKittens, vLLM, and SGLang. We evaluate leading closed and open models under a cheat-resistant harness and present case studies of where and why they succeed or break down. As future work, we plan to post-train LLMs on these datasets to close this gap.
+Today's frontier LLMs write excellent single-device code yet consistently fail on multi-device GPU communication, precisely the code that bottlenecks large-scale LLM training and inference. We present CommBench, a benchmark covering industry-level multi-device communication use cases based on UCCL's development experience. The dataset spans <strong>point-to-point</strong>, <strong>collective</strong>, <strong>expert-parallel</strong>, <strong>compute and communication fusion</strong>, and <strong>utilities</strong> (building blocks for GPU communication interfaces, such as a GPU–CPU FIFO queue) — some examples hand-written by GPU communication experts, others distilled from production codebases such as Mscclpp, NCCL, NVSHMEM, DeepEP, ThunderKittens, vLLM, and SGLang. We evaluate leading closed and open models under a cheat-resistant harness and present case studies of where and why they succeed or break down. As future work, we plan to post-train LLMs on these datasets to close this gap.
 </p>
 <p>
-Open-sourced at <a href="https://github.com/uccl-project/llm-for-gpu-comm/tree/main">uccl-project/llm-for-gpu-comm</a>.
+Open-sourced at <a href="https://github.com/uccl-project/CommBench/tree/main">uccl-project/CommBench</a>.
 </p>
 </div>
 
@@ -77,7 +77,7 @@ We built a framework that automatically evaluates different models on the datase
 
 **Example structure.** Each example has three parts:
 
-- **Reference solution** — high-quality, hand-written code organized in an object-oriented style (Python / CUDA / HIP / C++). It ships with a test harness that uses randomized inputs, so a model cannot hard-code expected outputs.
+- **Reference solution** — high-quality, hand-written code organized in an object-oriented style (Python / CUDA / HIP / C++). It ships with a test harness that uses randomized inputs, so a model cannot hard-code expected outputs. We keep the reference solutions secret to prevent them from leaking into model training data and contaminating future evaluations.
 - **Empty solution** — the reference with its core implementation stripped out and marked `// TODO`, but with the functional interface preserved. This file becomes part of the prompt: the model must honor the interface semantics, which also keeps its output directly testable. We verify that only the regions meant to be edited were changed, guarding against cheating.
 - **Build-and-run script** — independently compiles and runs an example (reference or generated) and is hidden from the model. By controlling the compile command, we strictly ensure the generated code uses only the intended libraries.
 
@@ -90,17 +90,17 @@ We built a framework that automatically evaluates different models on the datase
 > Sorted by **Pass×GM** ⭐ — pass rate scaled by geometric-mean code quality on passing examples.
 > Bars `▓░` are scaled to the column maximum.
 
-| Rank | Model | Price | Pass×GM | Pass Rate | PASS+Good | GM‑Speedup |
-|:----:|:------|:-----:|:-------:|:---------:|:---------:|:----------:|
-| 🥇 | **gpt-5.5** | $1.91 | 🟢 **0.539** `▓▓▓▓▓▓▓▓` | 🟢 59.4% `▓▓▓▓▓▓▓▓` | 🟢 **32.7%** `▓▓▓▓▓▓▓▓` | 🟡 0.908 `▓▓▓░░░░░` |
-| 🥈 | **gemini-3.1-pro-preview** | $0.26 | 🟡 0.305 `▓▓▓▓▓░░░` | 🟡 36.6% `▓▓▓▓▓░░░` | 🟢 **25.7%** `▓▓▓▓▓▓░░` | 🔴 0.832 `░░░░░░░░` |
-| 🥉 | **claude-opus-4-7** | $0.21 | 🟡 0.282 `▓▓▓▓▓░░░` | 🟡 33.7% `▓▓▓▓▓░░░` | 🟡 **20.8%** `▓▓▓▓▓░░░` | 🔴 0.836 `░░░░░░░░` |
-| 4️⃣ | **glm-5.1** | $0.63 | 🟡 0.281 `▓▓▓▓░░░░` | 🟡 29.7% `▓▓▓▓░░░░` | 🟡 **17.8%** `▓▓▓▓░░░░` | 🟢 0.947 `▓▓▓▓▓░░░` |
-| 5️⃣ | **kimi-k2.6** | $0.10 | 🟡 0.275 `▓▓▓▓░░░░` | 🟡 30.7% `▓▓▓▓░░░░` | 🟡 **18.8%** `▓▓▓▓▓░░░` | 🟡 0.895 `▓▓▓░░░░░` |
-| 6️⃣ | **qwen3.7-max** | $0.03 | 🟡 0.269 `▓▓▓▓░░░░` | 🟡 26.7% `▓▓▓▓░░░░` | 🟡 **15.8%** `▓▓▓▓░░░░` | 🟢 1.008 `▓▓▓▓▓▓▓▓` |
-| 7️⃣ | **deepseek-v4-pro** | $0.02 | 🔴 0.197 `▓▓▓░░░░░` | 🔴 19.8% `▓▓▓░░░░░` | 🔴 **12.9%** `▓▓▓░░░░░` | 🟢 0.995 `▓▓▓▓▓▓▓░` |
+| Rank | Model | Pass×GM | Pass Rate | PASS+Good | GM‑Speedup | Open Source | Price |
+|:----:|:------|:-------:|:---------:|:---------:|:----------:|:-----------:|:-----:|
+| 🥇 | **gpt-5.5** | 🟢 **0.467** `▓▓▓▓▓▓▓▓` | 🟢 57.4% `▓▓▓▓▓▓▓▓` | 🟢 **30.7%** `▓▓▓▓▓▓▓▓` | 🔴 0.813 `░░░░░░░░` | ❌ | $1.91 |
+| 🥈 | **gemini-3.1-pro-preview** | 🟡 0.305 `▓▓▓▓▓░░░` | 🟡 36.6% `▓▓▓▓▓░░░` | 🟢 **25.7%** `▓▓▓▓▓▓░░` | 🔴 0.832 `▓░░░░░░░` | ❌ | $0.26 |
+| 🥉 | **claude-opus-4-7** | 🟡 0.282 `▓▓▓▓▓░░░` | 🟡 33.7% `▓▓▓▓▓░░░` | 🟡 **20.8%** `▓▓▓▓▓░░░` | 🔴 0.836 `▓░░░░░░░` | ❌ | $0.21 |
+| 4️⃣ | **glm-5.1** | 🟡 0.281 `▓▓▓▓░░░░` | 🟡 29.7% `▓▓▓▓░░░░` | 🟡 **17.8%** `▓▓▓▓░░░░` | 🟢 0.947 `▓▓▓▓▓▓░░` | ✅ | $0.63 |
+| 5️⃣ | **kimi-k2.6** | 🟡 0.275 `▓▓▓▓░░░░` | 🟡 30.7% `▓▓▓▓░░░░` | 🟡 **18.8%** `▓▓▓▓▓░░░` | 🟡 0.895 `▓▓▓░░░░░` | ✅ | $0.10 |
+| 6️⃣ | **qwen3.7-max** | 🟡 0.269 `▓▓▓▓░░░░` | 🟡 26.7% `▓▓▓▓░░░░` | 🟡 **15.8%** `▓▓▓▓░░░░` | 🟢 1.008 `▓▓▓▓▓▓▓▓` | ❌ | $0.03 |
+| 7️⃣ | **deepseek-v4-pro** | 🔴 0.197 `▓▓▓░░░░░` | 🔴 19.8% `▓▓▓░░░░░` | 🔴 **12.9%** `▓▓▓░░░░░` | 🟢 0.995 `▓▓▓▓▓▓▓░` | ✅ | $0.02 |
 
-**Color:** 🟢 top tier &nbsp;·&nbsp; 🟡 mid tier &nbsp;·&nbsp; 🔴 bottom tier &nbsp;&nbsp;|&nbsp;&nbsp; GM‑Speedup bar scaled to [0.832, 1.008] range (not from zero).
+**Color:** 🟢 top tier &nbsp;·&nbsp; 🟡 mid tier &nbsp;·&nbsp; 🔴 bottom tier &nbsp;&nbsp;|&nbsp;&nbsp; GM‑Speedup bar scaled to [0.813, 1.008] range (not from zero).
 
 ### Metric Definitions
 
@@ -109,7 +109,7 @@ We built a framework that automatically evaluates different models on the datase
 | **Pass×GM** ⭐ | Pass Rate × GM‑Speedup | Pass rate scaled by geometric-mean code quality on passing examples. Combines coverage and quality: a model that rarely passes but generates very fast code scores the same as one that always passes at reference speed. Primary ranking metric. |
 | **Pass Rate** | PASS / Total | Fraction of examples where code compiled, ran, and produced correct results. |
 | **PASS+Good** | (on\_compare + better) / Total | Fraction of all examples with correct **and** performant code (within −5% of reference). |
-| **GM‑Speedup** | `GM` over scored PASS of `scoreᵢ` | Geometric mean of per-example speedup scores over passing examples. The per-example score is `scoreᵢ = GMₛ( gen(i,s) / ref(i,s) )`, where `s` iterates over measured data sizes and `gen(i,s)`, `ref(i,s)` are the performance metrics of the generated and reference code on example `i` at data size `s`, expressed so that **higher is better** (lower-is-better metrics such as latency are inverted to `1/latency` first). The choice of primary metric per example is determined by human review. Taking the GM across sizes (rather than averaging absolute throughput first) ensures each data point contributes equally regardless of absolute throughput magnitude; without it, large sizes (e.g. 128 MB at ~100 GB/s) would dominate small ones (e.g. 256 KB at ~5 GB/s). |
+| **GM‑Speedup** | `GM` over scored PASS of `scoreᵢ` | Geometric mean of per-example speedup scores over passing examples. The per-example score is `scoreᵢ = GMₛ( gen(i,s) / ref(i,s) )`, where `s` iterates over measured data sizes and `gen(i,s)`, `ref(i,s)` are the performance metrics of the generated and reference code on example `i` at data size `s`, expressed so that **higher is better** (lower-is-better metrics such as latency are inverted to `1/latency` first). The choice of primary metric per example is determined by human review. Taking the GM across sizes (rather than averaging absolute throughput first) ensures each data point contributes equally regardless of absolute throughput magnitude; without it, large sizes (e.g. 128 MB at ~100 GB/s) would dominate small ones (e.g. 256 KB at ~5 GB/s). **Caveat:** computed only over *passing* examples. A model that passes more (often harder) examples with mediocre performance can show a *worse* GM‑Speedup, hence we rank by Pass×GM. |
 | **Price** | — | Average cost per example (USD). |
 
 **Performance verdict thresholds** (4-tier):
@@ -119,7 +119,7 @@ We built a framework that automatically evaluates different models on the datase
 
 ## Analysis: Top vs. Bottom Model
 
-We select the highest- and lowest-scoring models on CommBench, gpt-5.5 (Pass×GM = 0.539) and deepseek-v4-pro (Pass×GM = 0.197), for a detailed breakdown across difficulty levels, task types, library coverage, and code performance.
+We select the highest- and lowest-scoring models on CommBench, gpt-5.5 (Pass×GM = 0.467) and deepseek-v4-pro (Pass×GM = 0.197), for a detailed breakdown across difficulty levels, task types, library coverage, and code performance.
 
 ### Difficulty Breakdown
 
@@ -149,7 +149,7 @@ Human-defined difficulty does not always align with model difficulty. deepseek's
 </tr>
 </table>
 
-gpt-5.5 has the widest quality spread: 8 severely degraded cases (13% of PASS), all concentrated in Hard examples. This is partly because examples that gpt-5.5 manages to compile and run (but with degraded performance) would simply fail to compile or execute under deepseek, and therefore never appear in deepseek's performance distribution at all.
+gpt-5.5 has the widest quality spread: 8 severely degraded cases (14% of PASS), all concentrated in Hard examples. This is partly because examples that gpt-5.5 manages to compile and run (but with degraded performance) would simply fail to compile or execute under deepseek, and therefore never appear in deepseek's performance distribution at all.
 
 ### Tag and Library Coverage
 
@@ -164,7 +164,7 @@ gpt-5.5 has the widest quality spread: 8 severely degraded cases (13% of PASS), 
 </tr>
 </table>
 
-gpt-5.5 dominates on Collective (72% vs 22%) and is the **only** model with meaningful coverage of specialized libraries — mscclpp (33%), nccl-device-api (40%), and thunderkittens (54%). deepseek is competitive on NCCL (100%) and P2P tags, but scores 0% across all three specialized libraries. For widely adopted libraries such as vllm, NCCL, and nvshmem, both models perform well.
+gpt-5.5 dominates on Collective (66% vs 22%) and is the **only** model with meaningful coverage of specialized libraries — mscclpp (17%), nccl-device-api (40%), and thunderkittens (54%). deepseek is competitive on NCCL (100%) and P2P tags, but scores 0% across all three specialized libraries. For widely adopted libraries such as vllm, NCCL, and nvshmem, both models perform well.
 
 ### DeepSeek with max_rounds = 5
 
@@ -193,33 +193,20 @@ Round 5:  42 PASS  (41.6%)   +8
 </tr>
 </table>
 
-#### Performance Quality: max=1 vs max=5
+#### Performance Quality and Library Coverage (max=5)
 
 <table>
 <tr>
-<td align="center" width="50%"><b>DeepSeek max=1</b></td>
-<td align="center" width="50%"><b>DeepSeek max=5</b></td>
+<td align="center" width="50%"><b>Performance distribution</b></td>
+<td align="center" width="50%"><b>Tag & library coverage</b></td>
 </tr>
 <tr>
-<td><img src="/ubench/fig2_pass_performance_deepseek-v4-pro.png" width="100%"></td>
 <td><img src="/ubench/fig2_pass_performance_deepseek_v4_pro_max5.png" width="100%"></td>
-</tr>
-</table>
-
-#### Tag and Library Coverage: max=1 vs max=5
-
-<table>
-<tr>
-<td align="center" width="50%"><b>DeepSeek max=1</b></td>
-<td align="center" width="50%"><b>DeepSeek max=5</b></td>
-</tr>
-<tr>
-<td><img src="/ubench/fig3_radar_tag_library_deepseek-v4-pro.png" width="100%"></td>
 <td><img src="/ubench/fig3_radar_tag_library_deepseek_v4_pro_max5.png" width="100%"></td>
 </tr>
 </table>
 
-Multi-round self-correction doubles deepseek's overall pass rate and unlocks Medium-difficulty commodity-library tasks. It does not unlock Hard examples or specialized libraries — those require domain knowledge the model does not have. The practical implication: deepseek with retries is a reasonable choice when tasks are restricted to commodity libraries (NCCL, vllm, cuda-runtime, nvshmem) and a retry budget is acceptable.
+Multi-round self-correction more than doubles deepseek's overall pass rate (16→42, 15.8%→41.6%) and substantially unlocks Medium-difficulty commodity-library tasks (31% → 60%). It does not unlock Hard examples or specialized libraries (mscclpp: 0%, thunderkittens: 4%) — those require domain knowledge the model does not have. The practical implication: deepseek with retries is a reasonable choice when tasks are restricted to commodity libraries (NCCL, vllm, cuda-runtime, nvshmem) and a retry budget is acceptable.
 
 ---
 
@@ -227,7 +214,7 @@ Multi-round self-correction doubles deepseek's overall pass rate and unlocks Med
 
 ### Case 1: Partial Pass — ThunderKittens AllToAll
 
-##### [Example 049 — ThunderKittens AllToAll ↗](https://github.com/uccl-project/llm-for-gpu-comm/tree/main/datasets/example049_thunderkitten_alltoall_easy)
+##### [Example 049 — ThunderKittens AllToAll ↗](https://github.com/uccl-project/CommBench/tree/main/datasets/example049_thunderkitten_alltoall_easy)
 
 **Level** 🟢 `Easy` &nbsp;·&nbsp; **Tag** `Collective` &nbsp;·&nbsp; **Library** `thunderkittens`
 
@@ -251,7 +238,7 @@ Multi-round self-correction doubles deepseek's overall pass rate and unlocks Med
 
 ### Case 2: A Case All LLMs Failed
 
-##### [Example 072 — GPU Barrier Within CTA ↗](https://github.com/uccl-project/llm-for-gpu-comm/tree/main/datasets/example072_GPU_barrier_within_CTA)
+##### [Example 072 — GPU Barrier Within CTA ↗](https://github.com/uccl-project/CommBench/tree/main/datasets/example072_GPU_barrier_within_CTA)
 
 **Level** 🟡 `Medium` &nbsp;·&nbsp; **Tag** `Utilities` &nbsp;·&nbsp; **Library** `cuda-runtime`
 
@@ -276,7 +263,7 @@ Multi-round self-correction doubles deepseek's overall pass rate and unlocks Med
 
 ### Case 3: All LLMs Failed — Niche Library API with No Algorithmic Hints
 
-##### [Example 086 — mscclpp AllToAll (Hard) ↗](https://github.com/uccl-project/llm-for-gpu-comm/tree/main/datasets/example086_mscclpp_alltoall_hard)
+##### [Example 086 — mscclpp AllToAll (Hard) ↗](https://github.com/uccl-project/CommBench/tree/main/datasets/example086_mscclpp_alltoall_hard)
 
 **Level** 🔴 `Hard` &nbsp;·&nbsp; **Tag** `Collective` &nbsp;·&nbsp; **Library** `mscclpp`
 
