@@ -1,5 +1,5 @@
 ---
-title: "CommBench: Can LLMs Write Correct and Efficient GPU Communication code?"
+title: "CommBench: Can LLMs Write Correct and Efficient GPU Communication Code?"
 slug: commbench
 description: "CommBench evaluates how effectively frontier LLMs generate multi-device GPU communication code, covering diverse communication functionalities and compute–communication fusion kernels."
 category:
@@ -12,7 +12,6 @@ tags:
   - NCCL
   - RDMA
   - CUDA
-  - NCCL
   - MSCCLPP
 pubDate: 2026-06-08
 cover: /ubench/commbench-logo.png
@@ -29,29 +28,29 @@ Date: June 8, 2026
 
 <div class="tldr">
 <p>
-Today's frontier LLMs write excellent single-device code yet consistently fail on multi-device GPU communication, precisely the code that bottlenecks large-scale LLM training and inference. We present CommBench, a benchmark covering industry-level multi-device communication use cases based on UCCL's development experience. The dataset spans <strong>point-to-point</strong>, <strong>collective</strong>, <strong>expert-parallel</strong>, <strong>compute and communication fusion</strong>, and <strong>utilities</strong> (building blocks for GPU communication interfaces, such as a GPU–CPU FIFO queue) — some examples hand-written by GPU communication experts, others distilled from production codebases such as Mscclpp, NCCL, NVSHMEM, DeepEP, ThunderKittens, vLLM, and SGLang. We evaluate leading closed and open models under a cheat-resistant harness and present case studies of where and why they succeed or break down. As future work, we plan to post-train LLMs on these datasets to close this gap.
+GPU communication is a critical component of large-scale LLM training and inference, yet its complexity makes it challenging for code-generation models. We present CommBench, a benchmark covering industry-level multi-device communication use cases based on UCCL's development experience. The dataset spans <strong>point-to-point</strong>, <strong>collective</strong>, <strong>expert-parallel</strong>, <strong>compute and communication fusion</strong>, and <strong>utilities</strong> (building blocks for GPU communication interfaces, such as a GPU–CPU FIFO queue) — some examples hand-written by GPU communication experts, others distilled from production codebases such as Mscclpp, NCCL, NVSHMEM, DeepEP, ThunderKittens, vLLM, and SGLang. We evaluate leading closed and open models under a cheat-resistant harness and present case studies of where and why they succeed or break down. As future work, we plan to post-train LLMs on these datasets to close this gap.
 </p>
 <p>
 Open-sourced at <a href="https://github.com/uccl-project/CommBench/tree/main">uccl-project/CommBench</a>.
 </p>
 </div>
 
-## Why Multi-Device Coding Matters — and Why LLMs Are Bad at It
+## Why Writing GPU Communication Code Matters—and Why It Remains Challenging for LLMs?
 
-Communication and compute-communication fusion sit at the critical path of every serious LLM workload today. In production training, communication can consume **43.6% of the forward pass** [1]; in MoE inference with wide expert parallelism, inter-device communication accounts for **up to 47% of total execution time** [2]. Getting this code **right** and **fast** is not a nice-to-have.
+Communication and compute-communication fusion are essential for scaling modern LLM training and inference. In production training, communication can consume **43.6% of the forward pass** [1]; in MoE inference with wide expert parallelism, inter-device communication accounts for **up to 47% of total execution time** [2]. Getting this code **right** and **fast** is not a nice-to-have.
 
 **The demand for customized GPU communication and compute-communication fusion is rapidly growing.** Established libraries like NCCL offer comprehensive interfaces, but optimize for generality over frontier performance. As a result, companies often maintain in-house GPU communication and computation stacks for tighter control and optimization. GPU communication also remains a rapidly evolving area: new hardware and new LLM architectures continuously introduce new requirements for higher performance and specialized workloads, while communication abstractions are still evolving:
 
 - **Modern GPUs are extremely powerful and expensive**, motivating highly customized kernels and tighter compute–communication fusion to maximize hardware utilization across architectures such as Hopper, Blackwell, and AMD GPUs. As GPUs become faster, communication increasingly needs to be initiated directly from GPUs instead of relying on CPU-mediated execution paths used in traditional libraries such as NCCL.
 - **New LLM architectures, such as MoE expert parallelism**, introduce increasingly irregular and fine-grained communication patterns that are not well supported by existing collective libraries.
 
-Multi-device coding is inherently harder than single-device coding, for three reasons:
+Multi-device GPU programming is inherently harder than single-device coding, for three reasons:
 
 - **It demands niche expertise**, requiring deep knowledge of both GPU kernels and networking.
 - **It requires coordinating many devices over fail-prone interconnects**, which is intrinsically difficult.
-- **It lacks data**, as practical, faithful datasets for multi-GPU coding are largely missing.
+- **It lacks data**, as practical, faithful datasets for GPU communication are largely missing.
 
-Despite all this, multi-device coding has been **largely overlooked** in LLM coding benchmarks. HumanEval, MBPP, LiveCodeBench — these measure single-device reasoning. No benchmark tests whether a model can write correct GPU communication, or fused communication-plus-compute, functionality (e.g., components like Mscclpp channels, a collective interface, or a fused AllGather+GEMM across NVLink and InfiniBand).
+Despite all this, multi-device GPU programming has been **largely overlooked** in LLM coding benchmarks. HumanEval, MBPP, LiveCodeBench — these measure single-device reasoning. No existing benchmark evaluates whether a model can generate correct GPU communication code, including communication primitives (e.g., Mscclpp channels and collective interfaces) and compute–communication fusion kernels (e.g., fused AllGather+GEMM across NVLink and InfiniBand).
 
 ---
 
@@ -88,19 +87,19 @@ We built a framework that automatically evaluates different models on the datase
 ## Leaderboard
 
 > Sorted by **Pass×GM** ⭐ — pass rate scaled by geometric-mean code quality on passing examples.
-> Bars `▓░` are scaled to the column maximum.
+> Bars `▓░` show each value on an absolute 0–100% scale (Pass×GM and GM‑Speedup as a fraction of 1.0).
 
 | Rank | Model | Pass×GM | Pass Rate | PASS+Good | GM‑Speedup | Open Source | Price |
 |:----:|:------|:-------:|:---------:|:---------:|:----------:|:-----------:|:-----:|
-| 🥇 | **gpt-5.5** | 🟢 **0.467** `▓▓▓▓▓▓▓▓` | 🟢 57.4% `▓▓▓▓▓▓▓▓` | 🟢 **30.7%** `▓▓▓▓▓▓▓▓` | 🔴 0.813 `░░░░░░░░` | ❌ | $1.91 |
-| 🥈 | **gemini-3.1-pro-preview** | 🟡 0.305 `▓▓▓▓▓░░░` | 🟡 36.6% `▓▓▓▓▓░░░` | 🟢 **25.7%** `▓▓▓▓▓▓░░` | 🔴 0.832 `▓░░░░░░░` | ❌ | $0.26 |
-| 🥉 | **claude-opus-4-7** | 🟡 0.282 `▓▓▓▓▓░░░` | 🟡 33.7% `▓▓▓▓▓░░░` | 🟡 **20.8%** `▓▓▓▓▓░░░` | 🔴 0.836 `▓░░░░░░░` | ❌ | $0.21 |
-| 4️⃣ | **glm-5.1** | 🟡 0.281 `▓▓▓▓░░░░` | 🟡 29.7% `▓▓▓▓░░░░` | 🟡 **17.8%** `▓▓▓▓░░░░` | 🟢 0.947 `▓▓▓▓▓▓░░` | ✅ | $0.63 |
-| 5️⃣ | **kimi-k2.6** | 🟡 0.275 `▓▓▓▓░░░░` | 🟡 30.7% `▓▓▓▓░░░░` | 🟡 **18.8%** `▓▓▓▓▓░░░` | 🟡 0.895 `▓▓▓░░░░░` | ✅ | $0.10 |
-| 6️⃣ | **qwen3.7-max** | 🟡 0.269 `▓▓▓▓░░░░` | 🟡 26.7% `▓▓▓▓░░░░` | 🟡 **15.8%** `▓▓▓▓░░░░` | 🟢 1.008 `▓▓▓▓▓▓▓▓` | ❌ | $0.03 |
-| 7️⃣ | **deepseek-v4-pro** | 🔴 0.197 `▓▓▓░░░░░` | 🔴 19.8% `▓▓▓░░░░░` | 🔴 **12.9%** `▓▓▓░░░░░` | 🟢 0.995 `▓▓▓▓▓▓▓░` | ✅ | $0.02 |
+| 🥇 | **gpt-5.5** | 🟢 **0.467** `▓▓▓▓░░░░` | 🟢 57.4% `▓▓▓▓▓░░░` | 🟢 **30.7%** `▓▓░░░░░░` | 🔴 0.813 `▓▓▓▓▓▓▓░` | ❌ | $1.91 |
+| 🥈 | **gemini-3.1-pro-preview** | 🟡 0.305 `▓▓░░░░░░` | 🟡 36.6% `▓▓▓░░░░░` | 🟢 **25.7%** `▓▓░░░░░░` | 🔴 0.832 `▓▓▓▓▓▓▓░` | ❌ | $0.26 |
+| 🥉 | **claude-opus-4-7** | 🟡 0.282 `▓▓░░░░░░` | 🟡 33.7% `▓▓▓░░░░░` | 🟡 **20.8%** `▓▓░░░░░░` | 🔴 0.836 `▓▓▓▓▓▓▓░` | ❌ | $0.21 |
+| 4️⃣ | **glm-5.1** | 🟡 0.281 `▓▓░░░░░░` | 🟡 29.7% `▓▓░░░░░░` | 🟡 **17.8%** `▓░░░░░░░` | 🟢 0.947 `▓▓▓▓▓▓▓▓` | ✅ | $0.63 |
+| 5️⃣ | **kimi-k2.6** | 🟡 0.275 `▓▓░░░░░░` | 🟡 30.7% `▓▓░░░░░░` | 🟡 **18.8%** `▓▓░░░░░░` | 🟡 0.895 `▓▓▓▓▓▓▓░` | ✅ | $0.10 |
+| 6️⃣ | **qwen3.7-max** | 🟡 0.269 `▓▓░░░░░░` | 🟡 26.7% `▓▓░░░░░░` | 🟡 **15.8%** `▓░░░░░░░` | 🟢 1.008 `▓▓▓▓▓▓▓▓` | ❌ | $0.03 |
+| 7️⃣ | **deepseek-v4-pro** | 🔴 0.197 `▓▓░░░░░░` | 🔴 19.8% `▓▓░░░░░░` | 🔴 **12.9%** `▓░░░░░░░` | 🟢 0.995 `▓▓▓▓▓▓▓▓` | ✅ | $0.02 |
 
-**Color:** 🟢 top tier &nbsp;·&nbsp; 🟡 mid tier &nbsp;·&nbsp; 🔴 bottom tier &nbsp;&nbsp;|&nbsp;&nbsp; GM‑Speedup bar scaled to [0.813, 1.008] range (not from zero).
+**Color:** 🟢 top tier &nbsp;·&nbsp; 🟡 mid tier &nbsp;·&nbsp; 🔴 bottom tier.
 
 ### Metric Definitions
 
@@ -242,9 +241,9 @@ Multi-round self-correction more than doubles deepseek's overall pass rate (16�
 
 **Level** 🟡 `Medium` &nbsp;·&nbsp; **Tag** `Utilities` &nbsp;·&nbsp; **Library** `cuda-runtime`
 
-**Task:** Implement intra-CTA producer/consumer synchronization using a Hopper/Blackwell shared-memory `mbarrier` with a non-blocking `try_wait` probe, a pattern used in persistent-kernel tile pipelines (e.g., CUTLASS, Mirage [[1]](https://github.com/mirage-project/mirage)) to overlap data arrival with computation without stalling the warp scheduler.
+**Task:** Implement intra-CTA producer/consumer synchronization using a Hopper/Blackwell shared-memory `mbarrier` with a non-blocking `try_wait` probe, a pattern used in persistent-kernel tile pipelines (e.g., CUTLASS, [Mirage](https://github.com/mirage-project/mirage)) to overlap data arrival with computation without stalling the warp scheduler.
 
-**What to implement:** Three inline-PTX device helpers (`initialize_barrier`, `arrive`, `try_wait_barrier`) and a benchmark kernel body, lifted from Mirage [[1]](https://github.com/mirage-project/mirage).
+**What to implement:** Three inline-PTX device helpers (`initialize_barrier`, `arrive`, `try_wait_barrier`) and a benchmark kernel body, lifted from [Mirage](https://github.com/mirage-project/mirage).
 
 **Why all models failed:** This task only requires using a small set of well-defined `mbarrier` interfaces, which is the kind of API memorization LLMs are expected to excel at. However, `mbarrier` is Hopper-specific PTX introduced in sm_90, and models may lack sufficient training data for these instructions, making them prone to mis-remembering argument counts, ordering, or address-space requirements.
 
@@ -267,7 +266,7 @@ Multi-round self-correction more than doubles deepseek's overall pass rate (16�
 
 **Level** 🔴 `Hard` &nbsp;·&nbsp; **Tag** `Collective` &nbsp;·&nbsp; **Library** `mscclpp`
 
-**Task:** Implement the fastest intra-node AllToAll kernel using MSCCL++ [[2]](https://github.com/microsoft/mscclpp) `MemoryChannel` primitives. The template provides no algorithmic description — only a minimal comment "implement the fastest All to All CUDA kernel" and a set of empty `// TODO` stubs.
+**Task:** Implement the fastest intra-node AllToAll kernel using [MSCCL++](https://github.com/microsoft/mscclpp) [3] `MemoryChannel` primitives. The template provides no algorithmic description — only a minimal comment "implement the fastest All to All CUDA kernel" and a set of empty `// TODO` stubs.
 
 **What to implement:** One GPU kernel (`alltoall2`) using `MemoryChannel` for direct peer writes, and the full host-side `All2All` class (constructor, buffer allocation, channel setup, launch, correctness verification, barrier).
 
