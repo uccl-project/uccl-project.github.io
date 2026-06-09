@@ -14,13 +14,13 @@ tags:
   - CUDA
   - MSCCLPP
 pubDate: 2026-06-08
-cover: /ubench/commbench-logo.png
+cover: /commbench/commbench-logo.png
 coverAlt: CommBench logo
-author: Shuang Ma, Yuyi Li, Yihan Zhang, Danyang Chen, Shuyang Ji, Ziming Mao, Cheng Ji, Ansha Prashanth, Wenting Yang, Chihan Cui, Peiyu Lin, Amanda Raybuck, Ion Stoica, Yang Zhou, and the UCCL Team.
+author: Shuang Ma, Yuyi Li, Yihan Zhang, Danyang Chen, Shuyang Ji, Ziming Mao, Cheng Ji, Ansha Prashanth, Wenting Yang, Chihan Cui, Peiyu Lin, Amanda Raybuck, Ion Stoica, Yang Zhou.
 ---
 
 <p>
-<strong>By: Shuang Ma, Yuyi Li, Yihan Zhang, Danyang Chen, Shuyang Ji, Ziming Mao, Cheng Ji, Ansha Prashanth, Wenting Yang, Chihan Cui, Peiyu Lin, Amanda Raybuck, Ion Stoica, Yang Zhou, and the UCCL Team.
+<strong>By: Shuang Ma, Yuyi Li, Yihan Zhang, Danyang Chen, Shuyang Ji, Ziming Mao, Cheng Ji, Ansha Prashanth, Wenting Yang, Chihan Cui, Peiyu Lin, Amanda Raybuck, Ion Stoica, Yang Zhou.
 <br>
 Date: June 8, 2026
 </strong>
@@ -28,16 +28,17 @@ Date: June 8, 2026
 
 <div class="tldr">
 <p>
-GPU communication is a critical component of large-scale LLM training and inference, yet its complexity makes it challenging for code-generation models. We present CommBench, a benchmark covering industry-level multi-device communication use cases based on UCCL's development experience. The dataset spans <strong>point-to-point</strong>, <strong>collective</strong>, <strong>expert-parallel</strong>, <strong>compute and communication fusion</strong>, and <strong>utilities</strong> (building blocks for GPU communication interfaces, such as a GPU–CPU FIFO queue) — some examples hand-written by GPU communication experts, others distilled from production codebases such as Mscclpp, NCCL, NVSHMEM, DeepEP, ThunderKittens, vLLM, and SGLang. We evaluate leading closed and open models under a cheat-resistant harness and present case studies of where and why they succeed or break down. As future work, we plan to post-train LLMs on these datasets to close this gap.
+GPU communication is a critical component of large-scale LLM training and inference, yet its complexity makes it challenging for code-generation models. We present CommBench, a benchmark with 100+ GPU communication problems + reference solutions (collectively called examples) that cover industry-level multi-device communication use cases based on UCCL's development experience. CommBench spans <strong>point-to-point</strong>, <strong>collective</strong>, <strong>expert-parallel</strong>, <strong>compute and communication fusion</strong>, and <strong>utility functions</strong>. 
+These examples are either hand-written by GPU communication experts or distilled from production codebases such as Mscclpp, NCCL, NVSHMEM, DeepEP, ThunderKittens, vLLM, and SGLang. We then evaluate leading closed and open models under a cheat-resistant harness and present case studies of where and why they succeed or break down. As future work, we plan to post-train LLMs on these datasets to close this gap.
 </p>
 <p>
-Open-sourced at <a href="https://github.com/uccl-project/CommBench/tree/main">uccl-project/CommBench</a>.
+CommBench open-source: <a href="https://github.com/uccl-project/CommBench/tree/main">uccl-project/CommBench</a> (MIT license).
 </p>
 </div>
 
 ## Why Writing GPU Communication Code Matters—and Why It Remains Challenging for LLMs?
 
-Communication and compute-communication fusion are essential for scaling modern LLM training and inference. In production training, communication can consume **43.6% of the forward pass** [1]; in MoE inference with wide expert parallelism, inter-device communication accounts for **up to 47% of total execution time** [2]. Getting this code **right** and **fast** is not a nice-to-have.
+Communication and compute-communication fusion are essential for scaling modern LLM training and inference. In production training, communication can consume **43.6% of the forward pass** [^1]; in MoE inference with wide expert parallelism, inter-device communication accounts for **up to 47% of total execution time** [^2]. Getting this code **right** and **fast** is not a nice-to-have.
 
 **The demand for customized GPU communication and compute-communication fusion is rapidly growing.** Established libraries like NCCL offer comprehensive interfaces, but optimize for generality over frontier performance. As a result, companies often maintain in-house GPU communication and computation stacks for tighter control and optimization. GPU communication also remains a rapidly evolving area: new hardware and new LLM architectures continuously introduce new requirements for higher performance and specialized workloads, while communication abstractions are still evolving:
 
@@ -58,7 +59,7 @@ Despite all this, multi-device GPU programming has been **largely overlooked** i
 
 ### Benchmark Structure
 
-The dataset is organized as a list of independently runnable examples. Some implement complete, ready-to-use functionality (e.g., P2P/collective interfaces, or MoE expert-parallel dispatch and combine); others are reusable communication building blocks (e.g., Mscclpp channels). Drawing on our hands-on experience from the UCCL project, we manually assign each example one of three difficulty levels: **Easy / Medium / Hard**.
+The dataset is organized as a list of independently runnable examples, currently with **100+** such examples. Some implement complete, ready-to-use functionality (e.g., P2P/collective interfaces, or MoE expert-parallel dispatch and combine); others are reusable communication building blocks (e.g., Mscclpp channels). Drawing on our hands-on experience from the UCCL project, we manually assign each example one of three difficulty levels: **Easy / Medium / Hard**.
 
 Some examples we hand-wrote on top of base libraries; others are extracted from production-grade communication and LLM-serving frameworks. **By function**, they fall into:
 
@@ -68,7 +69,7 @@ Some examples we hand-wrote on top of base libraries; others are extracted from 
 - **Fusion** — kernels that interleave communication with compute (e.g., AllGather+GEMM).
 - **Utilities** — supporting components such as connection setup, buffer registration, and topology queries.
 
-**By source**, they span cuda-runtime, ibverbs, Mscclpp, nccl, nvshmem, deepep, nccl-device-api, thunderkittens, vllm, and sglang.
+**By source**, they span cuda-runtime, libibverbs, Mscclpp, nccl, nvshmem, deepep, nccl-device-api, thunderkittens, vllm, and sglang.
 
 ### Framework Structure
 
@@ -76,8 +77,8 @@ We built a framework that automatically evaluates different models on the datase
 
 **Example structure.** Each example has three parts:
 
-- **Reference solution** — high-quality, hand-written code organized in an object-oriented style (Python / CUDA / HIP / C++). It ships with a test harness that uses randomized inputs, so a model cannot hard-code expected outputs. We keep the reference solutions secret to prevent them from leaking into model training data and contaminating future evaluations.
-- **Empty solution** — the reference with its core implementation stripped out and marked `// TODO`, but with the functional interface preserved. This file becomes part of the prompt: the model must honor the interface semantics, which also keeps its output directly testable. We verify that only the regions meant to be edited were changed, guarding against cheating.
+- **Reference solution (excluded from the repo)** — high-quality, hand-written code organized in an object-oriented style (Python / CUDA / HIP / C++). It ships with a test harness that uses randomized inputs, so a model cannot hard-code expected outputs. We keep the reference solutions secret to prevent them from leaking into model training data and contaminating future evaluations.
+- **Problem statement + empty solution** — the reference with its core implementation stripped out and marked `// TODO`, but with the functional interface preserved. This file becomes part of the prompt: the model must honor the interface semantics, which also keeps its output directly testable. We verify that only the regions meant to be edited were changed, guarding against cheating.
 - **Build-and-run script** — independently compiles and runs an example (reference or generated) and is hidden from the model. By controlling the compile command, we strictly ensure the generated code uses only the intended libraries.
 
 **Multi-round refinement.** When `max-round > 1`, if the generated code fails to run or underperforms the reference, we feed the compile/run output back into the prompt and ask the model to iterate — repeating until performance improves or the round limit is reached.
@@ -128,8 +129,8 @@ We select the highest- and lowest-scoring models on CommBench, gpt-5.5 (Pass×GM
 <td align="center" width="50%"><b>DeepSeek-V4-Pro</b></td>
 </tr>
 <tr>
-<td><img src="/ubench/fig1_level_breakdown_gpt-5.5.png" width="100%"></td>
-<td><img src="/ubench/fig1_level_breakdown_deepseek-v4-pro.png" width="100%"></td>
+<td><img src="/commbench/fig1_level_breakdown_gpt-5.5.png" width="100%"></td>
+<td><img src="/commbench/fig1_level_breakdown_deepseek-v4-pro.png" width="100%"></td>
 </tr>
 </table>
 
@@ -143,8 +144,8 @@ Human-defined difficulty does not always align with model difficulty. deepseek's
 <td align="center" width="50%"><b>DeepSeek-V4-Pro</b></td>
 </tr>
 <tr>
-<td><img src="/ubench/fig2_pass_performance_gpt-5.5.png" width="100%"></td>
-<td><img src="/ubench/fig2_pass_performance_deepseek-v4-pro.png" width="100%"></td>
+<td><img src="/commbench/fig2_pass_performance_gpt-5.5.png" width="100%"></td>
+<td><img src="/commbench/fig2_pass_performance_deepseek-v4-pro.png" width="100%"></td>
 </tr>
 </table>
 
@@ -158,8 +159,8 @@ gpt-5.5 has the widest quality spread: 8 severely degraded cases (14% of PASS), 
 <td align="center" width="50%"><b>DeepSeek-V4-Pro</b></td>
 </tr>
 <tr>
-<td><img src="/ubench/fig3_radar_tag_library_gpt-5.5.png" width="100%"></td>
-<td><img src="/ubench/fig3_radar_tag_library_deepseek-v4-pro.png" width="100%"></td>
+<td><img src="/commbench/fig3_radar_tag_library_gpt-5.5.png" width="100%"></td>
+<td><img src="/commbench/fig3_radar_tag_library_deepseek-v4-pro.png" width="100%"></td>
 </tr>
 </table>
 
@@ -187,8 +188,8 @@ Round 5:  42 PASS  (41.6%)   +8
 <td align="center" width="50%"><b>DeepSeek max=5</b></td>
 </tr>
 <tr>
-<td align="center"><img src="/ubench/fig1_level_breakdown_deepseek-v4-pro.png" style="height: 240px; width: auto; max-width: 100%;"></td>
-<td align="center"><img src="/ubench/fig1_level_breakdown_deepseek_v4_pro_max5.png" style="height: 240px; width: auto; max-width: 100%;"></td>
+<td align="center"><img src="/commbench/fig1_level_breakdown_deepseek-v4-pro.png" style="height: 240px; width: auto; max-width: 100%;"></td>
+<td align="center"><img src="/commbench/fig1_level_breakdown_deepseek_v4_pro_max5.png" style="height: 240px; width: auto; max-width: 100%;"></td>
 </tr>
 </table>
 
@@ -200,8 +201,8 @@ Round 5:  42 PASS  (41.6%)   +8
 <td align="center" width="50%"><b>Tag & library coverage</b></td>
 </tr>
 <tr>
-<td><img src="/ubench/fig2_pass_performance_deepseek_v4_pro_max5.png" width="100%"></td>
-<td><img src="/ubench/fig3_radar_tag_library_deepseek_v4_pro_max5.png" width="100%"></td>
+<td><img src="/commbench/fig2_pass_performance_deepseek_v4_pro_max5.png" width="100%"></td>
+<td><img src="/commbench/fig3_radar_tag_library_deepseek_v4_pro_max5.png" width="100%"></td>
 </tr>
 </table>
 
@@ -266,7 +267,7 @@ Multi-round self-correction more than doubles deepseek's overall pass rate (16�
 
 **Level** 🔴 `Hard` &nbsp;·&nbsp; **Tag** `Collective` &nbsp;·&nbsp; **Library** `mscclpp`
 
-**Task:** Implement the fastest intra-node AllToAll kernel using [MSCCL++](https://github.com/microsoft/mscclpp) [3] `MemoryChannel` primitives. The template provides no algorithmic description — only a minimal comment "implement the fastest All to All CUDA kernel" and a set of empty `// TODO` stubs.
+**Task:** Implement the fastest intra-node AllToAll kernel using [MSCCL++](https://github.com/microsoft/mscclpp) [^3] `MemoryChannel` primitives. The template provides no algorithmic description — only a minimal comment "implement the fastest All to All CUDA kernel" and a set of empty `// TODO` stubs.
 
 **What to implement:** One GPU kernel (`alltoall2`) using `MemoryChannel` for direct peer writes, and the full host-side `All2All` class (constructor, buffer allocation, channel setup, launch, correctness verification, barrier).
 
@@ -296,6 +297,6 @@ We thank Mibura and AMD for sponsoring the testbed for this benchmark.
 
 ## References
 
-1. Chao Jin et al. *MegaScale-MoE: Large-Scale Communication-Efficient Training of Mixture-of-Experts Models in Production*. EuroSys, 2026.
-2. Shulai Zhang et al. *Comet: Fine-grained Computation-communication Overlapping for Mixture-of-Experts*. MLSys, 2025.
-3. Changho Hwang et al. *MSCCL++: Rethinking GPU Communication Abstractions for AI Inference*. ASPLOS, 2026
+[^1]: Chao Jin et al. *MegaScale-MoE: Large-Scale Communication-Efficient Training of Mixture-of-Experts Models in Production*. EuroSys, 2026.
+[^2]: Shulai Zhang et al. *Comet: Fine-grained Computation-communication Overlapping for Mixture-of-Experts*. MLSys, 2025.
+[^3]: Changho Hwang et al. *MSCCL++: Rethinking GPU Communication Abstractions for AI Inference*. ASPLOS, 2026.
