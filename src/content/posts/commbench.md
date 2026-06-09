@@ -29,7 +29,7 @@ Date: June 9, 2026
 <div class="tldr">
 <p>
 GPU communication is a critical component of large-scale LLM training and inference, yet its complexity makes it challenging for code-generation models. We present CommBench, a benchmark with 100+ GPU communication problems + reference solutions (collectively called examples) that cover industry-level multi-device communication use cases based on UCCL's development experience. CommBench spans <strong>point-to-point</strong>, <strong>collective</strong>, <strong>expert-parallel</strong>, <strong>compute and communication fusion</strong>, and <strong>utility functions</strong>. 
-These examples are either hand-written by GPU communication experts or distilled from production codebases such as Mscclpp, NCCL, NVSHMEM, DeepEP, ThunderKittens, vLLM, and SGLang. We then evaluate leading closed and open models under a cheat-resistant harness and present case studies of where and why they succeed or break down. As future work, we plan to post-train LLMs on these datasets to close this gap.
+These examples are either hand-written by GPU communication experts or distilled from production codebases such as Mscclpp, NCCL, NVSHMEM, DeepEP, ThunderKittens, vLLM, and SGLang. We then evaluate leading closed and open models under a cheat-resistant harness on real hardware spanning intra-node NVLink and inter-node RDMA, and present case studies of where and why they succeed or break down. As future work, we plan to post-train LLMs on these datasets to close this gap.
 </p>
 <p>
 CommBench open-source: <a href="https://github.com/uccl-project/CommBench/tree/main">uccl-project/CommBench</a> (MIT license).
@@ -83,6 +83,8 @@ We built a framework that automatically evaluates different models on the datase
 
 **Multi-round refinement.** When `max-round > 1`, if the generated code fails to run or underperforms the reference, we feed the compile/run output back into the prompt and ask the model to iterate — repeating until performance improves or the round limit is reached.
 
+**Testbed.** We evaluate on three clusters that together span NVLink, InfiniBand, and RoCE on both NVIDIA and AMD GPUs: (1) a single node of 8× NVIDIA B300 over NVLink; (2) NVIDIA GH200 nodes linked by 400 Gb/s InfiniBand (ConnectX-7 / BlueField-3) for inter-node RDMA; and (3) 8× AMD Instinct MI325X nodes with intra-node Infinity Fabric (XGMI) and 400 Gb/s RoCE inter-node RDMA. This lets CommBench exercise real inter-node RDMA paths, not only intra-node NVLink, across both vendors' stacks (CUDA and ROCm/HIP).
+
 ---
 
 ## Leaderboard
@@ -114,6 +116,8 @@ We built a framework that automatically evaluates different models on the datase
 
 **Performance verdict thresholds** (4-tier):
 `better` ≥ +20% &nbsp;·&nbsp; `on_compare` −5% to +20% &nbsp;·&nbsp; `degraded` −40% to −5% &nbsp;·&nbsp; `severely_degraded` < −40%
+
+**Reasoning effort and model parameters.** We run every model at its *default* reasoning effort and default sampling parameters (temperature, top-p, etc.); we do not tune them. The per-model defaults are: gpt-5.5 = `medium`, gemini-3.1-pro-preview = `high`, claude-opus-4-7 = adaptive thinking, glm-5.1 = thinking enabled (the model decides when to think), kimi-k2.6 = thinking enabled (temperature fixed at 1.0), deepseek-v4-pro = `medium`. The only exception is qwen3.7-max, where thinking is disabled to avoid timeouts.
 
 ---
 
@@ -172,13 +176,13 @@ Due to budget constraints, gpt-5.5 was evaluated with a single generation round.
 
 #### Cumulative PASS by Round
 
-```text
-Round 1:  16 PASS  (15.8%)
-Round 2:  28 PASS  (27.7%)   +12  ← largest single gain
-Round 3:  32 PASS  (31.7%)   +4
-Round 4:  34 PASS  (33.7%)   +2
-Round 5:  42 PASS  (41.6%)   +8
-```
+| Round | Cumulative PASS | Pass Rate | New this round |
+|:-----:|:---------------:|:---------:|:--------------:|
+| 1 | 16 | 15.8% | |
+| 2 | 28 | 27.7% | **+12** (largest gain) |
+| 3 | 32 | 31.7% | +4 |
+| 4 | 34 | 33.7% | +2 |
+| 5 | 42 | 41.6% | +8 |
 
 #### Difficulty Breakdown: max=1 vs max=5
 
@@ -197,7 +201,7 @@ Round 5:  42 PASS  (41.6%)   +8
 
 <table>
 <tr>
-<td align="center" width="50%"><b>Performance distribution</b></td>
+<td align="center" width="50%"><b>Performance distribution among PASS examples</b></td>
 <td align="center" width="50%"><b>Tag & library coverage</b></td>
 </tr>
 <tr>
