@@ -1,0 +1,509 @@
+<!DOCTYPE html><html lang="en"> <head><!-- Global Metadata --><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/svg+xml" href="/logos/uccl_logo.png"><meta name="generator" content="Astro v5.1.1"><!-- Canonical URL --><link rel="canonical" href="https://uccl-project.github.io/posts/commbench/"><!-- Sitemap --><link rel="sitemap" href="/sitemap-index.xml"><!-- Primary Meta Tags --><title>CommBench: Can LLMs Write Correct and Efficient GPU Communication Code?</title><meta name="title" content="CommBench: Can LLMs Write Correct and Efficient GPU Communication Code?"><meta name="description" content="CommBench evaluates how effectively frontier LLMs generate multi-device GPU communication code, covering diverse communication functionalities and compute–communication fusion kernels."><!-- Open Graph / Facebook --><meta property="og:type" content="website"><meta property="og:url" content="https://uccl-project.github.io/posts/commbench/"><meta property="og:title" content="CommBench: Can LLMs Write Correct and Efficient GPU Communication Code?"><meta property="og:description" content="CommBench evaluates how effectively frontier LLMs generate multi-device GPU communication code, covering diverse communication functionalities and compute–communication fusion kernels."><meta property="og:image" content="https://uccl-project.github.io/blog-placeholder-1.avif"><!-- Twitter --><meta property="twitter:card" content="summary_large_image"><meta property="twitter:url" content="https://uccl-project.github.io/posts/commbench/"><meta property="twitter:title" content="CommBench: Can LLMs Write Correct and Efficient GPU Communication Code?"><meta property="twitter:description" content="CommBench evaluates how effectively frontier LLMs generate multi-device GPU communication code, covering diverse communication functionalities and compute–communication fusion kernels."><meta property="twitter:image" content="https://uccl-project.github.io/blog-placeholder-1.avif"><!-- Preline CSS --><script type="module" src="/_astro/BaseHead.astro_astro_type_script_index_0_lang.BtT675nX.js"></script><!-- Prism syntax highlighting --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-3wzg3yUeG6mXQz0YIZxZOKhHvJ3C0cI85FhF38sZ4N2VNivXzXcX4Jt9I7H5PHeTtNKgHdwNwp0UrEG3iu8IRw==" crossorigin="anonymous" referrerpolicy="no-referrer"><!-- Custom CSS for table borders --><link rel="stylesheet" href="/_astro/_page_.CihA94b9.css">
+<style>[data-astro-image]{width:100%;height:auto;-o-object-fit:var(--fit);object-fit:var(--fit);-o-object-position:var(--pos);object-position:var(--pos);aspect-ratio:var(--w) / var(--h)}[data-astro-image=responsive]{max-width:calc(var(--w) * 1px);max-height:calc(var(--h) * 1px)}[data-astro-image=fixed]{width:calc(var(--w) * 1px);height:calc(var(--h) * 1px)}
+</style><script type="module" src="/_astro/page.DTIbhfSr.js"></script>
+<script>!(function(w,p,f,c){if(!window.crossOriginIsolated && !navigator.serviceWorker) return;c=w[p]=Object.assign(w[p]||{},{"lib":"/~partytown/","debug":false});c[f]=(c[f]||[]).concat(["dataLayer.push"])})(window,'partytown','forward');/* Partytown 0.10.2 - MIT builder.io */
+const t={preserveBehavior:!1},e=e=>{if("string"==typeof e)return[e,t];const[n,r=t]=e;return[n,{...t,...r}]},n=Object.freeze((t=>{const e=new Set;let n=[];do{Object.getOwnPropertyNames(n).forEach((t=>{"function"==typeof n[t]&&e.add(t)}))}while((n=Object.getPrototypeOf(n))!==Object.prototype);return Array.from(e)})());!function(t,r,o,i,a,s,c,d,l,p,u=t,f){function h(){f||(f=1,"/"==(c=(s.lib||"/~partytown/")+(s.debug?"debug/":""))[0]&&(l=r.querySelectorAll('script[type="text/partytown"]'),i!=t?i.dispatchEvent(new CustomEvent("pt1",{detail:t})):(d=setTimeout(v,1e4),r.addEventListener("pt0",w),a?y(1):o.serviceWorker?o.serviceWorker.register(c+(s.swPath||"partytown-sw.js"),{scope:c}).then((function(t){t.active?y():t.installing&&t.installing.addEventListener("statechange",(function(t){"activated"==t.target.state&&y()}))}),console.error):v())))}function y(e){p=r.createElement(e?"script":"iframe"),t._pttab=Date.now(),e||(p.style.display="block",p.style.width="0",p.style.height="0",p.style.border="0",p.style.visibility="hidden",p.setAttribute("aria-hidden",!0)),p.src=c+"partytown-"+(e?"atomics.js?v=0.10.2":"sandbox-sw.html?"+t._pttab),r.querySelector(s.sandboxParent||"body").appendChild(p)}function v(n,o){for(w(),i==t&&(s.forward||[]).map((function(n){const[r]=e(n);delete t[r.split(".")[0]]})),n=0;n<l.length;n++)(o=r.createElement("script")).innerHTML=l[n].innerHTML,o.nonce=s.nonce,r.head.appendChild(o);p&&p.parentNode.removeChild(p)}function w(){clearTimeout(d)}s=t.partytown||{},i==t&&(s.forward||[]).map((function(r){const[o,{preserveBehavior:i}]=e(r);u=t,o.split(".").map((function(e,r,o){var a;u=u[o[r]]=r+1<o.length?u[o[r]]||(a=o[r+1],n.includes(a)?[]:{}):(()=>{let e=null;if(i){const{methodOrProperty:n,thisObject:r}=((t,e)=>{let n=t;for(let t=0;t<e.length-1;t+=1)n=n[e[t]];return{thisObject:n,methodOrProperty:e.length>0?n[e[e.length-1]]:void 0}})(t,o);"function"==typeof n&&(e=(...t)=>n.apply(r,...t))}return function(){let n;return e&&(n=e(arguments)),(t._ptf=t._ptf||[]).push(o,arguments),n}})()}))})),"complete"==r.readyState?h():(t.addEventListener("DOMContentLoaded",h),t.addEventListener("load",h))}(window,document,navigator,top,window.crossOriginIsolated);;(e=>{e.addEventListener("astro:before-swap",e=>{let r=document.body.querySelector("iframe[src*='/~partytown/']");if(r)e.newDocument.body.append(r)})})(document);</script></head> <body class="flex flex-col min-h-screen mx-auto max-w-4xl px-4 dark:prose-invert sm:px-6 lg:px-8 dark:bg-neutral-900"> <header class="flex flex-wrap md:justify-start md:flex-nowrap z-50 w-full py-7"> <nav class="relative max-w-7xl w-full flex flex-wrap md:grid md:grid-cols-12 basis-full items-center px-4 mx-auto" aria-label="Global"> <div class="md:col-span-3"> <a class="flex-none flex items-center" href="https://github.com/uccl-project/uccl" aria-label="UCCL GitHub repository"> <img src="/logos/uccl_logo_side.png" alt="UCCL Logo" class="h-12 w-auto"> </a> </div> <div class="flex items-center gap-x-2 ms-auto py-1 md:ps-6 md:order-3 md:col-span-3"> <button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-xl border border-transparent text-black hover:bg-neutral-100 dark:text-white dark:hover:bg-neutral-700 transition disabled:opacity-50 disabled:pointer-events-none" onclick="window.location.href='/search/'"> <svg width="1em" height="1em" class="icon-base" data-icon="tabler:search">   <symbol id="ai:tabler:search" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10a7 7 0 1 0 14 0a7 7 0 1 0-14 0m18 11l-6-6"/></symbol><use href="#ai:tabler:search"></use>  </svg> </button> <button type="button" class="hs-dark-mode hs-dark-mode-active:hidden inline-flex items-center gap-x-2 py-2 px-3 rounded-full text-sm text-black hover:bg-white/20" data-hs-theme-click-value="dark"> <svg width="1em" height="1em" class="icon-base" data-icon="tabler:sun-filled">   <symbol id="ai:tabler:sun-filled" viewBox="0 0 24 24"><path fill="currentColor" d="M12 19a1 1 0 0 1 .993.883L13 20v1a1 1 0 0 1-1.993.117L11 21v-1a1 1 0 0 1 1-1m6.313-2.09l.094.083l.7.7a1 1 0 0 1-1.32 1.497l-.094-.083l-.7-.7a1 1 0 0 1 1.218-1.567zm-11.306.083a1 1 0 0 1 .083 1.32l-.083.094l-.7.7a1 1 0 0 1-1.497-1.32l.083-.094l.7-.7a1 1 0 0 1 1.414 0M4 11a1 1 0 0 1 .117 1.993L4 13H3a1 1 0 0 1-.117-1.993L3 11zm17 0a1 1 0 0 1 .117 1.993L21 13h-1a1 1 0 0 1-.117-1.993L20 11zM6.213 4.81l.094.083l.7.7a1 1 0 0 1-1.32 1.497l-.094-.083l-.7-.7A1 1 0 0 1 6.11 4.74zm12.894.083a1 1 0 0 1 .083 1.32l-.083.094l-.7.7a1 1 0 0 1-1.497-1.32l.083-.094l.7-.7a1 1 0 0 1 1.414 0M12 2a1 1 0 0 1 .993.883L13 3v1a1 1 0 0 1-1.993.117L11 4V3a1 1 0 0 1 1-1m0 5a5 5 0 1 1-4.995 5.217L7 12l.005-.217A5 5 0 0 1 12 7"/></symbol><use href="#ai:tabler:sun-filled"></use>  </svg> </button> <button type="button" class="hs-dark-mode hs-dark-mode-active:inline-flex hidden items-center gap-x-2 py-2 px-3 rounded-full text-sm text-white hover:bg-white/20" data-hs-theme-click-value="light"> <svg width="1em" height="1em" class="icon-base" data-icon="tabler:moon-filled">   <symbol id="ai:tabler:moon-filled" viewBox="0 0 24 24"><path fill="currentColor" d="M12 1.992a10 10 0 1 0 9.236 13.838c.341-.82-.476-1.644-1.298-1.31a6.5 6.5 0 0 1-6.864-10.787l.077-.08c.551-.63.113-1.653-.758-1.653h-.266l-.068-.006z"/></symbol><use href="#ai:tabler:moon-filled"></use>  </svg> </button> <div class="md:hidden"> <button type="button" class="hs-collapse-toggle size-[38px] flex justify-center items-center text-sm font-semibold rounded-xl text-black hover:bg-neutral-100 disabled:opacity-50 disabled:pointer-events-none dark:text-white dark:hover:bg-neutral-700" data-hs-collapse="#navbar-collapse-with-animation" aria-controls="navbar-collapse-with-animation" aria-label="Toggle navigation"> <svg width="1em" height="1em" class="hs-collapse-open:hidden flex-shrink-0 size-4" data-icon="tabler:menu-2">   <symbol id="ai:tabler:menu-2" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></symbol><use href="#ai:tabler:menu-2"></use>  </svg> <svg width="1em" height="1em" class="hs-collapse-open:block hidden flex-shrink-0 size-4" data-icon="tabler:menu-order">   <symbol id="ai:tabler:menu-order" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 10h16M4 14h16M9 18l3 3l3-3M9 6l3-3l3 3"/></symbol><use href="#ai:tabler:menu-order"></use>  </svg> </button> </div> </div> <div id="navbar-collapse-with-animation" class="hs-collapse hidden overflow-hidden transition-all duration-300 basis-full grow md:block md:w-auto md:basis-auto md:order-2 md:col-span-6"> <div class="flex flex-col gap-y-4 gap-x-0 mt-5 md:flex-row md:justify-center md:items-center md:gap-y-0 md:gap-x-7 md:mt-0"> <a href="/posts/about-us/" class="px-4 py-3 font-medium text-neutral-900 hover:text-neutral-600 dark:text-neutral-400 dark:hover:text-neutral-200"> About Us </a><a href="/" class="px-4 py-3 font-medium text-neutral-900 hover:text-neutral-600 dark:text-neutral-400 dark:hover:text-neutral-200"> Blog Posts </a><a href="/tags/" class="px-4 py-3 font-medium text-neutral-900 hover:text-neutral-600 dark:text-neutral-400 dark:hover:text-neutral-200"> Sort by Tags </a> </div> </div> </nav> </header> <main class="flex-grow">  <main> <article class="prose mx-auto dark:prose-invert"> <div class="prose-h1 text-center"> <h1 class="whitespace-pre-line">CommBench: Can LLMs Write Correct and Efficient GPU Communication Code?</h1> </div> <div> <img src="/commbench/commbench-logo.png" alt="CommBench logo" class="mx-auto w-full max-w-full rounded-lg"> </div> <div> <p>
+<strong>By: Shuang Ma, Yuyi Li, Yihan Zhang, Danyang Chen, Shuyang Ji, Ziming Mao, Cheng Ji, Ansha Prashanth, Wenting Yang, Chihan Cui, Peiyu Lin, Amanda Raybuck, Ion Stoica, Yang Zhou.
+<br>
+Date: June 9, 2026
+</strong>
+</p>
+<div class="tldr">
+<p>
+GPU communication is a critical component of large-scale LLM training and inference, yet its complexity makes it challenging for code-generation models. We present CommBench, a benchmark with 100+ GPU communication problems + reference solutions (collectively called examples) that cover industry-level multi-device communication use cases based on UCCL's development experience. CommBench spans <strong>point-to-point</strong>, <strong>collective</strong>, <strong>expert-parallel</strong>, <strong>compute and communication fusion</strong>, and <strong>utility functions</strong>. 
+These examples are either hand-written by GPU communication experts or distilled from production codebases such as Mscclpp, NCCL, NVSHMEM, DeepEP, ThunderKittens, vLLM, and SGLang. We then evaluate leading closed and open models under a cheat-resistant harness on real hardware spanning intra-node NVLink and inter-node RDMA, and present case studies of where and why they succeed or break down. As future work, we plan to post-train LLMs on these datasets to close this gap.
+</p>
+<p>
+CommBench open-source: <a href="https://github.com/uccl-project/CommBench/tree/main">uccl-project/CommBench</a> (MIT license).
+</p>
+</div>
+<h2 id="why-writing-gpu-communication-code-mattersand-why-it-remains-challenging-for-llms"><a class="heading-anchor" href="#why-writing-gpu-communication-code-mattersand-why-it-remains-challenging-for-llms">Why Writing GPU Communication Code Matters—and Why It Remains Challenging for LLMs?</a></h2>
+<p>Communication and compute-communication fusion are essential for scaling modern LLM training and inference. In production training, communication can consume <strong>43.6% of the forward pass</strong> <sup><a href="#user-content-fn-1" id="user-content-fnref-1" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup>; in MoE inference with wide expert parallelism, inter-device communication accounts for <strong>up to 47% of total execution time</strong> <sup><a href="#user-content-fn-2" id="user-content-fnref-2" data-footnote-ref="" aria-describedby="footnote-label">2</a></sup>. Getting this code <strong>right</strong> and <strong>fast</strong> is not a nice-to-have.</p>
+<p><strong>The demand for customized GPU communication and compute-communication fusion is rapidly growing.</strong> Established libraries like NCCL offer comprehensive interfaces, but optimize for generality over frontier performance. As a result, companies often maintain in-house GPU communication and computation stacks for tighter control and optimization. GPU communication also remains a rapidly evolving area: new hardware and new LLM architectures continuously introduce new requirements for higher performance and specialized workloads, while communication abstractions are still evolving:</p>
+<ul>
+<li><strong>Modern GPUs are extremely powerful and expensive</strong>, motivating highly customized kernels and tighter compute–communication fusion to maximize hardware utilization across architectures such as Hopper, Blackwell, and AMD GPUs. As GPUs become faster, communication increasingly needs to be initiated directly from GPUs instead of relying on CPU-mediated execution paths used in traditional libraries such as NCCL.</li>
+<li><strong>New LLM architectures, such as MoE expert parallelism</strong>, introduce increasingly irregular and fine-grained communication patterns that are not well supported by existing collective libraries.</li>
+</ul>
+<p>Multi-device GPU programming is inherently harder than single-device coding, for three reasons:</p>
+<ul>
+<li><strong>It demands niche expertise</strong>, requiring deep knowledge of both GPU kernels and networking.</li>
+<li><strong>It requires coordinating many devices over fail-prone interconnects</strong>, which is intrinsically difficult.</li>
+<li><strong>It lacks data</strong>, as practical, faithful datasets for GPU communication are largely missing.</li>
+</ul>
+<p>Despite all this, multi-device GPU programming has been <strong>largely overlooked</strong> in LLM coding benchmarks. HumanEval, MBPP, LiveCodeBench — these measure single-device reasoning. No existing benchmark evaluates whether a model can generate correct GPU communication code, including communication primitives (e.g., Mscclpp channels and collective interfaces) and compute–communication fusion kernels (e.g., fused AllGather+GEMM across NVLink and InfiniBand).</p>
+<hr>
+<h2 id="benchmark-and-framework-structure"><a class="heading-anchor" href="#benchmark-and-framework-structure">Benchmark and Framework Structure</a></h2>
+<h3 id="benchmark-structure"><a class="heading-anchor" href="#benchmark-structure">Benchmark Structure</a></h3>
+<p>The dataset is organized as a list of independently runnable examples, currently with <strong>100+</strong> such examples. Some implement complete, ready-to-use functionality (e.g., P2P/collective interfaces, or MoE expert-parallel dispatch and combine); others are reusable communication building blocks (e.g., Mscclpp channels). Drawing on our hands-on experience from the UCCL project, we manually assign each example one of three difficulty levels: <strong>Easy / Medium / Hard</strong>.</p>
+<p>Some examples we hand-wrote on top of base libraries; others are extracted from production-grade communication and LLM-serving frameworks. <strong>By function</strong>, they fall into:</p>
+<ul>
+<li><strong>P2P</strong> — point-to-point transfer between a pair of devices.</li>
+<li><strong>Collective</strong> — group operations across all ranks (AllReduce, AllGather, All-to-All, …).</li>
+<li><strong>EP</strong> — dynamic, non-uniform dispatch/combine traffic for MoE models.</li>
+<li><strong>Fusion</strong> — kernels that interleave communication with compute (e.g., AllGather+GEMM).</li>
+<li><strong>Utilities</strong> — supporting components such as connection setup, buffer registration, and topology queries.</li>
+</ul>
+<p><strong>By source</strong>, they span cuda-runtime, libibverbs, Mscclpp, nccl, nvshmem, deepep, nccl-device-api, thunderkittens, vllm, and sglang.</p>
+<h3 id="framework-structure"><a class="heading-anchor" href="#framework-structure">Framework Structure</a></h3>
+<p>We built a framework that automatically evaluates different models on the dataset and supports multi-round refinement of generated code. Careful design of each example and its execution environment enforces strict checking and prevents the model from cheating.</p>
+<p><strong>Example structure.</strong> Each example has three parts:</p>
+<ul>
+<li><strong>Reference solution (excluded from the repo)</strong> — high-quality, hand-written code organized in an object-oriented style (Python / CUDA / HIP / C++). It ships with a test harness that uses randomized inputs, so a model cannot hard-code expected outputs. We keep the reference solutions secret to prevent them from leaking into model training data and contaminating future evaluations.</li>
+<li><strong>Problem statement + empty solution</strong> — the reference with its core implementation stripped out and marked <code>// TODO</code>, but with the functional interface preserved. This file becomes part of the prompt: the model must honor the interface semantics, which also keeps its output directly testable. We verify that only the regions meant to be edited were changed, guarding against cheating.</li>
+<li><strong>Build-and-run script</strong> — independently compiles and runs an example (reference or generated) and is hidden from the model. By controlling the compile command, we strictly ensure the generated code uses only the intended libraries.</li>
+</ul>
+<p><strong>Multi-round refinement.</strong> When <code>max-round > 1</code>, if the generated code fails to run or underperforms the reference, we feed the compile/run output back into the prompt and ask the model to iterate — repeating until performance improves or the round limit is reached.</p>
+<p><strong>Testbed.</strong> We evaluate on three clusters that together span NVLink, InfiniBand, and RoCE on both NVIDIA and AMD GPUs: (1) a single node of 8× NVIDIA B300 over NVLink; (2) NVIDIA GH200 nodes linked by 400 Gb/s InfiniBand (ConnectX-7 / BlueField-3) for inter-node RDMA; and (3) 8× AMD Instinct MI325X nodes with intra-node Infinity Fabric (XGMI) and 400 Gb/s RoCE inter-node RDMA. This lets CommBench exercise real inter-node RDMA paths, not only intra-node NVLink, across both vendors’ stacks (CUDA and ROCm/HIP).</p>
+<hr>
+<h2 id="leaderboard"><a class="heading-anchor" href="#leaderboard">Leaderboard</a></h2>
+<blockquote>
+<p>Sorted by <strong>Pass×GM</strong> ⭐ — pass rate scaled by geometric-mean code quality on passing examples.
+Bars <code>▓░</code> show each value on an absolute 0–100% scale (Pass×GM and GM‑Speedup as a fraction of 1.0).</p>
+</blockquote>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th align="center">Rank</th><th align="left">Model</th><th align="center">Pass×GM</th><th align="center">Pass Rate</th><th align="center">PASS+Good</th><th align="center">GM‑Speedup</th><th align="center">Open Source</th><th align="center">Price</th></tr></thead><tbody><tr><td align="center">🥇</td><td align="left"><strong>gpt-5.5</strong></td><td align="center">🟢 <strong>0.467</strong> <code>▓▓▓▓░░░░</code></td><td align="center">🟢 57.4% <code>▓▓▓▓▓░░░</code></td><td align="center">🟢 <strong>30.7%</strong> <code>▓▓░░░░░░</code></td><td align="center">🔴 0.813 <code>▓▓▓▓▓▓▓░</code></td><td align="center">❌</td><td align="center">$1.91</td></tr><tr><td align="center">🥈</td><td align="left"><strong>gemini-3.1-pro-preview</strong></td><td align="center">🟡 0.305 <code>▓▓░░░░░░</code></td><td align="center">🟡 36.6% <code>▓▓▓░░░░░</code></td><td align="center">🟢 <strong>25.7%</strong> <code>▓▓░░░░░░</code></td><td align="center">🔴 0.832 <code>▓▓▓▓▓▓▓░</code></td><td align="center">❌</td><td align="center">$0.26</td></tr><tr><td align="center">🥉</td><td align="left"><strong>claude-opus-4-7</strong></td><td align="center">🟡 0.282 <code>▓▓░░░░░░</code></td><td align="center">🟡 33.7% <code>▓▓▓░░░░░</code></td><td align="center">🟡 <strong>20.8%</strong> <code>▓▓░░░░░░</code></td><td align="center">🔴 0.836 <code>▓▓▓▓▓▓▓░</code></td><td align="center">❌</td><td align="center">$0.21</td></tr><tr><td align="center">4️⃣</td><td align="left"><strong>glm-5.1</strong></td><td align="center">🟡 0.281 <code>▓▓░░░░░░</code></td><td align="center">🟡 29.7% <code>▓▓░░░░░░</code></td><td align="center">🟡 <strong>17.8%</strong> <code>▓░░░░░░░</code></td><td align="center">🟢 0.947 <code>▓▓▓▓▓▓▓▓</code></td><td align="center">✅</td><td align="center">$0.63</td></tr><tr><td align="center">5️⃣</td><td align="left"><strong>kimi-k2.6</strong></td><td align="center">🟡 0.275 <code>▓▓░░░░░░</code></td><td align="center">🟡 30.7% <code>▓▓░░░░░░</code></td><td align="center">🟡 <strong>18.8%</strong> <code>▓▓░░░░░░</code></td><td align="center">🟡 0.895 <code>▓▓▓▓▓▓▓░</code></td><td align="center">✅</td><td align="center">$0.10</td></tr><tr><td align="center">6️⃣</td><td align="left"><strong>qwen3.7-max</strong></td><td align="center">🟡 0.269 <code>▓▓░░░░░░</code></td><td align="center">🟡 26.7% <code>▓▓░░░░░░</code></td><td align="center">🟡 <strong>15.8%</strong> <code>▓░░░░░░░</code></td><td align="center">🟢 1.008 <code>▓▓▓▓▓▓▓▓</code></td><td align="center">❌</td><td align="center">$0.03</td></tr><tr><td align="center">7️⃣</td><td align="left"><strong>deepseek-v4-pro</strong></td><td align="center">🔴 0.197 <code>▓▓░░░░░░</code></td><td align="center">🔴 19.8% <code>▓▓░░░░░░</code></td><td align="center">🔴 <strong>12.9%</strong> <code>▓░░░░░░░</code></td><td align="center">🟢 0.995 <code>▓▓▓▓▓▓▓▓</code></td><td align="center">✅</td><td align="center">$0.02</td></tr></tbody></table>
+<p><strong>Color:</strong> 🟢 top tier  ·  🟡 mid tier  ·  🔴 bottom tier.</p>
+<h3 id="metric-definitions"><a class="heading-anchor" href="#metric-definitions">Metric Definitions</a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th align="left">Metric</th><th align="left">Formula</th><th align="left">What it measures</th></tr></thead><tbody><tr><td align="left"><strong>Pass×GM</strong> ⭐</td><td align="left">Pass Rate × GM‑Speedup</td><td align="left">Pass rate scaled by geometric-mean code quality on passing examples. Combines coverage and quality: a model that rarely passes but generates very fast code scores the same as one that always passes at reference speed. Primary ranking metric.</td></tr><tr><td align="left"><strong>Pass Rate</strong></td><td align="left">PASS / Total</td><td align="left">Fraction of examples where code compiled, ran, and produced correct results.</td></tr><tr><td align="left"><strong>PASS+Good</strong></td><td align="left">(on_compare + better) / Total</td><td align="left">Fraction of all examples with correct <strong>and</strong> performant code (within −5% of reference).</td></tr><tr><td align="left"><strong>GM‑Speedup</strong></td><td align="left"><code>GM</code> over scored PASS of <code>scoreᵢ</code></td><td align="left">Geometric mean of per-example speedup scores over passing examples. The per-example score is <code>scoreᵢ = GMₛ( gen(i,s) / ref(i,s) )</code>, where <code>s</code> iterates over measured data sizes and <code>gen(i,s)</code>, <code>ref(i,s)</code> are the performance metrics of the generated and reference code on example <code>i</code> at data size <code>s</code>, expressed so that <strong>higher is better</strong> (lower-is-better metrics such as latency are inverted to <code>1/latency</code> first). The choice of primary metric per example is determined by human review. Taking the GM across sizes (rather than averaging absolute throughput first) ensures each data point contributes equally regardless of absolute throughput magnitude; without it, large sizes (e.g. 128 MB at ~100 GB/s) would dominate small ones (e.g. 256 KB at ~5 GB/s). <strong>Caveat:</strong> computed only over <em>passing</em> examples. A model that passes more (often harder) examples with mediocre performance can show a <em>worse</em> GM‑Speedup, hence we rank by Pass×GM.</td></tr><tr><td align="left"><strong>Price</strong></td><td align="left">—</td><td align="left">Average cost per example (USD).</td></tr></tbody></table>
+<p><strong>Performance verdict thresholds</strong> (4-tier):
+<code>better</code> ≥ +20%  ·  <code>on_compare</code> −5% to +20%  ·  <code>degraded</code> −40% to −5%  ·  <code>severely_degraded</code> &#x3C; −40%</p>
+<p><strong>Reasoning effort and model parameters.</strong> We run every model at its <em>default</em> reasoning effort and default sampling parameters (temperature, top-p, etc.); we do not tune them. The per-model defaults are: gpt-5.5 = <code>medium</code>, gemini-3.1-pro-preview = <code>high</code>, claude-opus-4-7 = adaptive thinking, glm-5.1 = thinking enabled (the model decides when to think), kimi-k2.6 = thinking enabled (temperature fixed at 1.0), deepseek-v4-pro = <code>medium</code>. The only exception is qwen3.7-max, where thinking is disabled to avoid timeouts.</p>
+<hr>
+<h2 id="analysis-top-vs-bottom-model"><a class="heading-anchor" href="#analysis-top-vs-bottom-model">Analysis: Top vs. Bottom Model</a></h2>
+<p>We select the highest- and lowest-scoring models on CommBench, gpt-5.5 (Pass×GM = 0.467) and deepseek-v4-pro (Pass×GM = 0.197), for a detailed breakdown across difficulty levels, task types, library coverage, and code performance.</p>
+<h3 id="difficulty-breakdown"><a class="heading-anchor" href="#difficulty-breakdown">Difficulty Breakdown</a></h3>
+<table>
+<tbody><tr>
+<td align="center" width="50%"><b>GPT-5.5</b></td>
+<td align="center" width="50%"><b>DeepSeek-V4-Pro</b></td>
+</tr>
+<tr>
+<td><img src="/commbench/fig1_level_breakdown_gpt-5.5.png" width="100%"></td>
+<td><img src="/commbench/fig1_level_breakdown_deepseek-v4-pro.png" width="100%"></td>
+</tr>
+</tbody></table>
+<p>Human-defined difficulty does not always align with model difficulty. deepseek’s weak Easy performance (14%) is largely attributable to gaps in library-specific API knowledge — for libraries such as mscclpp and ThunderKittens, it lacks the interface semantics needed to call APIs correctly, causing failures on examples that only require invoking a small number of functions to implement straightforward functionality. On the Hard end, many examples ask the model to implement communication primitives from near-scratch (e.g. AllReduce over NVLink or RDMA) which exposes deepseek’s limited capability on complex GPU communication-compute tasks.</p>
+<h3 id="performance-quality-among-pass-examples"><a class="heading-anchor" href="#performance-quality-among-pass-examples">Performance Quality Among PASS Examples</a></h3>
+<table>
+<tbody><tr>
+<td align="center" width="50%"><b>GPT-5.5</b></td>
+<td align="center" width="50%"><b>DeepSeek-V4-Pro</b></td>
+</tr>
+<tr>
+<td><img src="/commbench/fig2_pass_performance_gpt-5.5.png" width="100%"></td>
+<td><img src="/commbench/fig2_pass_performance_deepseek-v4-pro.png" width="100%"></td>
+</tr>
+</tbody></table>
+<p>gpt-5.5 has the widest quality spread: 8 severely degraded cases (14% of PASS), all concentrated in Hard examples. This is partly because examples that gpt-5.5 manages to compile and run (but with degraded performance) would simply fail to compile or execute under deepseek, and therefore never appear in deepseek’s performance distribution at all.</p>
+<h3 id="tag-and-library-coverage"><a class="heading-anchor" href="#tag-and-library-coverage">Tag and Library Coverage</a></h3>
+<table>
+<tbody><tr>
+<td align="center" width="50%"><b>GPT-5.5</b></td>
+<td align="center" width="50%"><b>DeepSeek-V4-Pro</b></td>
+</tr>
+<tr>
+<td><img src="/commbench/fig3_radar_tag_library_gpt-5.5.png" width="100%"></td>
+<td><img src="/commbench/fig3_radar_tag_library_deepseek-v4-pro.png" width="100%"></td>
+</tr>
+</tbody></table>
+<p>gpt-5.5 dominates on Collective (66% vs 22%) and is the <strong>only</strong> model with meaningful coverage of specialized libraries — mscclpp (17%), nccl-device-api (40%), and thunderkittens (54%). deepseek is competitive on NCCL (100%) and P2P tags, but scores 0% across all three specialized libraries. For widely adopted libraries such as vllm, NCCL, and nvshmem, both models perform well.</p>
+<h3 id="deepseek-with-max_rounds--5"><a class="heading-anchor" href="#deepseek-with-max_rounds--5">DeepSeek with max_rounds = 5</a></h3>
+<p>Due to budget constraints, gpt-5.5 was evaluated with a single generation round. Despite deepseek’s weaker first-round performance, its API cost is only ~1% of gpt-5.5’s ($0.02 vs $1.91 per example), which makes multi-round self-correction economically viable. Allowing deepseek up to 5 self-correction rounds substantially changes its profile.</p>
+<h4 id="cumulative-pass-by-round"><a class="heading-anchor" href="#cumulative-pass-by-round">Cumulative PASS by Round</a></h4>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th align="center">Round</th><th align="center">Cumulative PASS</th><th align="center">Pass Rate</th><th align="center">New this round</th></tr></thead><tbody><tr><td align="center">1</td><td align="center">16</td><td align="center">15.8%</td><td align="center"></td></tr><tr><td align="center">2</td><td align="center">28</td><td align="center">27.7%</td><td align="center"><strong>+12</strong> (largest gain)</td></tr><tr><td align="center">3</td><td align="center">32</td><td align="center">31.7%</td><td align="center">+4</td></tr><tr><td align="center">4</td><td align="center">34</td><td align="center">33.7%</td><td align="center">+2</td></tr><tr><td align="center">5</td><td align="center">42</td><td align="center">41.6%</td><td align="center">+8</td></tr></tbody></table>
+<h4 id="difficulty-breakdown-max1-vs-max5"><a class="heading-anchor" href="#difficulty-breakdown-max1-vs-max5">Difficulty Breakdown: max=1 vs max=5</a></h4>
+<table>
+<tbody><tr>
+<td align="center" width="50%"><b>DeepSeek max=1</b></td>
+<td align="center" width="50%"><b>DeepSeek max=5</b></td>
+</tr>
+<tr>
+<td align="center"><img src="/commbench/fig1_level_breakdown_deepseek-v4-pro.png" style="height: 240px; width: auto; max-width: 100%;"></td>
+<td align="center"><img src="/commbench/fig1_level_breakdown_deepseek_v4_pro_max5.png" style="height: 240px; width: auto; max-width: 100%;"></td>
+</tr>
+</tbody></table>
+<h4 id="performance-quality-and-library-coverage-max5"><a class="heading-anchor" href="#performance-quality-and-library-coverage-max5">Performance Quality and Library Coverage (max=5)</a></h4>
+<table>
+<tbody><tr>
+<td align="center" width="50%"><b>Performance distribution among PASS examples</b></td>
+<td align="center" width="50%"><b>Tag &#x26; library coverage</b></td>
+</tr>
+<tr>
+<td><img src="/commbench/fig2_pass_performance_deepseek_v4_pro_max5.png" width="100%"></td>
+<td><img src="/commbench/fig3_radar_tag_library_deepseek_v4_pro_max5.png" width="100%"></td>
+</tr>
+</tbody></table>
+<p>Multi-round self-correction more than doubles deepseek’s overall pass rate (16→42, 15.8%→41.6%) and substantially unlocks Medium-difficulty commodity-library tasks (31% → 60%). It does not unlock Hard examples or specialized libraries (mscclpp: 0%, thunderkittens: 4%) — those require domain knowledge the model does not have. The practical implication: deepseek with retries is a reasonable choice when tasks are restricted to commodity libraries (NCCL, vllm, cuda-runtime, nvshmem) and a retry budget is acceptable.</p>
+<hr>
+<h2 id="case-studies"><a class="heading-anchor" href="#case-studies">Case Studies</a></h2>
+<h3 id="case-1-partial-pass--thunderkittens-alltoall"><a class="heading-anchor" href="#case-1-partial-pass--thunderkittens-alltoall">Case 1: Partial Pass — ThunderKittens AllToAll</a></h3>
+<h5 id="example-049--thunderkittens-alltoall-"><a class="heading-anchor" href="#example-049--thunderkittens-alltoall-"></a><a href="https://github.com/uccl-project/CommBench/tree/main/datasets/example049_thunderkitten_alltoall_easy">Example 049 — ThunderKittens AllToAll ↗</a></h5>
+<p><strong>Level</strong> 🟢 <code>Easy</code>  ·  <strong>Tag</strong> <code>Collective</code>  ·  <strong>Library</strong> <code>thunderkittens</code></p>
+<p><strong>Task:</strong> Implement a BF16 multi-GPU AllToAll kernel using the ThunderKittens library, using TMA (Tensor Memory Accelerator) for tile-level data movement between GPU shards over NVLink.</p>
+<p><strong>What to implement:</strong> Two small device-side kernels: <code>all_to_all::kernel</code> (TMA-load one tile from local input, TMA-store to destination device’s output shard) and <code>all_to_all_barrier::kernel</code> (one-line <code>barrier_all</code> synchronization). All host scaffolding is provided.</p>
+<p><strong>Why most models failed:</strong> Both kernels are under 10 lines and only require calling existing ThunderKittens interfaces, with no custom algorithm needed. The failure root is ThunderKittens-specific API knowledge: type scoping (<code>all_to_all::globals::shared_tile</code> vs bare <code>shared_tile</code>), the correct <code>tma::load_async</code> argument signature, and the <code>shared_allocator::allocate</code> template usage. ThunderKittens is a niche research library with minimal training-data coverage, causing models to mis-scope types, hallucinate non-existent APIs, or use wrong argument forms.</p>
+<h4 id="per-model-summary"><a class="heading-anchor" href="#per-model-summary">Per-Model Summary</a></h4>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Model</th><th>Rounds</th><th>Outcome</th><th>Perf vs Ref</th><th>Failure Pattern</th></tr></thead><tbody><tr><td>gpt-5.5</td><td>1</td><td>PASS</td><td>on_par (−0.23%)</td><td>—</td></tr><tr><td>claude-opus-4-7</td><td>1</td><td>PASS</td><td>on_par (+0.17%)</td><td>—</td></tr><tr><td>deepseek-v4-pro</td><td>5</td><td>Compile error (r1–r2, r4–r5) / Link error (r3)</td><td>—</td><td>r1: hallucinated ThunderKittens API (<code>tma::semaphore</code>, <code>tma::init_semaphore</code>, <code>tma::wait</code>, wrong <code>barrier_all</code> form — none exist); r2: structural C++ errors (<code>__global__</code> written as member function, duplicate class definition, wrong CUDA driver API types); r3: compiled but no <code>main()</code> → linker <code>undefined reference to 'main'</code>; r4: used <code>CUDA_CHECK</code> macro without defining it; r5: early type/template error triggered 43 cascading STL errors</td></tr><tr><td>gemini-3.1-pro-preview</td><td>1</td><td>Compile error</td><td>—</td><td><code>shared_tile</code> used without <code>all_to_all::globals::</code> namespace qualifier</td></tr><tr><td>kimi-k2.6</td><td>1</td><td>Compile error</td><td>—</td><td>Same unqualified <code>shared_tile</code> reference</td></tr><tr><td>glm-5.1</td><td>1</td><td>Compile error</td><td>—</td><td>Wrong type passed to <code>shared_allocator::allocate</code></td></tr><tr><td>qwen3.7-max</td><td>1</td><td>Compile error</td><td>—</td><td>Wrong argument types for <code>tma::load_async</code></td></tr></tbody></table>
+<h3 id="case-2-a-case-all-llms-failed"><a class="heading-anchor" href="#case-2-a-case-all-llms-failed">Case 2: A Case All LLMs Failed</a></h3>
+<h5 id="example-072--gpu-barrier-within-cta-"><a class="heading-anchor" href="#example-072--gpu-barrier-within-cta-"></a><a href="https://github.com/uccl-project/CommBench/tree/main/datasets/example072_GPU_barrier_within_CTA">Example 072 — GPU Barrier Within CTA ↗</a></h5>
+<p><strong>Level</strong> 🟡 <code>Medium</code>  ·  <strong>Tag</strong> <code>Utilities</code>  ·  <strong>Library</strong> <code>cuda-runtime</code></p>
+<p><strong>Task:</strong> Implement intra-CTA producer/consumer synchronization using a Hopper/Blackwell shared-memory <code>mbarrier</code> with a non-blocking <code>try_wait</code> probe, a pattern used in persistent-kernel tile pipelines (e.g., CUTLASS, <a href="https://github.com/mirage-project/mirage">Mirage</a>) to overlap data arrival with computation without stalling the warp scheduler.</p>
+<p><strong>What to implement:</strong> Three inline-PTX device helpers (<code>initialize_barrier</code>, <code>arrive</code>, <code>try_wait_barrier</code>) and a benchmark kernel body, lifted from <a href="https://github.com/mirage-project/mirage">Mirage</a>.</p>
+<p><strong>Why all models failed:</strong> This task only requires using a small set of well-defined <code>mbarrier</code> interfaces, which is the kind of API memorization LLMs are expected to excel at. However, <code>mbarrier</code> is Hopper-specific PTX introduced in sm_90, and models may lack sufficient training data for these instructions, making them prone to mis-remembering argument counts, ordering, or address-space requirements.</p>
+<h4 id="per-model-failure-summary"><a class="heading-anchor" href="#per-model-failure-summary">Per-Model Failure Summary</a></h4>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Model</th><th>Rounds</th><th>Outcome</th><th>Failure Pattern</th></tr></thead><tbody><tr><td>deepseek-v4-pro</td><td>5</td><td>Compile error</td><td>Wrong PTX register constraint (r1); missing <code>mbarrier.arrive</code> destination operand (r2–r5)</td></tr><tr><td>gpt-5.5</td><td>1</td><td>Deadlock</td><td>Deadlock: consumer runs before producers due to warp branch ordering; no <code>kProbeBound</code> guard so kernel hangs forever</td></tr><tr><td>gemini-3.1-pro-preview</td><td>1</td><td>Correctness FAIL</td><td>Deadlock: consumer runs before producers; exits via <code>kProbeBound</code> and reads uninitialized tile</td></tr><tr><td>claude-opus-4-7</td><td>1</td><td>Correctness FAIL</td><td>Deadlock: consumer runs before producers; also incorrect <code>phase ^= 1</code> since <code>mbarrier.init</code> resets parity to 0 each iteration</td></tr><tr><td>glm-5.1</td><td>1</td><td>Runtime error</td><td>Inline-asm operand index confusion</td></tr><tr><td>kimi-k2.6</td><td>1</td><td>Compile error</td><td>Hallucinated CUDA intrinsic name</td></tr><tr><td>qwen3.7-max</td><td>1</td><td>Correctness FAIL</td><td>Wrong PTX register constraint (<code>"l"</code> instead of <code>"r"</code>)</td></tr></tbody></table>
+<h3 id="case-3-all-llms-failed--niche-library-api-with-no-algorithmic-hints"><a class="heading-anchor" href="#case-3-all-llms-failed--niche-library-api-with-no-algorithmic-hints">Case 3: All LLMs Failed — Niche Library API with No Algorithmic Hints</a></h3>
+<h5 id="example-086--mscclpp-alltoall-hard-"><a class="heading-anchor" href="#example-086--mscclpp-alltoall-hard-"></a><a href="https://github.com/uccl-project/CommBench/tree/main/datasets/example086_mscclpp_alltoall_hard">Example 086 — mscclpp AllToAll (Hard) ↗</a></h5>
+<p><strong>Level</strong> 🔴 <code>Hard</code>  ·  <strong>Tag</strong> <code>Collective</code>  ·  <strong>Library</strong> <code>mscclpp</code></p>
+<p><strong>Task:</strong> Implement the fastest intra-node AllToAll kernel using <a href="https://github.com/microsoft/mscclpp">MSCCL++</a> <sup><a href="#user-content-fn-3" id="user-content-fnref-3" data-footnote-ref="" aria-describedby="footnote-label">3</a></sup> <code>MemoryChannel</code> primitives. The template provides no algorithmic description — only a minimal comment “implement the fastest All to All CUDA kernel” and a set of empty <code>// TODO</code> stubs.</p>
+<p><strong>What to implement:</strong> One GPU kernel (<code>alltoall2</code>) using <code>MemoryChannel</code> for direct peer writes, and the full host-side <code>All2All</code> class (constructor, buffer allocation, channel setup, launch, correctness verification, barrier).</p>
+<p><strong>Why all models failed:</strong> The task requires models to implement a functionally complete, semantically correct intra-node AllToAll from scratch (device kernel, host class, channel setup, buffer management, and correctness verification), all consistent with MSCCL++‘s <code>MemoryChannel</code> interface contract, with no algorithmic hints provided. This is hard even for an expert programmer unfamiliar with mscclpp. Every model failed at compile time: mscclpp headers and class interfaces are largely absent from training data, causing models to hallucinate non-existent header paths and method signatures before reaching any algorithmic logic.</p>
+<h3 id="per-model-failure-summary-1"><a class="heading-anchor" href="#per-model-failure-summary-1">Per-Model Failure Summary</a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Model</th><th>Rounds</th><th>Outcome</th><th>Failure Pattern</th></tr></thead><tbody><tr><td>deepseek-v4-pro</td><td>5</td><td>Compile error</td><td>r1: used mscclpp types with no includes (namespace undefined); r2–r5: each round invented a different non-existent mscclpp header</td></tr><tr><td>gpt-5.5</td><td>1</td><td>Compile error</td><td>Included some mscclpp headers but missed the one for <code>MemoryChannel</code>; also hallucinated a wrong class name</td></tr><tr><td>gemini-3.1-pro-preview</td><td>1</td><td>Compile error</td><td>Hallucinated mscclpp API</td></tr><tr><td>claude-opus-4-7</td><td>1</td><td>Compile error</td><td>Hallucinated mscclpp API</td></tr><tr><td>glm-5.1</td><td>1</td><td>Compile error</td><td>Hallucinated mscclpp API</td></tr><tr><td>kimi-k2.6</td><td>1</td><td>Compile error</td><td>Hallucinated mscclpp API</td></tr><tr><td>qwen3.7-max</td><td>1</td><td>Compile error</td><td>Hallucinated mscclpp API</td></tr></tbody></table>
+<h2 id="conclusion"><a class="heading-anchor" href="#conclusion">Conclusion</a></h2>
+<p>CommBench shows that multi-device GPU communication remains a clear blind spot for today’s frontier LLMs. Even the strongest model passes under 60% of examples and produces performant code on only a third, while every model collapses to near-zero coverage on specialized libraries such as Mscclpp, ThunderKittens, and the NCCL device API. The failures are not superficial: models hallucinate APIs, misplace synchronization, and ship kernels orders of magnitude slower than reference — gaps that compiler feedback and multi-round retries alone cannot close. Multi-round self-correction helps only on commodity libraries and easier tasks; closing the remaining gap will require targeted post-training on the kind of data CommBench provides. We open-source the dataset and harness to support that effort.</p>
+<hr>
+<h2 id="acknowledgements"><a class="heading-anchor" href="#acknowledgements">Acknowledgements</a></h2>
+<p>We thank Mibura and AMD for sponsoring the testbed for this benchmark.</p>
+<h2 id="references"><a class="heading-anchor" href="#references">References</a></h2>
+<section data-footnotes="" class="footnotes"><h2 class="sr-only" id="footnote-label"><a class="heading-anchor" href="#footnote-label">Footnotes</a></h2>
+<ol>
+<li id="user-content-fn-1">
+<p>Chao Jin et al. <em>MegaScale-MoE: Large-Scale Communication-Efficient Training of Mixture-of-Experts Models in Production</em>. EuroSys, 2026. <a href="#user-content-fnref-1" data-footnote-backref="" aria-label="Back to reference 1" class="data-footnote-backref">↩</a></p>
+</li>
+<li id="user-content-fn-2">
+<p>Shulai Zhang et al. <em>Comet: Fine-grained Computation-communication Overlapping for Mixture-of-Experts</em>. MLSys, 2025. <a href="#user-content-fnref-2" data-footnote-backref="" aria-label="Back to reference 2" class="data-footnote-backref">↩</a></p>
+</li>
+<li id="user-content-fn-3">
+<p>Changho Hwang et al. <em>MSCCL++: Rethinking GPU Communication Abstractions for AI Inference</em>. ASPLOS, 2026. <a href="#user-content-fnref-3" data-footnote-backref="" aria-label="Back to reference 3" class="data-footnote-backref">↩</a></p>
+</li>
+</ol>
+</section> </div> <div class="prose-a:no-underline"> <span class="mb-2 mr-2 inline-block rounded-full bg-neutral-200 px-3 py-1 text-sm hover:bg-neutral-500 dark:bg-neutral-600"> <a href="/tags/LLMs/1/">LLMs</a> </span><span class="mb-2 mr-2 inline-block rounded-full bg-neutral-200 px-3 py-1 text-sm hover:bg-neutral-500 dark:bg-neutral-600"> <a href="/tags/Benchmark/1/">Benchmark</a> </span><span class="mb-2 mr-2 inline-block rounded-full bg-neutral-200 px-3 py-1 text-sm hover:bg-neutral-500 dark:bg-neutral-600"> <a href="/tags/Code Generation/1/">Code Generation</a> </span><span class="mb-2 mr-2 inline-block rounded-full bg-neutral-200 px-3 py-1 text-sm hover:bg-neutral-500 dark:bg-neutral-600"> <a href="/tags/GPU Communication/1/">GPU Communication</a> </span><span class="mb-2 mr-2 inline-block rounded-full bg-neutral-200 px-3 py-1 text-sm hover:bg-neutral-500 dark:bg-neutral-600"> <a href="/tags/NCCL/1/">NCCL</a> </span><span class="mb-2 mr-2 inline-block rounded-full bg-neutral-200 px-3 py-1 text-sm hover:bg-neutral-500 dark:bg-neutral-600"> <a href="/tags/RDMA/1/">RDMA</a> </span><span class="mb-2 mr-2 inline-block rounded-full bg-neutral-200 px-3 py-1 text-sm hover:bg-neutral-500 dark:bg-neutral-600"> <a href="/tags/CUDA/1/">CUDA</a> </span><span class="mb-2 mr-2 inline-block rounded-full bg-neutral-200 px-3 py-1 text-sm hover:bg-neutral-500 dark:bg-neutral-600"> <a href="/tags/MSCCLPP/1/">MSCCLPP</a> </span> </div> <div class="mt-4"> <small>Publish on <span>2026-06-09</span></small> <small class="mt-2 flex items-center gap-2"> <span>Enjoy the blog? Give UCCL a star</span> <a href="https://github.com/uccl-project/uccl" class="no-github-icon" aria-label="UCCL GitHub repository"> <img src="https://img.shields.io/github/stars/uccl-project/uccl?style=social" alt="GitHub Repo stars" class="relative -top-0.5 m-0 inline-block"> </a> </small> </div> </article> <div class="mt-4"> <div class="grid grid-cols-1 gap-4 md:grid-cols-3"> <div class="relative mb-4 overflow-hidden rounded-xl bg-white transition-transform duration-500 hover:-translate-y-1 hover:scale-105 dark:bg-neutral-900"> <a href="/posts/openai-mrc/"> <img src="/openai-mrc/openai-mrc.png" alt="OpenAI MRC" class="mx-auto w-full max-w-full rounded-lg"> <div class="absolute bottom-0 end-0 start-0 bg-gradient-to-t p-4 md:p-5"> <div class="mt-16 flex items-center gap-4 text-xs text-white"> <span>MRC SRv6 SRD Multi-plane UCCL-Tran</span> <span>2026-05-26</span> </div> <h2 class="mt-2 text-lg font-bold text-white">Reading OpenAI&#39;s MRC Through a UCCL Lens</h2> </div> </a> </div><div class="relative mb-4 overflow-hidden rounded-xl bg-white transition-transform duration-500 hover:-translate-y-1 hover:scale-105 dark:bg-neutral-900"> <a href="/posts/mkernel/"> <img src="/mkernel/mkernel.png" alt="mKernel" class="mx-auto w-full max-w-full rounded-lg"> <div class="absolute bottom-0 end-0 start-0 bg-gradient-to-t p-4 md:p-5"> <div class="mt-16 flex items-center gap-4 text-xs text-white"> <span>Fused Kernels RDMA</span> <span>2026-05-25</span> </div> <h2 class="mt-2 text-lg font-bold text-white">mKernel: Fast Multi-GPU, Multi-Node
+Fused Kernels</h2> </div> </a> </div><div class="relative mb-4 overflow-hidden rounded-xl bg-white transition-transform duration-500 hover:-translate-y-1 hover:scale-105 dark:bg-neutral-900"> <a href="/posts/continuum-blog/"> <img src="/continuum-blog/datacenter.png" alt="TrainMover Overview — Two-phase machine migration design" class="mx-auto w-full max-w-full rounded-lg"> <div class="absolute bottom-0 end-0 start-0 bg-gradient-to-t p-4 md:p-5"> <div class="mt-16 flex items-center gap-4 text-xs text-white"> <span>LLM Training Fault Tolerance Systems OSDI</span> <span>2026-05-18</span> </div> <h2 class="mt-2 text-lg font-bold text-white">When Your AI Training Cluster Crashes at 3 AM: How TrainMover Cuts Recovery Time to 20 Seconds</h2> </div> </a> </div> </div> </div> </main>  </main> <footer class="mt-auto w-full max-w-[85rem] py-10 mx-auto" data-astro-cid-sz7xmlte> <nav class="mx-auto w-full max-w-[85rem] px-4" aria-label="Footer" data-astro-cid-sz7xmlte> <div class="footer-wrapper" style="display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 2rem;" data-astro-cid-sz7xmlte> <!-- Left: Brand --> <div class="footer-left" style="text-align: left; justify-self: start;" data-astro-cid-sz7xmlte> <a class="flex-none text-sm text-neutral-500 hover:text-neutral-800 dark:text-neutral-500 dark:hover:text-neutral-200" href="/" aria-label="Brand" data-astro-cid-sz7xmlte>UCCL &copy; 2026</a> </div> <!-- Center: Footer Links --> <div class="footer-center" style="text-align: center; justify-self: center;" data-astro-cid-sz7xmlte> <div class="flex flex-row gap-5 items-center flex-wrap justify-center" data-astro-cid-sz7xmlte> <a href="https://sky.cs.berkeley.edu/" class="inline-flex gap-x-2 text-sm text-neutral-500 hover:text-neutral-800 dark:text-neutral-500 dark:hover:text-neutral-200" data-astro-cid-sz7xmlte="true"> UC Berkeley Sky Lab </a><a href="https://github.com/artsy-lab" class="inline-flex gap-x-2 text-sm text-neutral-500 hover:text-neutral-800 dark:text-neutral-500 dark:hover:text-neutral-200" data-astro-cid-sz7xmlte="true"> UC Davis ArtSy Lab </a> </div> </div> <!-- Right: Social Links --> <div class="footer-right" style="text-align: right; justify-self: end;" data-astro-cid-sz7xmlte> <button type="button" class="relative inline-flex h-12 w-12 items-center gap-x-2 bg-white px-4 py-3 text-neutral-500 hover:text-neutral-800 disabled:pointer-events-none disabled:opacity-50  dark:text-neutral-500 dark:hover:text-neutral-200 dark:bg-neutral-900 dark:hover:bg-neutral-900" data-astro-cid-sz7xmlte> <a href="https://github.com/uccl-project/uccl" class="absolute inset-0 z-10" aria-label="GitHub" data-astro-cid-sz7xmlte></a> <svg width="1em" height="1em" class="icon-base" data-astro-cid-sz7xmlte="true" data-icon="tabler:brand-github">   <symbol id="ai:tabler:brand-github" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2c2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2a4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3 0 0 0-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 9.5c0 4.6 2.7 5.7 5.5 6c-.6.6-.6 1.2-.5 2V21"/></symbol><use href="#ai:tabler:brand-github"></use>  </svg> </button> </div> </div> </nav> </footer> </body></html>
