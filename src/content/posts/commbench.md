@@ -13,7 +13,7 @@ tags:
   - RDMA
   - CUDA
   - MSCCLPP
-pubDate: 2026-06-08
+pubDate: 2026-06-09
 cover: /commbench/commbench-logo.png
 coverAlt: CommBench logo
 author: Shuang Ma, Yuyi Li, Yihan Zhang, Danyang Chen, Shuyang Ji, Ziming Mao, Cheng Ji, Ansha Prashanth, Wenting Yang, Chihan Cui, Peiyu Lin, Amanda Raybuck, Ion Stoica, Yang Zhou.
@@ -22,7 +22,7 @@ author: Shuang Ma, Yuyi Li, Yihan Zhang, Danyang Chen, Shuyang Ji, Ziming Mao, C
 <p>
 <strong>By: Shuang Ma, Yuyi Li, Yihan Zhang, Danyang Chen, Shuyang Ji, Ziming Mao, Cheng Ji, Ansha Prashanth, Wenting Yang, Chihan Cui, Peiyu Lin, Amanda Raybuck, Ion Stoica, Yang Zhou.
 <br>
-Date: June 8, 2026
+Date: June 9, 2026
 </strong>
 </p>
 
