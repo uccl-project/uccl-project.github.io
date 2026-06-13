@@ -29,14 +29,7 @@ RDMA is the backbone of multi-node LLM training and inference, yet most of us ru
 
 If you run InfiniBand fabrics, you have probably used [`ibtop`](https://github.com/jhammond/ibtop)—a small but invaluable tool that reads InfiniBand hardware performance counters (via the UMAD interface) and organizes bandwidth and traffic by job or host. It answers the everyday operational question: *who is using the fabric, and how much?*
 
-The trouble is that the RDMA world is no longer just InfiniBand. GPU clusters today run RDMA over an expanding set of providers, each with its own NIC, counter definitions, and behavioral quirks:
-
-- **NVIDIA / Mellanox ConnectX** (RoCE and InfiniBand)
-- **AWS EFA** (Elastic Fabric Adapter)
-- **Broadcom Thor / `bnxt`** NICs
-- **AMD** Pensando / Pollara NICs
-
-An InfiniBand-only tool like `ibtop` cannot see any of these, and writing a separate monitor per vendor does not scale. What practitioners actually need is a **provider-agnostic** view of RDMA traffic.
+The trouble is that the RDMA world is no longer just InfiniBand. GPU clusters today run RDMA over an expanding set of providers—NVIDIA/Mellanox ConnectX (RoCE and InfiniBand), AWS EFA, Broadcom Thor/`bnxt`, AMD Pensando/Pollara—each with its own NIC, counter definitions, and quirks. An InfiniBand-only tool like `ibtop` cannot see any of these, and writing a separate monitor per vendor does not scale. What practitioners actually need is a **provider-agnostic** view of RDMA traffic.
 
 That is exactly what `rdmatop` provides. Instead of per-vendor counters, it reads **RDMA netlink**—the same interface behind the `rdma statistic` command—so it works on any Linux RDMA device, and it maps queue pairs (QPs) back to the processes that own them. The result is a live terminal dashboard of per-device throughput (Gb/s, packets/s, drops), RDMA read/write counters, retransmissions, and—crucially—**which process is driving each device**. That per-NIC, per-process, Tx-vs-Rx visibility is what turns "the job is slow" into "GPU 0's traffic is all landing on a single NIC."
 
