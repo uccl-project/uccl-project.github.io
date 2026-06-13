@@ -78,9 +78,31 @@ NVSHMEM **3.6.5** added **round-robin NIC selection** so a single GPU could spra
 
 The fix in [NVIDIA/nvshmem#76](https://github.com/NVIDIA/nvshmem/pull/76) spreads remote-NIC selection per sender, so receives land on different NICs and throughput scales as expected; the PR has the details and benchmarks.
 
+## Case Study 5: Try It Yourself with the Bundled Examples
+
+You do not need a broken cluster to see what `rdmatop` shows. The repo ships ready-to-run [examples](https://github.com/uccl-project/rdmatop/tree/main/examples) that generate RDMA traffic across the frameworks people actually use—`ib` and `rdma` verbs microbenchmarks, `ucx`, `nccl`, `nvshmem`, `nixl`, and `pplx`—plus deployment recipes for real clusters.
+
+On **Kubernetes**, run `rdmatop` as a DaemonSet so every GPU node is covered, then attach to any pod's TUI:
+
+```bash
+kubectl apply -f examples/kubernetes/daemonset.yaml
+kubectl exec -it <rdmatop-pod> -- rdmatop
+```
+
+The DaemonSet runs with `hostNetwork`, `hostPID`, and the `NET_ADMIN` capability so it can read host RDMA devices and map queue pairs to the processes that own them.
+
+On **Slurm**, submit your job, then open an interactive shell on one of its allocated nodes and watch the traffic live:
+
+```bash
+srun --jobid=$JOBID --overlap --pty bash   # hop onto a running job's node
+rdmatop
+```
+
+Beyond debugging, this is how you tell whether a workload is **compute-bound or communication-bound**. In prefill–decode (PD) disaggregation, for example, the KV cache streams over RDMA from prefill to decode GPUs: if `rdmatop` shows those NICs saturated, the transfer is your bottleneck; if they sit near idle while the GPUs stay busy, the network is not what is holding you back. It is the fastest way to learn both the tool and your workload before you need it in production.
+
 ## Conclusion
 
-These case studies share a theme: the hardware was capable, but it was being used wrong—idle because traffic fell back to TCP, capped to a single rail, or funneled onto one NIC—and each failure was effectively invisible at the application layer. The job ran; it was simply slow. Each took real investigation to track down.
+The debugging cases above share a theme: the hardware was capable, but it was being used wrong—idle because traffic fell back to TCP, capped to a single rail, or funneled onto one NIC—and each failure was effectively invisible at the application layer. The job ran; it was simply slow. Each took real investigation to track down.
 
 A per-NIC, per-process, Tx-vs-Rx monitor collapses that investigation into a glance. As RDMA fans out across EFA, ConnectX, Broadcom, and AMD, a tool that reads every one of them through a single vendor-neutral interface becomes essential rather than nice-to-have. That is the gap `rdmatop` is built to fill—`htop`, but for RDMA traffic. We welcome issues and contributions.
 
