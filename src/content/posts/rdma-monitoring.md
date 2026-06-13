@@ -21,7 +21,7 @@ author: UCCL Team
 
 <div class="tldr">
 <p>
-RDMA is the backbone of multi-node LLM training and inference, yet most of us run it blind: when throughput is half of what it should be, there is rarely an easy way to see <em>which</em> NIC is hot, which is idle, or whether the bottleneck is on the transmit or the receive side. We built <strong><a href="https://github.com/uccl-project/rdmatop">rdmatop</a></strong>—"htop, but for RDMA traffic"—a real-time TUI that works across RDMA providers (NVIDIA ConnectX, AWS EFA, Broadcom, and any Linux RDMA device) through the RDMA netlink interface. In this post we motivate why such a tool is needed, explain why production dashboards fall short for interactive debugging, and walk through real NCCL and NVSHMEM performance issues that a per-NIC, per-process monitor makes obvious at a glance.
+RDMA is the backbone of multi-node LLM training and inference, yet most of us run it blind—when throughput is half what it should be, it is hard to see which NIC is hot, which is idle, or whether the bottleneck is on transmit or receive. We built <strong><a href="https://github.com/uccl-project/rdmatop">rdmatop</a></strong>, "htop, but for RDMA traffic": a real-time TUI that monitors any Linux RDMA device (NVIDIA ConnectX, AWS EFA, Broadcom) through RDMA netlink. We then walk through real NCCL and NVSHMEM cases where a per-NIC, per-process view made the problem obvious at a glance.
 </p>
 </div>
 
