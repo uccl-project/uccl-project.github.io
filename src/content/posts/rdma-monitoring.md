@@ -1,7 +1,7 @@
 ---
 title: "rdmatop: Real-Time, Vendor-Neutral RDMA Network Monitoring"
 slug: rdma-monitoring
-description: "rdmatop is htop for RDMA traffic: a vendor-neutral TUI for real-time RDMA NIC monitoring across InfiniBand, RoCE, and EFA, shown via real NCCL and NVSHMEM debugging case studies."
+description: "rdmatop is htop for RDMA traffic: a real-time TUI for monitoring RDMA NICs in multi-node LLM training and inference, surfacing bottlenecks NCCL and NVSHMEM hide."
 category:
   - One
 tags:
@@ -21,7 +21,7 @@ author: UCCL Team
 
 <div class="tldr">
 <p>
-RDMA is the backbone of modern GPU communication, yet most of us run it blind: when throughput is half of what it should be, there is rarely an easy way to see <em>which</em> NIC is hot, which is idle, or whether the bottleneck is on the transmit or the receive side. We built <strong><a href="https://github.com/uccl-project/rdmatop">rdmatop</a></strong>—"htop, but for RDMA traffic"—a real-time TUI that works across RDMA providers (NVIDIA ConnectX, AWS EFA, Broadcom, and any Linux RDMA device) through the RDMA netlink interface. In this post we motivate why such a tool is needed, explain why production dashboards fall short for interactive debugging, and walk through real NCCL and NVSHMEM performance issues that a per-NIC, per-process monitor makes obvious at a glance.
+RDMA is the backbone of multi-node LLM training and inference, yet most of us run it blind: when throughput is half of what it should be, there is rarely an easy way to see <em>which</em> NIC is hot, which is idle, or whether the bottleneck is on the transmit or the receive side. We built <strong><a href="https://github.com/uccl-project/rdmatop">rdmatop</a></strong>—"htop, but for RDMA traffic"—a real-time TUI that works across RDMA providers (NVIDIA ConnectX, AWS EFA, Broadcom, and any Linux RDMA device) through the RDMA netlink interface. In this post we motivate why such a tool is needed, explain why production dashboards fall short for interactive debugging, and walk through real NCCL and NVSHMEM performance issues that a per-NIC, per-process monitor makes obvious at a glance.
 </p>
 </div>
 
