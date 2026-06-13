@@ -17,7 +17,7 @@ cover: /rdma-monitoring/rdma-monitoring.png
 coverAlt: rdmatop
 author: UCCL Team
 ---
-**By: UCCL Team -- June 13, 2026**
+**By: Chang-Ning Tsai and the UCCL Team -- June 13, 2026**
 
 <div class="tldr">
 <p>
@@ -38,26 +38,19 @@ The trouble is that the RDMA world is no longer just InfiniBand. GPU clusters to
 
 An InfiniBand-only tool like `ibtop` cannot see any of these, and writing a separate monitor per vendor does not scale. What practitioners actually need is a **provider-agnostic** view of RDMA traffic.
 
-That is exactly what `rdmatop` provides. Instead of talking to one vendor's counters, it uses **RDMA netlink**—the same interface behind the standard `rdma statistic` command—so it works on any Linux RDMA device. It runs in four steps:
-
-1. **Discover** RDMA devices and ports via netlink
-2. **Collect** hardware counters per device/port
-3. **Map** queue pairs (QPs) back to the processes that own them
-4. **Compute** throughput from interval snapshots
-
-The result is a live terminal dashboard of per-device throughput (Gb/s, packets/s, drops), RDMA read/write counters, retransmissions, and—crucially—**which process is driving each device**. That per-NIC, per-process, Tx-vs-Rx visibility is what turns "the job is slow" into "GPU 0's traffic is all landing on a single NIC."
+That is exactly what `rdmatop` provides. Instead of per-vendor counters, it reads **RDMA netlink**—the same interface behind the `rdma statistic` command—so it works on any Linux RDMA device, and it maps queue pairs (QPs) back to the processes that own them. The result is a live terminal dashboard of per-device throughput (Gb/s, packets/s, drops), RDMA read/write counters, retransmissions, and—crucially—**which process is driving each device**. That per-NIC, per-process, Tx-vs-Rx visibility is what turns "the job is slow" into "GPU 0's traffic is all landing on a single NIC."
 
 ## Case Study 1: AWS Already Has an EFA Exporter—So Why a TUI?
 
-Isn't this already solved on AWS? Not for *debugging*. AWS ships an [EFA node exporter](https://github.com/awslabs/awsome-distributed-ai/tree/main/4.validation_and_observability/3.efa-node-exporter) that scrapes EFA RDMA counters into Prometheus and renders them in Grafana on EKS—great for long-lived, fleet-wide dashboards. But standing it up takes a custom Docker image, ECR, a Helm-installed Prometheus stack, a DaemonSet, and a hosted Grafana: the right machinery for continuous observability, the wrong machinery for answering "why is this job slow *right now*?"
+Isn't this already solved on AWS? Not for *debugging*. AWS ships an [EFA node exporter](https://github.com/awslabs/awsome-distributed-ai/tree/main/4.validation_and_observability/3.efa-node-exporter) that scrapes EFA RDMA counters into Prometheus and Grafana on EKS—ideal for long-lived, fleet-wide dashboards. But standing it up takes a custom Docker image, ECR, a Helm-installed Prometheus stack, a DaemonSet, and a hosted Grafana: the right machinery for continuous observability, the wrong machinery for "why is this job slow *right now*?"
 
-On a node, a dashboard is a poor debugging instrument—coarse scrape intervals, no per-process attribution, and a whole stack to deploy just to inspect one host. That is the gap `rdmatop` fills: a single binary that shows live per-NIC, per-process Tx/Rx rates instantly, with no cluster, no ECR, and no Grafana. The case studies that follow show what that immediacy buys you.
+For ad-hoc debugging a dashboard is the wrong instrument—coarse scrape intervals, no per-process attribution, a whole stack to deploy just to inspect one host. That is the gap `rdmatop` fills: a single binary showing live per-NIC, per-process Tx/Rx rates, with no cluster, no ECR, no Grafana. The case studies below show what that immediacy buys.
 
 ## Case Study 2: NCCL Silently Falling Back to TCP Sockets
 
-NCCL is the default collective library for distributed training and inference, and on EFA it should move data over RDMA through the libfabric (OFI) plugin. If that plugin is mislinked or misconfigured, NCCL silently falls back to kernel **TCP sockets**—RDMA disabled—and collective throughput can crater by up to an order of magnitude (~10×). The job still runs and still converges; it is just far slower.
+NCCL is the default collective library for distributed training and inference, and on EFA it should move data over RDMA through the libfabric (OFI) plugin. If that plugin is mislinked or misconfigured, NCCL silently falls back to kernel **TCP sockets**—RDMA disabled—and collective throughput can crater by up to an order of magnitude (~10×). The job still runs and converges; it is just far slower.
 
-The only clue is a single line in the `NCCL_DEBUG=INFO` output:
+The only clue is one line in the `NCCL_DEBUG=INFO` output:
 
 ```text
 # wrong — silently fell back to TCP sockets
@@ -67,23 +60,23 @@ NCCL INFO Using network Socket
 NCCL INFO Using network Libfabric
 ```
 
-In practice, nobody is reading initialization logs during a multi-node training run or a hosted inference service, and the sheer log volume buries that one line (see [uccl#734](https://github.com/uccl-project/uccl/issues/734)). `rdmatop` surfaces the fallback instantly: if NCCL is on sockets, the EFA NICs show **near-zero RDMA traffic** even while the GPUs are obviously communicating. Flat RDMA counters mean you are not on RDMA—no log archaeology required.
+In a multi-node training run or a hosted inference service, nobody is watching initialization logs, and the log volume buries that one line (see [uccl#734](https://github.com/uccl-project/uccl/issues/734)). `rdmatop` surfaces the fallback instantly: on sockets, the EFA NICs show **near-zero RDMA traffic** even while the GPUs are clearly communicating. Flat RDMA counters mean you are not on RDMA—no log archaeology required.
 
 ## Case Study 3: NVSHMEM ≤ 3.5.21 Was Stuck on a Single EFA NIC
 
-AWS GPU instances ship with **multiple EFA NICs per node** precisely so that each GPU can drive a lot of network bandwidth. But for a long time, NVSHMEM[^1] could not take advantage of them.
+AWS GPU instances ship with **multiple EFA NICs per node** so each GPU can drive more network bandwidth—but for a long time, NVSHMEM[^1] could not use them all.
 
-In NVSHMEM **3.5.21 and earlier**, the libfabric transport bound **each GPU to exactly one EFA NIC**. No matter how many NICs the instance had, a single GPU's point-to-point throughput was capped at one NIC's bandwidth, leaving the rest of an expensive multi-NIC system idle. Workloads looked mysteriously "slow," but the application-level numbers gave no hint as to why.
+In NVSHMEM **3.5.21 and earlier**, the libfabric transport bound **each GPU to a single EFA NIC**, capping its point-to-point throughput at one NIC's bandwidth and leaving the rest of an expensive multi-NIC system idle. Workloads looked mysteriously slow, with no hint why at the application level.
 
-This is the textbook case for an RDMA monitor. With `rdmatop` running on the node, the picture is immediate and unambiguous: **one EFA NIC pinned near line rate while its siblings sit at zero.** There is no theory to test and no guesswork—the imbalance is right there on screen. (For the full write-up of the single- vs. multi-NIC behavior, see the NVSHMEM Multi-NIC notes.[^2])
+An RDMA monitor makes this unambiguous: `rdmatop` shows **one EFA NIC pinned near line rate while its siblings sit at zero**—no theory, no guesswork. (For the full single- vs. multi-NIC write-up, see the NVSHMEM Multi-NIC notes.[^2])
 
 ## Case Study 4: Multi-Rail Was Added, But Throughput Did Not Scale
 
-NVSHMEM **3.6.5** added **round-robin NIC selection**, letting a single GPU spray traffic across all of its EFA NICs. With four NICs per GPU we expected point-to-point throughput to scale roughly **4×**—but all-to-all stubbornly refused to, and could even come out *slower than a single NIC*.
+NVSHMEM **3.6.5** added **round-robin NIC selection** so a single GPU could spray traffic across all its EFA NICs. With four NICs we expected throughput to scale roughly **4×**—but all-to-all refused to, sometimes coming out *slower than a single NIC*.
 
-Running `rdmatop` on the destination node made the cause obvious: **transmit (Tx) traffic spread evenly across all NICs, but receive (Rx) traffic funneled onto a single NIC** while the others sat idle. Round-robin balanced sends but not receives—every sender picked the same remote NIC for a given destination—and that lone receive-side hotspot capped the whole job.
+`rdmatop` on the destination node made the cause obvious: **transmit (Tx) traffic spread evenly across all NICs, but receive (Rx) traffic funneled onto one NIC.** Round-robin balanced sends but not receives—every sender picked the same remote NIC for a given destination—and that lone receive-side hotspot capped the job.
 
-The fix in [NVIDIA/nvshmem#76](https://github.com/NVIDIA/nvshmem/pull/76) spreads remote-NIC selection per sender, so receives land on different NICs; with it applied, Rx balances across all NICs and throughput scales as expected. The PR has the implementation details and benchmark numbers.
+The fix in [NVIDIA/nvshmem#76](https://github.com/NVIDIA/nvshmem/pull/76) spreads remote-NIC selection per sender, so receives land on different NICs and throughput scales as expected; the PR has the details and benchmarks.
 
 ## Conclusion
 
