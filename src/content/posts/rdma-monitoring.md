@@ -42,9 +42,9 @@ That is exactly what `rdmatop` provides. Instead of per-vendor counters, it read
 
 ## Case Study 1: AWS Already Has an EFA Exporter—So Why a TUI?
 
-Isn't this already solved on AWS? Not for *debugging*. AWS ships an [EFA node exporter](https://github.com/awslabs/awsome-distributed-ai/tree/main/4.validation_and_observability/3.efa-node-exporter) that scrapes EFA RDMA counters into Prometheus and Grafana on EKS—ideal for long-lived, fleet-wide dashboards. But standing it up takes a custom Docker image, ECR, a Helm-installed Prometheus stack, a DaemonSet, and a hosted Grafana: the right machinery for continuous observability, the wrong machinery for "why is this job slow *right now*?"
+AWS does provide an example: its distributed-training repo (for EKS and SageMaker HyperPod) documents an [EFA node exporter](https://github.com/awslabs/awsome-distributed-ai/tree/main/4.validation_and_observability/3.efa-node-exporter) that scrapes EFA traffic into Prometheus and Grafana for fleet-wide dashboards. Deploying that exporter is not always convenient, though—on a Slurm cluster, or any node you simply SSH into, there is usually no Prometheus/Grafana stack, and bringing one up just to inspect a single host is a lot of moving parts for a quick look.
 
-For ad-hoc debugging a dashboard is the wrong instrument—coarse scrape intervals, no per-process attribution, a whole stack to deploy just to inspect one host. That is the gap `rdmatop` fills: a single binary showing live per-NIC, per-process Tx/Rx rates, with no cluster, no ECR, no Grafana. The case studies below show what that immediacy buys.
+That is the gap `rdmatop` fills: a single binary, no cluster and no Grafana, showing live per-NIC, per-process Tx/Rx rates the moment you run it on the node. The case studies below show what that immediacy buys.
 
 ## Case Study 2: NCCL Silently Falling Back to TCP Sockets
 
@@ -68,6 +68,12 @@ AWS GPU instances ship with **multiple EFA NICs per node** so each GPU can drive
 
 In NVSHMEM **3.5.21 and earlier**, the libfabric transport bound **each GPU to a single EFA NIC**, capping its point-to-point throughput at one NIC's bandwidth and leaving the rest of an expensive multi-NIC system idle. Workloads looked mysteriously slow, with no hint why at the application level.
 
+<p align="center">
+  <img src="/rdma-monitoring/nvshmem-3.5.21.gif" alt="rdmatop on an NVSHMEM 3.5.21 run: only a few EFA NICs carry traffic while the rest sit idle at 0.00 Gbps" width="820"/>
+  <br/>
+  <em>Figure 1: NVSHMEM 3.5.21—only a few EFA NICs carry traffic; the rest sit at <strong>0.00</strong>.</em>
+</p>
+
 An RDMA monitor makes this unambiguous: `rdmatop` shows **one EFA NIC pinned near line rate while its siblings sit at zero**—no theory, no guesswork. (For the full single- vs. multi-NIC write-up, see the NVSHMEM Multi-NIC notes.[^2])
 
 ## Case Study 4: Multi-Rail Was Added, But Throughput Did Not Scale
@@ -75,6 +81,12 @@ An RDMA monitor makes this unambiguous: `rdmatop` shows **one EFA NIC pinned nea
 NVSHMEM **3.6.5** added **round-robin NIC selection** so a single GPU could spray traffic across all its EFA NICs. With four NICs we expected throughput to scale roughly **4×**—but all-to-all refused to, sometimes coming out *slower than a single NIC*.
 
 `rdmatop` on the destination node made the cause obvious: **transmit (Tx) traffic spread evenly across all NICs, but receive (Rx) traffic funneled onto one NIC.** Round-robin balanced sends but not receives—every sender picked the same remote NIC for a given destination—and that lone receive-side hotspot capped the job.
+
+<p align="center">
+  <img src="/rdma-monitoring/nvshmem-multirail.gif" alt="rdmatop showing multi-rail NVSHMEM: every NIC transmits but only a few receive, so Rx funnels onto a handful of NICs" width="820"/>
+  <br/>
+  <em>Figure 2: Multi-rail NVSHMEM—Tx spreads across all NICs, but Rx funnels onto a few.</em>
+</p>
 
 The fix in [NVIDIA/nvshmem#76](https://github.com/NVIDIA/nvshmem/pull/76) spreads remote-NIC selection per sender, so receives land on different NICs and throughput scales as expected; the PR has the details and benchmarks.
 
