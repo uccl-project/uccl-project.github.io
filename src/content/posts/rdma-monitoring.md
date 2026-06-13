@@ -1,5 +1,5 @@
 ---
-title: "rdmatop: Real-Time, Vendor-Neutral RDMA Network Monitoring"
+title: "rdmatop: Cross-Provider htop for RDMA Traffic"
 slug: rdma-monitoring
 description: "rdmatop is htop for RDMA traffic: a real-time TUI for monitoring RDMA NICs in multi-node LLM training and inference, surfacing bottlenecks NCCL and NVSHMEM hide."
 category:
