@@ -62,7 +62,7 @@ NCCL INFO Using network Libfabric
 
 In a multi-node training run or a hosted inference service, nobody is watching initialization logs, and the log volume buries that one line (see [uccl#734](https://github.com/uccl-project/uccl/issues/734)). `rdmatop` surfaces the fallback instantly: on sockets, the EFA NICs show **near-zero RDMA traffic** even while the GPUs are clearly communicating. Flat RDMA counters mean you are not on RDMA—no log archaeology required.
 
-## Case Study 3: NVSHMEM ≤ 3.5.21 Was Stuck on a Single EFA NIC
+## Case Study 3: NVSHMEM ≤ 3.5.21 Silently Used Only One of Many EFA NICs
 
 AWS GPU instances ship with **multiple EFA NICs per node** so each GPU can drive more network bandwidth—but for a long time, NVSHMEM[^1] could not use them all.
 
