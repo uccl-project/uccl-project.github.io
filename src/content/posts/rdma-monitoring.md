@@ -69,7 +69,7 @@ AWS GPU instances ship with **multiple EFA NICs per node** so each GPU can drive
 In NVSHMEM **3.5.21 and earlier**, the libfabric transport bound **each GPU to a single EFA NIC**, capping its point-to-point throughput at one NIC's bandwidth and leaving the rest of an expensive multi-NIC system idle. Workloads looked mysteriously slow, with no hint why at the application level.
 
 <p align="center">
-  <img src="/rdma-monitoring/nvshmem-3.5.21.gif" alt="rdmatop on an NVSHMEM 3.5.21 run: only a few EFA NICs carry traffic while the rest sit idle at 0.00 Gbps" width="820"/>
+  <img src="/rdma-monitoring/nvshmem-3.5.21.gif" alt="rdmatop on an NVSHMEM 3.5.21 run: only a few EFA NICs carry traffic while the rest sit idle at 0.00 Gbps" width="820" style="border-radius:0.6rem"/>
   <br/>
   <em>Figure 1: NVSHMEM 3.5.21—only a few EFA NICs carry traffic; the rest sit at <strong>0.00</strong>.</em>
 </p>
@@ -83,9 +83,9 @@ NVSHMEM **3.6.5** added **round-robin NIC selection** so a single GPU could spra
 `rdmatop` on the destination node made the cause obvious: **transmit (Tx) traffic spread evenly across all NICs, but receive (Rx) traffic funneled onto one NIC.** Round-robin balanced sends but not receives—every sender picked the same remote NIC for a given destination—and that lone receive-side hotspot capped the job.
 
 <p align="center">
-  <img src="/rdma-monitoring/nvshmem-multirail.gif" alt="rdmatop showing multi-rail NVSHMEM: every NIC transmits but only a few receive, so Rx funnels onto a handful of NICs" width="820"/>
+  <img src="/rdma-monitoring/nvshmem-3.6.5.gif" alt="rdmatop on an NVSHMEM 3.6.5 multi-rail run: every NIC transmits but only a few receive, so Rx funnels onto a handful of NICs" width="820" style="border-radius:0.6rem"/>
   <br/>
-  <em>Figure 2: Multi-rail NVSHMEM—Tx spreads across all NICs, but Rx funnels onto a few.</em>
+  <em>Figure 2: NVSHMEM 3.6.5 multi-rail—Tx spreads across all NICs, but Rx funnels onto a few.</em>
 </p>
 
 The fix in [NVIDIA/nvshmem#76](https://github.com/NVIDIA/nvshmem/pull/76) spreads remote-NIC selection per sender, so receives land on different NICs and throughput scales as expected; the PR has the details and benchmarks.
